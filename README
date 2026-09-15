@@ -1,0 +1,53 @@
+Castle + Slot. A chess roguelike with a gambling economy.
+Overview
+Castlot takes the chess board and drops it into a Camelot Casino Fantasy — stained glass meets casino felt, medieval court meets Vegas high-roller room. Every run, you build and rebuild an army through a weighted lottery, gambling points earned in play on pieces, upgrades, and one-time powers. Lose a piece in battle, and it's gone — buy it back or win it back in the lottery pool.
+Short, fast rounds. Constant risk. No two runs field the same army twice.
+Starting Army
+King, rook, knight, bishop, 3 pawns. Deliberately asymmetric — forces buying decisions from round one.
+Core Loop
+
+Play a round, earn points.
+Spend points in a weighted lottery for pieces, upgrades, and powers.
+Lose pieces in-game = lose them from your roster permanently.
+Upgraded pieces that are lost go back into the lottery pool — win them back or don't.
+Board slot limits force optimization: fewer strong pieces beats many weak ones.
+Win Conditions
+
+Primary: time-based positional scoring.
+Bonus: checkmate still wins outright if you can get there.
+Rounds are short by design — no grinding out 100-move endgames.
+Round Variety
+
+Alternates between move-limit rounds and chess-clock rounds.
+Board type rotates between rounds.
+Subgame rounds at fixed intervals (every 5–10 rounds): suicide chess, fog of war, crazyhouse, and more.
+Economy
+
+Pieces get more expensive over time — pushes upgrade investment instead of hoarding.
+Lottery is performance-weighted: struggling players skew toward better pulls, dominating players skew worse. Subtle rubber-banding, never obvious.
+Rarity tiers: Common (basic pieces) → Uncommon (minor powers) → Rare (upgrades, special pieces) → Legendary (run-defining).
+Powers are one-time use.
+Special pieces have unique movement and abilities — the joker-equivalent of the deck.
+Progression
+
+Meta hub: your castle/court, built up across runs.
+Starting lineup customization unlocks over time.
+Persistent currency adjusts drop weights.
+Certain pieces only enter the pool after being discovered once.
+Castle upgrades grant passive bonuses — extra starting gold, better shop odds, a free reroll.
+Endgame
+
+Final boss changes the board and rules continuously through the fight.
+Beating the boss unlocks endless mode or a fresh run.
+Post-Game Modes
+
+Static insane difficulty.
+Rules-change-every-round mode.
+Subgame-every-round mode.
+Each mode has exclusive unlocks to incentivize playing all of them.
+Multiplayer
+
+P2P via Steam Networking.
+Versus mode: the full roguelike run played against a real opponent instead of AI.
+Random matchmaking each round, or private lobbies.
+Disconnect = forfeit. No reconnect window.
