@@ -1,9 +1,44 @@
-[gd_scene load_steps=2 format=3 uid="uid://bqx7n8m0k3v1a"]
+[gd_scene load_steps=3 format=3 uid="uid://bqx7n8m0k3v1a"]
 
 [ext_resource type="Script" path="res://scripts/Board.gd" id="1_board"]
+[ext_resource type="Script" path="res://scripts/Main.gd" id="2_main"]
 
 [node name="Main" type="Node2D"]
+script = ExtResource("2_main")
 
 [node name="Board" type="Node2D" parent="."]
-position = Vector2(320, 40)
+position = Vector2(320, 80)
 script = ExtResource("1_board")
+
+[node name="UI" type="Control" parent="."]
+anchors_preset = 0
+offset_right = 1280.0
+offset_bottom = 80.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UI"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 500.0
+offset_bottom = 60.0
+theme_override_constants/separation = 12
+
+[node name="WidthLabel" type="Label" parent="UI/HBoxContainer"]
+layout_mode = 2
+text = "Width:"
+
+[node name="WidthSpinBox" type="SpinBox" parent="UI/HBoxContainer"]
+layout_mode = 2
+min_value = 2.0
+max_value = 16.0
+value = 8.0
+
+[node name="HeightLabel" type="Label" parent="UI/HBoxContainer"]
+layout_mode = 2
+text = "Height:"
+
+[node name="HeightSpinBox" type="SpinBox" parent="UI/HBoxContainer"]
+layout_mode = 2
+min_value = 2.0
+max_value = 16.0
+value = 8.0
