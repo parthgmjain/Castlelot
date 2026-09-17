@@ -7,12 +7,14 @@ const MAX_DIM := 10
 const DIRECTIONS := ["RIGHT", "LEFT", "UP", "DOWN"]
 const DIR_VECTORS := { "RIGHT": Vector2i(1, 0), "LEFT": Vector2i(-1, 0), "UP": Vector2i(0, -1), "DOWN": Vector2i(0, 1) }
 const PLAY_AREA := Vector2(1200.0, 500.0)
-const BASE_POSITION := Vector2(40.0, 210.0)
+const BASE_POSITION := Vector2(40.0, 250.0)
 
 @onready var boards_container: Node2D = $BoardsContainer
 @onready var count_spin_box: SpinBox = $UI/VBox/CountRow/CountSpinBox
 @onready var refresh_button: Button = $UI/VBox/CountRow/RefreshButton
 @onready var sizes_row: HBoxContainer = $UI/VBox/SizesRow
+@onready var zone_tiles_spin_box: SpinBox = $UI/VBox/ZoneRow/ZoneTilesSpinBox
+@onready var generate_zones_button: Button = $UI/VBox/ZoneRow/GenerateZonesButton
 @onready var side_check_button: CheckButton = $UI/VBox/PieceRow/SideCheckButton
 @onready var zone_edit_button: CheckButton = $UI/VBox/PieceRow/ZoneEditButton
 @onready var king_button: Button = $UI/VBox/PieceRow/KingButton
@@ -39,6 +41,7 @@ func _ready() -> void:
 	refresh_button.pressed.connect(_on_refresh_pressed)
 	side_check_button.toggled.connect(_on_side_toggled)
 	zone_edit_button.toggled.connect(_on_zone_edit_toggled)
+	generate_zones_button.pressed.connect(_on_generate_zones_pressed)
 	king_button.pressed.connect(_on_place_pressed.bind(Piece.Type.KING))
 	queen_button.pressed.connect(_on_place_pressed.bind(Piece.Type.QUEEN))
 	rook_button.pressed.connect(_on_place_pressed.bind(Piece.Type.ROOK))
@@ -346,6 +349,60 @@ func _on_square_selected(square: Vector2i, board: Board) -> void:
 func _on_square_right_clicked(square: Vector2i, board: Board) -> void:
 	if zone_edit_mode:
 		board.clear_zone(square)
+
+func _on_generate_zones_pressed() -> void:
+	if boards.is_empty():
+		return
+
+	for b in boards:
+		b.pieces.clear()
+		b.zone_owner.clear()
+		b.clear_selection()
+		b.clear_move_markers()
+	active_board = null
+	active_square = Vector2i(-1, -1)
+	current_moves = []
+
+	var white_board: Board = boards[0]
+	var white_square := Vector2i(0, 0)
+	var black_board: Board = _farthest_board(white_board)
+	var black_square := Vector2i(black_board.grid_width - 1, black_board.grid_height - 1)
+
+	white_board.place_piece(white_square, Piece.Type.KING, Piece.Side.WHITE)
+	black_board.place_piece(black_square, Piece.Type.KING, Piece.Side.BLACK)
+
+	_grow_zone(white_board, white_square, Piece.Side.WHITE)
+	_grow_zone(black_board, black_square, Piece.Side.BLACK)
+
+	for b in boards:
+		b.queue_redraw()
+
+func _farthest_board(from: Board) -> Board:
+	var farthest: Board = from
+	var farthest_dist: float = -1.0
+	for b in boards:
+		var dist: float = from.position.distance_to(b.position)
+		if dist > farthest_dist:
+			farthest_dist = dist
+			farthest = b
+	return farthest
+
+func _grow_zone(king_board: Board, king_square: Vector2i, side: Piece.Side) -> void:
+	var tile_count: int = int(zone_tiles_spin_box.value)
+	var board_area: int = king_board.grid_width * king_board.grid_height
+	var offsets: Array = ZoneGenerator.spiral_offsets(min(tile_count, board_area) * 4 + 4)
+
+	var assigned := 0
+	for offset in offsets:
+		if assigned >= tile_count:
+			break
+		var square: Vector2i = king_square + offset
+		if not king_board.is_in_bounds(square):
+			continue
+		if king_board.zone_owner.has(square) and king_board.zone_owner[square] != side:
+			continue
+		king_board.set_zone(square, side)
+		assigned += 1
 
 func _on_side_toggled(pressed: bool) -> void:
 	current_side = Piece.Side.BLACK if pressed else Piece.Side.WHITE
