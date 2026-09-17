@@ -34,8 +34,21 @@ const KNIGHT_OFFSETS := [
 const ROOK_DIRECTIONS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const BISHOP_DIRECTIONS := [Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]
 
+## Standard chess values. King is 0 - it doesn't count against a point budget.
+const VALUES := {
+	Type.KING: 0,
+	Type.QUEEN: 9,
+	Type.ROOK: 5,
+	Type.BISHOP: 3,
+	Type.KNIGHT: 3,
+	Type.PAWN: 1,
+}
+
 static func symbol(type: Piece.Type, side: Piece.Side) -> String:
 	return SYMBOLS[side][type]
+
+static func value(type: Piece.Type) -> int:
+	return VALUES[type]
 
 ## Steps one square from `square` on `board` in `direction`. If that lands
 ## off the board, follows a portal at `square` whose direction matches, if

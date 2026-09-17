@@ -7,7 +7,7 @@ const MAX_DIM := 10
 const DIRECTIONS := ["RIGHT", "LEFT", "UP", "DOWN"]
 const DIR_VECTORS := { "RIGHT": Vector2i(1, 0), "LEFT": Vector2i(-1, 0), "UP": Vector2i(0, -1), "DOWN": Vector2i(0, 1) }
 const PLAY_AREA := Vector2(1200.0, 500.0)
-const BASE_POSITION := Vector2(40.0, 250.0)
+const BASE_POSITION := Vector2(40.0, 290.0)
 
 @onready var boards_container: Node2D = $BoardsContainer
 @onready var count_spin_box: SpinBox = $UI/VBox/CountRow/CountSpinBox
@@ -16,6 +16,9 @@ const BASE_POSITION := Vector2(40.0, 250.0)
 @onready var white_zone_spin_box: SpinBox = $UI/VBox/ZoneRow/WhiteZoneSpinBox
 @onready var black_zone_spin_box: SpinBox = $UI/VBox/ZoneRow/BlackZoneSpinBox
 @onready var generate_zones_button: Button = $UI/VBox/ZoneRow/GenerateZonesButton
+@onready var white_points_spin_box: SpinBox = $UI/VBox/PointsRow/WhitePointsSpinBox
+@onready var black_points_spin_box: SpinBox = $UI/VBox/PointsRow/BlackPointsSpinBox
+@onready var points_status_label: Label = $UI/VBox/PointsRow/PointsStatusLabel
 @onready var side_check_button: CheckButton = $UI/VBox/PieceRow/SideCheckButton
 @onready var zone_edit_button: CheckButton = $UI/VBox/PieceRow/ZoneEditButton
 @onready var king_button: Button = $UI/VBox/PieceRow/KingButton
@@ -43,6 +46,8 @@ func _ready() -> void:
 	side_check_button.toggled.connect(_on_side_toggled)
 	zone_edit_button.toggled.connect(_on_zone_edit_toggled)
 	generate_zones_button.pressed.connect(_on_generate_zones_pressed)
+	white_points_spin_box.value_changed.connect(func(_v): _update_points_status())
+	black_points_spin_box.value_changed.connect(func(_v): _update_points_status())
 	king_button.pressed.connect(_on_place_pressed.bind(Piece.Type.KING))
 	queen_button.pressed.connect(_on_place_pressed.bind(Piece.Type.QUEEN))
 	rook_button.pressed.connect(_on_place_pressed.bind(Piece.Type.ROOK))
@@ -53,6 +58,7 @@ func _ready() -> void:
 
 	_rebuild_size_controls(int(count_spin_box.value))
 	_generate_boards()
+	_update_points_status()
 
 func _on_count_changed(value: float) -> void:
 	_rebuild_size_controls(int(value))
@@ -215,6 +221,7 @@ func _relayout() -> void:
 	BoardColorizer.assign_colors(boards, connections)
 	_build_portals()
 	_refresh_moves()
+	_update_points_status()
 
 func _build_connection(p: int, c: int, direction: String, positions: Array, sizes: Array) -> Dictionary:
 	var p_pos: Vector2 = positions[p]
@@ -377,6 +384,7 @@ func _on_generate_zones_pressed() -> void:
 
 	for b in boards:
 		b.queue_redraw()
+	_update_points_status()
 
 func _farthest_board(from: Board) -> Board:
 	var farthest: Board = from
@@ -451,14 +459,38 @@ func _on_zone_edit_toggled(pressed: bool) -> void:
 	for b in boards:
 		b.clear_selection()
 
+func _points_used(side: Piece.Side) -> int:
+	var total := 0
+	for b in boards:
+		for square in b.pieces:
+			var piece: Dictionary = b.pieces[square]
+			if piece.side == side:
+				total += Piece.value(piece.type)
+	return total
+
+func _points_allocated(side: Piece.Side) -> int:
+	return int(white_points_spin_box.value if side == Piece.Side.WHITE else black_points_spin_box.value)
+
+func _update_points_status() -> void:
+	points_status_label.text = "White: %d/%d   Black: %d/%d" % [
+		_points_used(Piece.Side.WHITE), _points_allocated(Piece.Side.WHITE),
+		_points_used(Piece.Side.BLACK), _points_allocated(Piece.Side.BLACK),
+	]
+
 func _on_place_pressed(type: Piece.Type) -> void:
 	if active_board == null:
 		return
+	if type != Piece.Type.KING:
+		if _points_used(current_side) + Piece.value(type) > _points_allocated(current_side):
+			return
 	active_board.place_piece(active_square, type, current_side)
 	_refresh_moves()
+	_update_points_status()
 
 func _on_remove_pressed() -> void:
 	if active_board == null:
 		return
 	active_board.remove_piece(active_square)
+	_refresh_moves()
+	_update_points_status()
 	_refresh_moves()
