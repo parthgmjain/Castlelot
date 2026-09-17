@@ -51,6 +51,10 @@ theme_override_constants/separation = 8
 layout_mode = 2
 text = "Black"
 
+[node name="ZoneEditButton" type="CheckButton" parent="UI/VBox/PieceRow"]
+layout_mode = 2
+text = "Edit Zones"
+
 [node name="KingButton" type="Button" parent="UI/VBox/PieceRow"]
 layout_mode = 2
 text = "King"

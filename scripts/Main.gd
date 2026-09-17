@@ -14,6 +14,7 @@ const BASE_POSITION := Vector2(40.0, 210.0)
 @onready var refresh_button: Button = $UI/VBox/CountRow/RefreshButton
 @onready var sizes_row: HBoxContainer = $UI/VBox/SizesRow
 @onready var side_check_button: CheckButton = $UI/VBox/PieceRow/SideCheckButton
+@onready var zone_edit_button: CheckButton = $UI/VBox/PieceRow/ZoneEditButton
 @onready var king_button: Button = $UI/VBox/PieceRow/KingButton
 @onready var queen_button: Button = $UI/VBox/PieceRow/QueenButton
 @onready var rook_button: Button = $UI/VBox/PieceRow/RookButton
@@ -31,11 +32,13 @@ var board_height_boxes: Array = []
 var active_board: Board = null
 var active_square: Vector2i = Vector2i(-1, -1)
 var current_moves: Array = []
+var zone_edit_mode: bool = false
 
 func _ready() -> void:
 	count_spin_box.value_changed.connect(_on_count_changed)
 	refresh_button.pressed.connect(_on_refresh_pressed)
 	side_check_button.toggled.connect(_on_side_toggled)
+	zone_edit_button.toggled.connect(_on_zone_edit_toggled)
 	king_button.pressed.connect(_on_place_pressed.bind(Piece.Type.KING))
 	queen_button.pressed.connect(_on_place_pressed.bind(Piece.Type.QUEEN))
 	rook_button.pressed.connect(_on_place_pressed.bind(Piece.Type.ROOK))
@@ -109,6 +112,7 @@ func _generate_boards() -> void:
 		board.grid_width = int(board_width_boxes[i].value)
 		board.grid_height = int(board_height_boxes[i].value)
 		board.square_selected.connect(_on_square_selected.bind(board))
+		board.square_right_clicked.connect(_on_square_right_clicked.bind(board))
 		boards.append(board)
 
 		if i == 0:
@@ -322,6 +326,10 @@ func _execute_move(move: Dictionary) -> void:
 	current_moves = []
 
 func _on_square_selected(square: Vector2i, board: Board) -> void:
+	if zone_edit_mode:
+		board.set_zone(square, current_side)
+		return
+
 	for move in current_moves:
 		if move.board == board and move.square == square:
 			_execute_move(move)
@@ -335,8 +343,20 @@ func _on_square_selected(square: Vector2i, board: Board) -> void:
 	active_square = square
 	_refresh_moves()
 
+func _on_square_right_clicked(square: Vector2i, board: Board) -> void:
+	if zone_edit_mode:
+		board.clear_zone(square)
+
 func _on_side_toggled(pressed: bool) -> void:
 	current_side = Piece.Side.BLACK if pressed else Piece.Side.WHITE
+
+func _on_zone_edit_toggled(pressed: bool) -> void:
+	zone_edit_mode = pressed
+	active_board = null
+	active_square = Vector2i(-1, -1)
+	_refresh_moves()
+	for b in boards:
+		b.clear_selection()
 
 func _on_place_pressed(type: Piece.Type) -> void:
 	if active_board == null:

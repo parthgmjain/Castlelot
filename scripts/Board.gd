@@ -2,6 +2,7 @@ class_name Board
 extends Node2D
 
 signal square_selected(square: Vector2i)
+signal square_right_clicked(square: Vector2i)
 
 const SQUARE_SIZE := 32.0
 const LIGHT_COLOR := Color(0.87, 0.87, 0.87)
@@ -12,12 +13,17 @@ const MOVE_COLOR := Color(0.2, 0.85, 0.3)
 const CAPTURE_COLOR := Color(0.9, 0.25, 0.25)
 const PIECE_FONT_SIZE := 22
 const PIECE_COLOR := Color(0.05, 0.05, 0.05)
+const ZONE_COLORS := {
+	Piece.Side.WHITE: Color(0.2, 0.5, 0.95, 0.28),
+	Piece.Side.BLACK: Color(0.85, 0.2, 0.2, 0.28),
+}
 
 var pieces: Dictionary = {}
 var selected_square: Vector2i = Vector2i(-1, -1)
 var connection_squares: Array = []
 var move_squares: Array = []
 var capture_squares: Array = []
+var zone_owner: Dictionary = {}
 
 # Populated by Main: Vector2i -> Array[{ direction: Vector2i, target_board: Board, target_square: Vector2i }]
 var portals: Dictionary = {}
@@ -34,6 +40,7 @@ var color_parity: int = 0:
 		selected_square = Vector2i(-1, -1)
 		move_squares = []
 		capture_squares = []
+		zone_owner.clear()
 		queue_redraw()
 
 @export var grid_height: int = 8:
@@ -43,6 +50,7 @@ var color_parity: int = 0:
 		selected_square = Vector2i(-1, -1)
 		move_squares = []
 		capture_squares = []
+		zone_owner.clear()
 		queue_redraw()
 
 func pixel_size() -> Vector2:
@@ -75,8 +83,22 @@ func clear_selection() -> void:
 	selected_square = Vector2i(-1, -1)
 	queue_redraw()
 
-func place_piece(square: Vector2i, type: Piece.Type, side: Piece.Side) -> void:
+func set_zone(square: Vector2i, side: Piece.Side) -> void:
 	if not is_in_bounds(square):
+		return
+	zone_owner[square] = side
+	queue_redraw()
+
+func clear_zone(square: Vector2i) -> void:
+	if zone_owner.has(square):
+		zone_owner.erase(square)
+		queue_redraw()
+
+func is_zone_allowed(square: Vector2i, side: Piece.Side) -> bool:
+	return not zone_owner.has(square) or zone_owner[square] == side
+
+func place_piece(square: Vector2i, type: Piece.Type, side: Piece.Side) -> void:
+	if not is_in_bounds(square) or not is_zone_allowed(square, side):
 		return
 	pieces[square] = { "type": type, "side": side }
 	queue_redraw()
@@ -87,16 +109,22 @@ func remove_piece(square: Vector2i) -> void:
 		queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.pressed \
+		and (event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT):
 		var rel: Vector2 = to_local(event.position)
 		if rel.x < 0 or rel.y < 0:
 			return
 		var col := int(rel.x / SQUARE_SIZE)
 		var row := int(rel.y / SQUARE_SIZE)
-		if col < grid_width and row < grid_height:
-			selected_square = Vector2i(col, row)
+		if col >= grid_width or row >= grid_height:
+			return
+		var square := Vector2i(col, row)
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			selected_square = square
 			queue_redraw()
-			square_selected.emit(selected_square)
+			square_selected.emit(square)
+		else:
+			square_right_clicked.emit(square)
 
 func _draw() -> void:
 	for row in grid_height:
@@ -104,6 +132,10 @@ func _draw() -> void:
 			var color := LIGHT_COLOR if (row + col + color_parity) % 2 == 0 else DARK_COLOR
 			var pos := Vector2(col, row) * SQUARE_SIZE
 			draw_rect(Rect2(pos, Vector2(SQUARE_SIZE, SQUARE_SIZE)), color)
+
+	for square in zone_owner:
+		var pos := Vector2(square.x, square.y) * SQUARE_SIZE
+		draw_rect(Rect2(pos, Vector2(SQUARE_SIZE, SQUARE_SIZE)), ZONE_COLORS[zone_owner[square]])
 
 	if selected_square.x >= 0 and selected_square.y >= 0:
 		var pos := Vector2(selected_square.x, selected_square.y) * SQUARE_SIZE
