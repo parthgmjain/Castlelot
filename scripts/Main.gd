@@ -387,22 +387,58 @@ func _farthest_board(from: Board) -> Board:
 			farthest = b
 	return farthest
 
+## Fills the king's board completely (in spiral order from the king square)
+## before spilling through any of that board's portals into unvisited
+## neighboring boards, each filled the same way from its entry square.
 func _grow_zone(king_board: Board, king_square: Vector2i, side: Piece.Side) -> void:
 	var tile_count: int = int(zone_tiles_spin_box.value)
-	var board_area: int = king_board.grid_width * king_board.grid_height
-	var offsets: Array = ZoneGenerator.spiral_offsets(min(tile_count, board_area) * 4 + 4)
+	var visited: Dictionary = {}
+	var queue: Array = [{ "board": king_board, "seed": king_square }]
 
 	var assigned := 0
-	for offset in offsets:
+	while assigned < tile_count and not queue.is_empty():
+		var entry: Dictionary = queue.pop_front()
+		var board: Board = entry.board
+		var seed: Vector2i = entry.seed
+
+		if visited.has(board):
+			continue
+		visited[board] = true
+
+		# A spiral with this radius, centered anywhere inside the board, is
+		# guaranteed to reach every square on it regardless of aspect ratio.
+		var radius: int = max(board.grid_width, board.grid_height)
+		var offsets: Array = ZoneGenerator.spiral_offsets((2 * radius + 1) * (2 * radius + 1))
+
+		for offset in offsets:
+			if assigned >= tile_count:
+				break
+			var square: Vector2i = seed + offset
+			if not board.is_in_bounds(square):
+				continue
+			if board.zone_owner.has(square) and board.zone_owner[square] != side:
+				continue
+			if board.zone_owner.get(square) == side:
+				continue
+			board.set_zone(square, side)
+			assigned += 1
+
 		if assigned >= tile_count:
-			break
-		var square: Vector2i = king_square + offset
-		if not king_board.is_in_bounds(square):
-			continue
-		if king_board.zone_owner.has(square) and king_board.zone_owner[square] != side:
-			continue
-		king_board.set_zone(square, side)
-		assigned += 1
+			return
+
+		# Board is as full as it'll get for this side - spill through any of
+		# its portals that landed inside this side's zone, into whichever
+		# neighboring boards haven't been visited yet.
+		var next_seeds: Dictionary = {}
+		for square in board.portals:
+			if board.zone_owner.get(square) != side:
+				continue
+			for portal in board.portals[square]:
+				if not visited.has(portal.target_board) and not next_seeds.has(portal.target_board):
+					next_seeds[portal.target_board] = portal.target_square
+
+		for target_board in next_seeds:
+			queue.append({ "board": target_board, "seed": next_seeds[target_board] })
 
 func _on_side_toggled(pressed: bool) -> void:
 	current_side = Piece.Side.BLACK if pressed else Piece.Side.WHITE
