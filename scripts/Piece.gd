@@ -57,7 +57,7 @@ static func get_legal_moves(type: Piece.Type, side: Piece.Side, board: Board, fr
 		Type.KING:
 			return _step_moves(KING_OFFSETS, side, board, from)
 		Type.KNIGHT:
-			return _step_moves(KNIGHT_OFFSETS, side, board, from)
+			return _knight_moves(side, board, from)
 		Type.ROOK:
 			return _slide_moves(ROOK_DIRECTIONS, side, board, from)
 		Type.BISHOP:
@@ -78,6 +78,40 @@ static func _step_moves(offsets: Array, side: Piece.Side, board: Board, from: Ve
 		if occupant == null or occupant.side != side:
 			moves.append({ "board": dest.board, "square": dest.square, "capture": occupant != null })
 	return moves
+
+## Traces a knight's L-shape as a sequence of unit steps (all of the x
+## offset, then all of the y offset) so a jump that crosses a board edge
+## mid-path can follow a portal, same as any other piece. Occupancy only
+## matters at the final square - knights jump over pieces along the way.
+static func _knight_moves(side: Piece.Side, board: Board, from: Vector2i) -> Array:
+	var moves: Array = []
+	for offset in KNIGHT_OFFSETS:
+		var dest: Dictionary = _trace_path(board, from, offset)
+		if dest.is_empty():
+			continue
+		var occupant = dest.board.pieces.get(dest.square)
+		if occupant == null or occupant.side != side:
+			moves.append({ "board": dest.board, "square": dest.square, "capture": occupant != null })
+	return moves
+
+static func _trace_path(board: Board, from: Vector2i, offset: Vector2i) -> Dictionary:
+	var steps: Array = []
+	var step_x := Vector2i(1 if offset.x > 0 else -1, 0)
+	var step_y := Vector2i(0, 1 if offset.y > 0 else -1)
+	for i in abs(offset.x):
+		steps.append(step_x)
+	for i in abs(offset.y):
+		steps.append(step_y)
+
+	var current_board: Board = board
+	var current_square: Vector2i = from
+	for step in steps:
+		var dest: Dictionary = step_across(current_board, current_square, step)
+		if dest.is_empty():
+			return {}
+		current_board = dest.board
+		current_square = dest.square
+	return { "board": current_board, "square": current_square }
 
 static func _slide_moves(directions: Array, side: Piece.Side, board: Board, from: Vector2i) -> Array:
 	var moves: Array = []
