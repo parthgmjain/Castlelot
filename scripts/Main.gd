@@ -190,11 +190,18 @@ func _relayout() -> void:
 			info.direction = DIRECTIONS[randi_range(0, DIRECTIONS.size() - 1)]
 
 		if not placed:
+			# Nothing else can occupy x >= max_x, so placing touching it here
+			# is always collision-free - and touching is required for a portal
+			# to make sense between the two boards.
+			var fallback_parent := 0
 			var max_x := 0.0
 			for j in i:
-				max_x = max(max_x, positions[j].x + sizes[j].x)
-			positions.append(Vector2(max_x + SQUARE_SIZE, 0))
-			info.parent = 0
+				var edge: float = positions[j].x + sizes[j].x
+				if edge > max_x:
+					max_x = edge
+					fallback_parent = j
+			positions.append(Vector2(max_x, positions[fallback_parent].y))
+			info.parent = fallback_parent
 			info.direction = "RIGHT"
 
 	var min_pos: Vector2 = positions[0]
