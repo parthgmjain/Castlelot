@@ -13,7 +13,8 @@ const BASE_POSITION := Vector2(40.0, 250.0)
 @onready var count_spin_box: SpinBox = $UI/VBox/CountRow/CountSpinBox
 @onready var refresh_button: Button = $UI/VBox/CountRow/RefreshButton
 @onready var sizes_row: HBoxContainer = $UI/VBox/SizesRow
-@onready var zone_tiles_spin_box: SpinBox = $UI/VBox/ZoneRow/ZoneTilesSpinBox
+@onready var white_zone_spin_box: SpinBox = $UI/VBox/ZoneRow/WhiteZoneSpinBox
+@onready var black_zone_spin_box: SpinBox = $UI/VBox/ZoneRow/BlackZoneSpinBox
 @onready var generate_zones_button: Button = $UI/VBox/ZoneRow/GenerateZonesButton
 @onready var side_check_button: CheckButton = $UI/VBox/PieceRow/SideCheckButton
 @onready var zone_edit_button: CheckButton = $UI/VBox/PieceRow/ZoneEditButton
@@ -371,8 +372,8 @@ func _on_generate_zones_pressed() -> void:
 	white_board.place_piece(white_square, Piece.Type.KING, Piece.Side.WHITE)
 	black_board.place_piece(black_square, Piece.Type.KING, Piece.Side.BLACK)
 
-	_grow_zone(white_board, white_square, Piece.Side.WHITE)
-	_grow_zone(black_board, black_square, Piece.Side.BLACK)
+	_grow_zone(white_board, white_square, Piece.Side.WHITE, int(white_zone_spin_box.value))
+	_grow_zone(black_board, black_square, Piece.Side.BLACK, int(black_zone_spin_box.value))
 
 	for b in boards:
 		b.queue_redraw()
@@ -390,8 +391,7 @@ func _farthest_board(from: Board) -> Board:
 ## Fills the king's board completely (in spiral order from the king square)
 ## before spilling through any of that board's portals into unvisited
 ## neighboring boards, each filled the same way from its entry square.
-func _grow_zone(king_board: Board, king_square: Vector2i, side: Piece.Side) -> void:
-	var tile_count: int = int(zone_tiles_spin_box.value)
+func _grow_zone(king_board: Board, king_square: Vector2i, side: Piece.Side, tile_count: int) -> void:
 	var visited: Dictionary = {}
 	var queue: Array = [{ "board": king_board, "seed": king_square }]
 

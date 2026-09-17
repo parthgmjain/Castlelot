@@ -47,11 +47,21 @@ theme_override_constants/separation = 10
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="ZoneTilesLabel" type="Label" parent="UI/VBox/ZoneRow"]
+[node name="WhiteZoneLabel" type="Label" parent="UI/VBox/ZoneRow"]
 layout_mode = 2
-text = "Zone Tiles Per Side:"
+text = "White Zone Tiles:"
 
-[node name="ZoneTilesSpinBox" type="SpinBox" parent="UI/VBox/ZoneRow"]
+[node name="WhiteZoneSpinBox" type="SpinBox" parent="UI/VBox/ZoneRow"]
+layout_mode = 2
+min_value = 1.0
+max_value = 50.0
+value = 5.0
+
+[node name="BlackZoneLabel" type="Label" parent="UI/VBox/ZoneRow"]
+layout_mode = 2
+text = "Black Zone Tiles:"
+
+[node name="BlackZoneSpinBox" type="SpinBox" parent="UI/VBox/ZoneRow"]
 layout_mode = 2
 min_value = 1.0
 max_value = 50.0
