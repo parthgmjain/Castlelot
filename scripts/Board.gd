@@ -16,8 +16,11 @@ const PIECE_COLOR := Color(0.05, 0.05, 0.05)
 var pieces: Dictionary = {}
 var selected_square: Vector2i = Vector2i(-1, -1)
 var connection_squares: Array = []
-var move_origin: Vector2i = Vector2i(-1, -1)
-var legal_moves: Array = []
+var move_squares: Array = []
+var capture_squares: Array = []
+
+# Populated by Main: Vector2i -> Array[{ direction: Vector2i, target_board: Board, target_square: Vector2i }]
+var portals: Dictionary = {}
 
 var color_parity: int = 0:
 	set(value):
@@ -29,8 +32,8 @@ var color_parity: int = 0:
 		grid_width = value
 		pieces.clear()
 		selected_square = Vector2i(-1, -1)
-		move_origin = Vector2i(-1, -1)
-		legal_moves = []
+		move_squares = []
+		capture_squares = []
 		queue_redraw()
 
 @export var grid_height: int = 8:
@@ -38,8 +41,8 @@ var color_parity: int = 0:
 		grid_height = value
 		pieces.clear()
 		selected_square = Vector2i(-1, -1)
-		move_origin = Vector2i(-1, -1)
-		legal_moves = []
+		move_squares = []
+		capture_squares = []
 		queue_redraw()
 
 func pixel_size() -> Vector2:
@@ -55,44 +58,33 @@ func set_connection_squares(squares: Array) -> void:
 	connection_squares = squares
 	queue_redraw()
 
+func set_portals(new_portals: Dictionary) -> void:
+	portals = new_portals
+
+func set_move_markers(moves: Array, captures: Array) -> void:
+	move_squares = moves
+	capture_squares = captures
+	queue_redraw()
+
+func clear_move_markers() -> void:
+	move_squares = []
+	capture_squares = []
+	queue_redraw()
+
 func clear_selection() -> void:
 	selected_square = Vector2i(-1, -1)
-	move_origin = Vector2i(-1, -1)
-	legal_moves = []
 	queue_redraw()
 
 func place_piece(square: Vector2i, type: Piece.Type, side: Piece.Side) -> void:
 	if not is_in_bounds(square):
 		return
 	pieces[square] = { "type": type, "side": side }
-	if square == selected_square:
-		_update_legal_moves()
 	queue_redraw()
 
 func remove_piece(square: Vector2i) -> void:
 	if pieces.has(square):
 		pieces.erase(square)
-		if square == selected_square:
-			_update_legal_moves()
 		queue_redraw()
-
-func _update_legal_moves() -> void:
-	move_origin = Vector2i(-1, -1)
-	legal_moves = []
-	if pieces.has(selected_square):
-		var piece: Dictionary = pieces[selected_square]
-		legal_moves = Piece.get_legal_moves(piece.type, piece.side, selected_square, self)
-		move_origin = selected_square
-
-func _move_piece(from: Vector2i, to: Vector2i) -> void:
-	if not pieces.has(from):
-		return
-	pieces[to] = pieces[from]
-	pieces.erase(from)
-	selected_square = Vector2i(-1, -1)
-	move_origin = Vector2i(-1, -1)
-	legal_moves = []
-	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -102,12 +94,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var col := int(rel.x / SQUARE_SIZE)
 		var row := int(rel.y / SQUARE_SIZE)
 		if col < grid_width and row < grid_height:
-			var clicked := Vector2i(col, row)
-			if move_origin.x >= 0 and legal_moves.has(clicked):
-				_move_piece(move_origin, clicked)
-			else:
-				selected_square = clicked
-				_update_legal_moves()
+			selected_square = Vector2i(col, row)
 			queue_redraw()
 			square_selected.emit(selected_square)
 
@@ -125,12 +112,11 @@ func _draw() -> void:
 	for square in connection_squares:
 		draw_circle(local_square_center(square), SQUARE_SIZE * 0.18, CONNECTOR_COLOR)
 
-	for square in legal_moves:
-		var center := local_square_center(square)
-		if pieces.has(square):
-			draw_arc(center, SQUARE_SIZE * 0.35, 0, TAU, 24, CAPTURE_COLOR, 3.0)
-		else:
-			draw_circle(center, SQUARE_SIZE * 0.12, MOVE_COLOR)
+	for square in move_squares:
+		draw_circle(local_square_center(square), SQUARE_SIZE * 0.12, MOVE_COLOR)
+
+	for square in capture_squares:
+		draw_arc(local_square_center(square), SQUARE_SIZE * 0.35, 0, TAU, 24, CAPTURE_COLOR, 3.0)
 
 	var font := ThemeDB.fallback_font
 	for square in pieces:

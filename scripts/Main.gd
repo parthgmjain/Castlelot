@@ -5,6 +5,7 @@ const SQUARE_SIZE := 32.0
 const MIN_DIM := 2
 const MAX_DIM := 10
 const DIRECTIONS := ["RIGHT", "LEFT", "UP", "DOWN"]
+const DIR_VECTORS := { "RIGHT": Vector2i(1, 0), "LEFT": Vector2i(-1, 0), "UP": Vector2i(0, -1), "DOWN": Vector2i(0, 1) }
 const PLAY_AREA := Vector2(1200.0, 500.0)
 const BASE_POSITION := Vector2(40.0, 210.0)
 
@@ -27,8 +28,9 @@ var attach_info: Array = []
 var connections: Array = []
 var board_width_boxes: Array = []
 var board_height_boxes: Array = []
-var active_board: Node2D = null
+var active_board: Board = null
 var active_square: Vector2i = Vector2i(-1, -1)
+var current_moves: Array = []
 
 func _ready() -> void:
 	count_spin_box.value_changed.connect(_on_count_changed)
@@ -203,6 +205,8 @@ func _relayout() -> void:
 
 	_compute_connections(positions, sizes)
 	BoardColorizer.assign_colors(boards, connections)
+	_build_portals()
+	_refresh_moves()
 
 func _build_connection(p: int, c: int, direction: String, positions: Array, sizes: Array) -> Dictionary:
 	var p_pos: Vector2 = positions[p]
@@ -252,12 +256,84 @@ func _apply_connection_squares() -> void:
 				squares.append_array(conn.b_squares)
 		boards[i].set_connection_squares(squares)
 
-func _on_square_selected(square: Vector2i, board: Node2D) -> void:
+func _build_portals() -> void:
+	var board_portals: Dictionary = {}
+	for b in boards:
+		board_portals[b] = {}
+
+	for i in range(1, boards.size()):
+		var info: Dictionary = attach_info[i]
+		var conn: Dictionary = connections[i - 1]
+		var direction: Vector2i = DIR_VECTORS[info.direction]
+		var board_a: Board = boards[conn.a_board]
+		var board_b: Board = boards[conn.b_board]
+
+		for k in conn.a_squares.size():
+			var sa: Vector2i = conn.a_squares[k]
+			var sb: Vector2i = conn.b_squares[k]
+
+			if not board_portals[board_a].has(sa):
+				board_portals[board_a][sa] = []
+			board_portals[board_a][sa].append({ "direction": direction, "target_board": board_b, "target_square": sb })
+
+			if not board_portals[board_b].has(sb):
+				board_portals[board_b][sb] = []
+			board_portals[board_b][sb].append({ "direction": -direction, "target_board": board_a, "target_square": sa })
+
+	for b in boards:
+		b.set_portals(board_portals[b])
+
+func _refresh_moves() -> void:
+	for b in boards:
+		b.clear_move_markers()
+	current_moves = []
+
+	if active_board == null or not active_board.pieces.has(active_square):
+		return
+
+	var piece: Dictionary = active_board.pieces[active_square]
+	current_moves = Piece.get_legal_moves(piece.type, piece.side, active_board, active_square)
+
+	var grouped: Dictionary = {}
+	for move in current_moves:
+		if not grouped.has(move.board):
+			grouped[move.board] = { "moves": [], "captures": [] }
+		if move.capture:
+			grouped[move.board].captures.append(move.square)
+		else:
+			grouped[move.board].moves.append(move.square)
+
+	for b in grouped:
+		b.set_move_markers(grouped[b].moves, grouped[b].captures)
+
+func _execute_move(move: Dictionary) -> void:
+	var piece: Dictionary = active_board.pieces[active_square]
+	active_board.pieces.erase(active_square)
+	move.board.pieces[move.square] = piece
+	active_board.queue_redraw()
+	move.board.queue_redraw()
+
+	for b in boards:
+		b.clear_selection()
+		b.clear_move_markers()
+
+	active_board = null
+	active_square = Vector2i(-1, -1)
+	current_moves = []
+
+func _on_square_selected(square: Vector2i, board: Board) -> void:
+	for move in current_moves:
+		if move.board == board and move.square == square:
+			_execute_move(move)
+			return
+
 	for b in boards:
 		if b != board:
 			b.clear_selection()
+
 	active_board = board
 	active_square = square
+	_refresh_moves()
 
 func _on_side_toggled(pressed: bool) -> void:
 	current_side = Piece.Side.BLACK if pressed else Piece.Side.WHITE
@@ -266,8 +342,10 @@ func _on_place_pressed(type: Piece.Type) -> void:
 	if active_board == null:
 		return
 	active_board.place_piece(active_square, type, current_side)
+	_refresh_moves()
 
 func _on_remove_pressed() -> void:
 	if active_board == null:
 		return
 	active_board.remove_piece(active_square)
+	_refresh_moves()
