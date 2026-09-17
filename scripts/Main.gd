@@ -202,6 +202,7 @@ func _relayout() -> void:
 	)
 
 	_compute_connections(positions, sizes)
+	BoardColorizer.assign_colors(boards, connections)
 
 func _build_connection(p: int, c: int, direction: String, positions: Array, sizes: Array) -> Dictionary:
 	var p_pos: Vector2 = positions[p]

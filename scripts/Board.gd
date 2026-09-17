@@ -14,6 +14,11 @@ var pieces: Dictionary = {}
 var selected_square: Vector2i = Vector2i(-1, -1)
 var connection_squares: Array = []
 
+var color_parity: int = 0:
+	set(value):
+		color_parity = value
+		queue_redraw()
+
 @export var grid_width: int = 8:
 	set(value):
 		grid_width = value
@@ -68,7 +73,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _draw() -> void:
 	for row in grid_height:
 		for col in grid_width:
-			var color := LIGHT_COLOR if (row + col) % 2 == 0 else DARK_COLOR
+			var color := LIGHT_COLOR if (row + col + color_parity) % 2 == 0 else DARK_COLOR
 			var pos := Vector2(col, row) * SQUARE_SIZE
 			draw_rect(Rect2(pos, Vector2(SQUARE_SIZE, SQUARE_SIZE)), color)
 
