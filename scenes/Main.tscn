@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://bqx7n8m0k3v1a"]
+[gd_scene load_steps=3 format=3 uid="uid://bqx7n8m0k3v1a"]
 
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/ui/ControlPanel.gd" id="2_panel"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -12,6 +13,7 @@ position = Vector2(40, 310)
 anchors_preset = 0
 offset_right = 1280.0
 offset_bottom = 310.0
+script = ExtResource("2_panel")
 
 [node name="VBox" type="VBoxContainer" parent="UI"]
 layout_mode = 0
