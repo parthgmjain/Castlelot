@@ -7,7 +7,7 @@ const MAX_DIM := 10
 const DIRECTIONS := ["RIGHT", "LEFT", "UP", "DOWN"]
 const DIR_VECTORS := { "RIGHT": Vector2i(1, 0), "LEFT": Vector2i(-1, 0), "UP": Vector2i(0, -1), "DOWN": Vector2i(0, 1) }
 const PLAY_AREA := Vector2(1200.0, 500.0)
-const BASE_POSITION := Vector2(40.0, 290.0)
+const BASE_POSITION := Vector2(40.0, 330.0)
 
 @onready var boards_container: Node2D = $BoardsContainer
 @onready var count_spin_box: SpinBox = $UI/VBox/CountRow/CountSpinBox
@@ -19,6 +19,10 @@ const BASE_POSITION := Vector2(40.0, 290.0)
 @onready var white_points_spin_box: SpinBox = $UI/VBox/PointsRow/WhitePointsSpinBox
 @onready var black_points_spin_box: SpinBox = $UI/VBox/PointsRow/BlackPointsSpinBox
 @onready var points_status_label: Label = $UI/VBox/PointsRow/PointsStatusLabel
+@onready var round_option: OptionButton = $UI/VBox/AutoPlaceRow/RoundOption
+@onready var auto_place_white_button: Button = $UI/VBox/AutoPlaceRow/AutoPlaceWhiteButton
+@onready var auto_place_black_button: Button = $UI/VBox/AutoPlaceRow/AutoPlaceBlackButton
+@onready var auto_place_status_label: Label = $UI/VBox/AutoPlaceRow/AutoPlaceStatusLabel
 @onready var side_check_button: CheckButton = $UI/VBox/PieceRow/SideCheckButton
 @onready var zone_edit_button: CheckButton = $UI/VBox/PieceRow/ZoneEditButton
 @onready var king_button: Button = $UI/VBox/PieceRow/KingButton
@@ -46,6 +50,10 @@ func _ready() -> void:
 	side_check_button.toggled.connect(_on_side_toggled)
 	zone_edit_button.toggled.connect(_on_zone_edit_toggled)
 	generate_zones_button.pressed.connect(_on_generate_zones_pressed)
+	for round_type in PieceSelector.ROUND_MODIFIERS:
+		round_option.add_item(round_type.capitalize())
+	auto_place_white_button.pressed.connect(_on_auto_place_pressed.bind(Piece.Side.WHITE))
+	auto_place_black_button.pressed.connect(_on_auto_place_pressed.bind(Piece.Side.BLACK))
 	white_points_spin_box.value_changed.connect(func(_v): _update_points_status())
 	black_points_spin_box.value_changed.connect(func(_v): _update_points_status())
 	king_button.pressed.connect(_on_place_pressed.bind(Piece.Type.KING))
@@ -483,6 +491,47 @@ func _update_points_status() -> void:
 		_points_used(Piece.Side.WHITE), _points_allocated(Piece.Side.WHITE),
 		_points_used(Piece.Side.BLACK), _points_allocated(Piece.Side.BLACK),
 	]
+
+## Rebuilds a side's army from scratch (kings stay): buys pieces with its
+## allocated points and drops them on random free squares of its zone. The
+## allocation is a hard cap, so the round type's budget multiplier is not applied.
+func _on_auto_place_pressed(side: Piece.Side) -> void:
+	for b in boards:
+		b.clear_selection()
+		for square in b.pieces.keys():
+			var piece: Dictionary = b.pieces[square]
+			if piece.side == side and piece.type != Piece.Type.KING:
+				b.remove_piece(square)
+	active_board = null
+	active_square = Vector2i(-1, -1)
+
+	var free_squares: Array = []
+	for b in boards:
+		for square in b.zone_owner:
+			if b.zone_owner[square] == side and not b.pieces.has(square):
+				free_squares.append({ "board": b, "square": square })
+
+	if free_squares.is_empty():
+		auto_place_status_label.text = "No free zone squares - generate zones first"
+	else:
+		var round_type: String = PieceSelector.ROUND_MODIFIERS.keys()[round_option.selected]
+		var picks: Array = PieceSelector.pick_pieces(
+			_points_allocated(side),
+			PieceSelector.working_weights(round_type),
+			PieceSelector.working_decays(round_type),
+			PieceSelector.SUPPLY_LIMITS,
+			RandomNumberGenerator.new(),
+			free_squares.size(),
+		)
+		free_squares.shuffle()
+		var spent := 0
+		for i in picks.size():
+			free_squares[i].board.place_piece(free_squares[i].square, picks[i], side)
+			spent += Piece.value(picks[i])
+		auto_place_status_label.text = "Placed %d pieces (%d pts) in %d free squares" % [picks.size(), spent, free_squares.size()]
+
+	_refresh_moves()
+	_update_points_status()
 
 func _on_place_pressed(type: Piece.Type) -> void:
 	if active_board == null:
