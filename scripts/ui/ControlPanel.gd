@@ -22,6 +22,7 @@ signal debug_pass_requested
 signal debug_goto_requested(round_number: int, match_number: int)
 signal debug_gold_changed(amount: int)
 signal debug_moves_changed(amount: int)
+signal debug_prophecy_requested(id: String)
 signal skip_bonus_requested
 
 const MIN_DIM := 2
@@ -37,6 +38,8 @@ const MAX_DIM := 10
 @onready var debug_go_button: Button = $VBox/DebugRow/DebugGoButton
 @onready var debug_gold_spin: SpinBox = $VBox/DebugRow/DebugGoldSpin
 @onready var debug_moves_spin: SpinBox = $VBox/DebugRow/DebugMovesSpin
+var debug_prophecy_picker: OptionButton
+var debug_prophecy_button: Button
 @onready var deploy_row: HBoxContainer = $VBox/DeployRow
 @onready var bench_box: HBoxContainer = $VBox/DeployRow/BenchBox
 @onready var auto_deploy_button: Button = $VBox/DeployRow/AutoDeployButton
@@ -99,6 +102,7 @@ func _ready() -> void:
 	pawn_button.pressed.connect(_on_place_pressed.bind(Piece.Type.PAWN))
 	_build_extra_piece_picker()
 	_build_skip_bonus_button()
+	_build_debug_prophecy_picker()
 	remove_button.pressed.connect(func(): remove_requested.emit())
 	start_match_button.pressed.connect(func(): start_match_requested.emit(int(moves_spin_box.value), int(target_spin_box.value)))
 	start_run_button.pressed.connect(func(): start_run_requested.emit())
@@ -221,6 +225,30 @@ func _build_extra_piece_picker() -> void:
 	extra_piece_picker.item_selected.connect(_on_extra_piece_selected)
 	remove_button.get_parent().add_child(extra_piece_picker)
 	remove_button.get_parent().move_child(extra_piece_picker, remove_button.get_index())
+
+## A dropdown of every prophecy (built or not, so a designed-but-unbuilt card can still be
+## inspected) plus a button that adds one to your hand for free, bypassing the hand-size cap.
+func _build_debug_prophecy_picker() -> void:
+	debug_prophecy_picker = OptionButton.new()
+	debug_prophecy_picker.add_item("Add prophecy...")
+	for id in ProphecyDefs.ids():
+		var label := "%s (%s)" % [ProphecyDefs.display_name(id), Piece.TIER_NAMES[ProphecyDefs.rarity(id)]]
+		if not ProphecyDefs.is_ready(id):
+			label += " - not built"
+		debug_prophecy_picker.add_item(label)
+		debug_prophecy_picker.set_item_metadata(debug_prophecy_picker.item_count - 1, id)
+	debug_prophecy_button = Button.new()
+	debug_prophecy_button.text = "Add"
+	debug_prophecy_button.pressed.connect(_on_debug_add_prophecy)
+	debug_row.add_child(debug_prophecy_picker)
+	debug_row.add_child(debug_prophecy_button)
+
+func _on_debug_add_prophecy() -> void:
+	var index := debug_prophecy_picker.selected
+	if index <= 0:
+		return
+	debug_prophecy_requested.emit(debug_prophecy_picker.get_item_metadata(index))
+	debug_prophecy_picker.select(0)
 
 ## Shown only while a bonus move is on offer, so it can be declined.
 func _build_skip_bonus_button() -> void:

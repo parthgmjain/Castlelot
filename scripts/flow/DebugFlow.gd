@@ -65,6 +65,14 @@ func set_moves(amount: int) -> void:
 	current.moves_left = amount
 	view_changed.emit()
 
+## Gives you any prophecy card for free, bypassing the hand-size cap, so you can test it
+## without needing to earn or buy it in a real run.
+func add_prophecy(id: String) -> void:
+	if not ProphecyDefs.has(id):
+		return
+	state.run.hand.append({ "id": id, "armed": false })
+	view_changed.emit()
+
 ## Debug buttons that can't do anything say so instead of failing silently.
 func _message(text: String) -> void:
 	panel.set_match_status("DEBUG: %s" % text)

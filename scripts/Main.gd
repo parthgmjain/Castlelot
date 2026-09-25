@@ -75,6 +75,7 @@ func _connect_panel() -> void:
 	panel.debug_goto_requested.connect(debug_flow.goto)
 	panel.debug_gold_changed.connect(debug_flow.set_gold)
 	panel.debug_moves_changed.connect(debug_flow.set_moves)
+	panel.debug_prophecy_requested.connect(debug_flow.add_prophecy)
 
 func _generate_boards() -> void:
 	for board in state.boards:
