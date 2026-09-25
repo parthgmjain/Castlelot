@@ -37,22 +37,21 @@ func test_arthur_is_a_single_boss_match_in_round_thirteen() -> void:
 	check_eq(run.matches_in_round(), 1, "the only match")
 	check_eq(run.boss_name(), "Arthur", "Arthur")
 
-func test_each_round_gets_its_own_knight_and_the_order_is_random() -> void:
+func test_each_round_gets_its_own_boss_and_the_order_is_random() -> void:
 	var seen := {}
 	var orders := {}
 	for i in 12:
 		var run := _started()
-		check_eq(run.boss_order.size(), RunConfig.ROUNDS, "one knight per round")
-		check_eq(run.boss_order.duplicate().size(), 12, "")
+		check_eq(run.boss_order.size(), RunConfig.ROUNDS, "one boss per round")
 		var unique := {}
-		for knight in run.boss_order:
-			unique[knight] = true
-		check_eq(unique.size(), RunConfig.ROUNDS, "no knight repeats within a run")
+		for boss in run.boss_order:
+			unique[boss] = true
+		check_eq(unique.size(), RunConfig.ROUNDS, "no boss repeats within a run")
 		orders[str(run.boss_order)] = true
 	check(orders.size() > 1, "the order differs between runs")
 	var run := _started()
 	run.match_number = 3
-	check(run.boss_name().begins_with("Sir "), run.boss_name())
+	check_eq(run.boss_name(), Piece.display_name(run.boss_order[0]), "the boss is named after its piece")
 	run.match_number = 1
 	check_eq(run.boss_name(), "", "ordinary matches have no boss name")
 
@@ -72,7 +71,7 @@ func test_titles_describe_where_you_are() -> void:
 	run.begin()
 	check_eq(run.title(), "Round 1/12 - Match 1/3", "first match")
 	run.match_number = 3
-	check(run.title().begins_with("Round 1/12 - Match 3/3 - BOSS: Sir "), run.title())
+	check_eq(run.title(), "Round 1/12 - Match 3/3 - BOSS: %s" % Piece.display_name(run.boss_order[0]), "the title names the boss")
 	run.round_number = 13
 	run.match_number = 1
 	check_eq(run.title(), "Round 13 - Arthur (final boss)", "final")

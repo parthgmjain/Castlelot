@@ -107,6 +107,7 @@ static func _guarded(definition: Dictionary, own: Array, neighbours: Array = [])
 static func _build() -> Dictionary:
 	var common := Piece.Tier.COMMON
 	var uncommon := Piece.Tier.UNCOMMON
+	var rare := Piece.Tier.RARE
 	var legendary := Piece.Tier.LEGENDARY
 	var forward := [Vector2i(0, 1)]
 	var beside := [Vector2i(1, 0), Vector2i(-1, 0)]
@@ -162,16 +163,16 @@ static func _build() -> Dictionary:
 		# ---- uncommon tier
 		Piece.Type.CAMEL: _def(uncommon, 3, "Ca", [{ "kind": "leap", "to": _symmetric(3, 1) }]),
 		Piece.Type.ZEBRA: _def(uncommon, 3, "Ze", [{ "kind": "leap", "to": _symmetric(3, 2) }]),
-		Piece.Type.TWIN_RIDER: _def(uncommon, 4, "Tw", [{ "kind": "twin_leap", "to": Piece.KNIGHT_OFFSETS }]),
+		Piece.Type.TWIN_RIDER: _def(rare, 4, "Tw", [{ "kind": "twin_leap", "to": Piece.KNIGHT_OFFSETS }]),
 		Piece.Type.HAWK: _def(uncommon, 3, "Ha", [{ "kind": "leap", "to": hawk_jumps }]),
-		Piece.Type.CANNON: _def(uncommon, 4, "Cn", [{ "kind": "cannon", "dirs": ORTHOGONAL }]),
+		Piece.Type.CANNON: _def(rare, 5, "Cn", [{ "kind": "cannon", "dirs": ORTHOGONAL }]),
 		Piece.Type.CHARGER: _def(uncommon, 3, "Ch", [{ "kind": "slide", "dirs": ORTHOGONAL, "min": 2 }]),
 		Piece.Type.RANGER: _def(uncommon, 3, "Ra", [{ "kind": "slide", "dirs": ORTHOGONAL, "max": 3 }]),
-		Piece.Type.LANCER: _def(uncommon, 4, "La", [
+		Piece.Type.LANCER: _def(rare, 4, "La", [
 			{ "kind": "slide", "dirs": forward, "local": true },
 			{ "kind": "step", "to": beside + [Vector2i(0, -1)], "local": true },
 		]),
-		Piece.Type.MIRROR: _def(uncommon, 3, "Mr", [{ "kind": "slide", "dirs": DIAGONAL, "bounce": 1 }]),
+		Piece.Type.MIRROR: _def(rare, 4, "Mr", [{ "kind": "slide", "dirs": DIAGONAL, "bounce": 1 }]),
 		Piece.Type.MONK: _def(uncommon, 3, "Mo", [
 			{ "kind": "slide", "dirs": DIAGONAL, "max": 3 },
 			{ "kind": "step", "to": ORTHOGONAL, "mode": "move" },
@@ -180,26 +181,26 @@ static func _build() -> Dictionary:
 			{ "kind": "step", "to": DIAGONAL },
 			{ "kind": "leap", "to": _symmetric(2, 2) },
 		]),
-		Piece.Type.GRASSHOPPER: _def(uncommon, 4, "Gr", [{ "kind": "grasshopper", "dirs": ALL_DIRECTIONS }]),
-		Piece.Type.GHOST: _def(uncommon, 4, "Gh", [{ "kind": "slide", "dirs": ALL_DIRECTIONS, "max": 2, "through": true }]),
+		Piece.Type.GRASSHOPPER: _def(rare, 4, "Gr", [{ "kind": "grasshopper", "dirs": ALL_DIRECTIONS }]),
+		Piece.Type.GHOST: _def(rare, 5, "Gh", [{ "kind": "slide", "dirs": ALL_DIRECTIONS, "max": 2, "through": true }]),
 		Piece.Type.SPEARMAN: _def(uncommon, 3, "Sp", [
 			{ "kind": "step", "to": ALL_DIRECTIONS },
 			{ "kind": "slide", "dirs": forward, "max": 2, "mode": "capture", "local": true },
 		]),
-		Piece.Type.GRIFFON: _def(uncommon, 4, "Gf", [{ "kind": "step_slide", "dirs": DIAGONAL, "then_max": 3 }]),
+		Piece.Type.GRIFFON: _def(rare, 5, "Gf", [{ "kind": "step_slide", "dirs": DIAGONAL, "then_max": 3 }]),
 		Piece.Type.TORTOISE: _guarded(_def(uncommon, 3, "To", [{ "kind": "slide", "dirs": ORTHOGONAL, "max": 2 }]),
 			[{ "kind": "from_front" }]),
 		Piece.Type.GOLEM: _guarded(_def(uncommon, 3, "Go", [{ "kind": "step", "to": ORTHOGONAL }]),
 			[{ "kind": "attacker_types", "types": [Piece.Type.PAWN, Piece.Type.KNIGHT] }]),
 		Piece.Type.BARD: _guarded(_def(uncommon, 2, "Ba", [{ "kind": "step", "to": ALL_DIRECTIONS, "mode": "move" }]),
 			[], [{ "kind": "attacker_types", "types": [Piece.Type.PAWN] }]),
-		Piece.Type.NINJA: _with(_def(uncommon, 4, "Ni", [{ "kind": "leap", "to": Piece.KNIGHT_OFFSETS }]),
+		Piece.Type.NINJA: _with(_def(rare, 4, "Ni", [{ "kind": "leap", "to": Piece.KNIGHT_OFFSETS }]),
 			{ "on_capture": [{ "kind": "bonus_step" }] }),
-		Piece.Type.ALCHEMIST: _def(uncommon, 4, "Al", [
+		Piece.Type.ALCHEMIST: _def(rare, 4, "Al", [
 			{ "kind": "step", "to": ALL_DIRECTIONS },
 			{ "kind": "swap", "to": within_two },
 		]),
-		Piece.Type.CATAPULT: _def(uncommon, 3, "Ct", [{ "kind": "shot", "dirs": ORTHOGONAL, "distance": 3 }]),
+		Piece.Type.CATAPULT: _def(rare, 4, "Ct", [{ "kind": "shot", "dirs": ORTHOGONAL, "distance": 3 }]),
 		# ---- legendary tier (boss rewards)
 		Piece.Type.TITAN: _def(legendary, 10, "Ti", [{ "kind": "slide", "dirs": ORTHOGONAL, "double_capture": true }], true),
 		Piece.Type.WRAITH: _guarded(_def(legendary, 10, "Wr", [{ "kind": "slide", "dirs": ALL_DIRECTIONS, "through": true }], true),

@@ -10,7 +10,7 @@ func _setup_at(round_number: int, match_number: int) -> Dictionary:
 
 func test_a_setup_has_everything_needed_to_build_a_match() -> void:
 	var setup := _setup_at(1, 1)
-	for key in ["board_sizes", "white_zone", "black_zone", "ai_budget", "moves", "target", "round_type", "boss_name"]:
+	for key in ["board_sizes", "white_zone", "black_zone", "ai_budget", "moves", "target", "round_type", "boss_name", "boss_piece"]:
 		check(setup.has(key), "has %s" % key)
 
 func test_boss_matches_use_the_boss_round_type_and_others_do_not() -> void:

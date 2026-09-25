@@ -24,7 +24,8 @@ func begin_match() -> void:
 	panel.apply_setup(setup)
 	generate_boards.call()
 	ZoneController.generate(state.boards, setup.white_zone, setup.black_zone)
-	ArmyPlacer.auto_place(state.boards, Piece.Side.BLACK, setup.ai_budget, setup.round_type)
+	var boss_army: Array = [setup.boss_piece] if setup.boss_piece >= 0 else []
+	ArmyPlacer.auto_place(state.boards, Piece.Side.BLACK, setup.ai_budget, setup.round_type, boss_army)
 	state.deployment.begin(setup)
 	MoveController.mark_last_move(state, {})
 	view_changed.emit()
@@ -63,6 +64,16 @@ func settle_if_finished() -> void:
 		if state.run.active:
 			var waiting: Array = current.revivals.map(func(r): return r.piece.get("roster_id", -1))
 			notes.append(_report_losses(Roster.settle(state.run, state.boards, current.deployed_roster_ids, waiting)))
+			var reward := state.run.boss_piece()
+			if reward >= 0:
+				var name := Piece.display_name(reward)
+				match Legendaries.grant(state.run, reward):
+					"added":
+						notes.append("REWARD: the %s joins your roster!" % name)
+					"owned":
+						notes.append("You already hold the %s." % name)
+					"choose":
+						notes.append("REWARD: the %s has arrived, but both legendary slots are full - you'll choose which to keep in the shop." % name)
 	var context := ""
 	var button := ""
 	if state.run.active:

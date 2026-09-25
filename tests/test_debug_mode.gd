@@ -254,7 +254,7 @@ func test_go_jumps_to_any_round_and_match_and_starts_a_run_if_needed() -> void:
 	main.panel.debug_go_button.pressed.emit()
 	var run: RunState = main.state.run
 	check(run.active and run.round_number == 5 and run.match_number == 3, "started at 5-3")
-	check(main.panel.run_status_label.text.contains("Round 5/12 - Match 3/3 - BOSS: Sir "), main.panel.run_status_label.text)
+	check(main.panel.run_status_label.text.contains("Round 5/12 - Match 3/3 - BOSS: %s" % run.boss_name()), main.panel.run_status_label.text)
 	check(main.state.deployment.active, "dealt and waiting for deployment")
 	main.debug_flow.goto(99, 9)
 	check(run.round_number == RunConfig.ROUNDS + 1 and run.match_number == 1, "out-of-range values are clamped to Arthur")

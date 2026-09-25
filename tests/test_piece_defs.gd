@@ -252,9 +252,12 @@ func test_new_pieces_join_the_lottery_pools() -> void:
 	for type in [PAWN, Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.MILITIA, Piece.Type.CRAB]:
 		check(commons.has(type), "common pool has %s" % Piece.Type.find_key(type))
 	var uncommons := Lottery.pool(Piece.Tier.UNCOMMON)
-	for type in [ROOK, BISHOP, KNIGHT, Piece.Type.CAMEL, Piece.Type.GRIFFON, Piece.Type.MIRROR]:
+	for type in [BISHOP, KNIGHT, Piece.Type.CAMEL, Piece.Type.GOLEM]:
 		check(uncommons.has(type), "uncommon pool has %s" % Piece.Type.find_key(type))
-	check_eq(Lottery.pool(Piece.Tier.LEGENDARY), [QUEEN], "only the queen is a legendary so far")
+	var rares := Lottery.pool(Piece.Tier.RARE)
+	for type in [ROOK, Piece.Type.GRIFFON, Piece.Type.MIRROR, Piece.Type.CANNON]:
+		check(rares.has(type), "rare pool has %s" % Piece.Type.find_key(type))
+	check(Lottery.pool(Piece.Tier.LEGENDARY).is_empty(), "legendaries are never drawn")
 
 func test_a_new_piece_can_be_deployed_and_costs_its_value() -> void:
 	var run := RunState.new()

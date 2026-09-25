@@ -1,5 +1,5 @@
 extends "res://tests/TestCase.gd"
-## The shop's economy: tiers, buying pawns, trading up, and the two upgrades.
+## The shop's economy: trading up (5 / 5 / 7) and the two upgrades.
 
 func _run(gold: int = 100) -> RunState:
 	var run := RunState.new()
@@ -22,69 +22,80 @@ func _give(run: RunState, type: Piece.Type, count: int) -> Array:
 
 # ---- tiers ---------------------------------------------------------------------
 
-func test_pieces_have_the_tiers_you_specified() -> void:
+func test_the_chess_pieces_sit_in_the_tiers_you_would_expect() -> void:
 	check_eq(Piece.tier(PAWN), Piece.Tier.COMMON, "pawn")
-	for type in [KNIGHT, BISHOP, ROOK]:
-		check_eq(Piece.tier(type), Piece.Tier.UNCOMMON, Piece.Type.find_key(type))
+	check_eq(Piece.tier(KNIGHT), Piece.Tier.UNCOMMON, "knight")
+	check_eq(Piece.tier(BISHOP), Piece.Tier.UNCOMMON, "bishop")
+	check_eq(Piece.tier(ROOK), Piece.Tier.RARE, "rook")
 	check_eq(Piece.tier(QUEEN), Piece.Tier.LEGENDARY, "queen")
-	for type in Piece.types_in_tier(Piece.Tier.UNCOMMON):
-		check_eq(Piece.tier(type), Piece.Tier.UNCOMMON, "everything listed as uncommon is uncommon: %s" % Piece.Type.find_key(type))
-	check_eq(Lottery.pool(Piece.Tier.LEGENDARY), [QUEEN], "only the queen can be pulled or traded up to")
-	for type in Piece.types_in_tier(Piece.Tier.LEGENDARY):
-		check(type == QUEEN or Piece.is_reward_only(type), "every other legendary is a boss reward: %s" % Piece.Type.find_key(type))
+	for tier in [Piece.Tier.COMMON, Piece.Tier.UNCOMMON, Piece.Tier.RARE, Piece.Tier.LEGENDARY]:
+		for type in Piece.types_in_tier(tier):
+			check_eq(Piece.tier(type), tier, "everything listed in a tier is in it: %s" % Piece.display_name(type))
 
 # ---- trading up ------------------------------------------------------------------
 
-func test_five_pawns_trade_up_to_one_uncommon_piece() -> void:
+func test_the_costs_are_five_five_and_seven() -> void:
+	check_eq(Shop.trade_up_cost(Piece.Tier.COMMON), 5, "commons")
+	check_eq(Shop.trade_up_cost(Piece.Tier.UNCOMMON), 5, "uncommons")
+	check_eq(Shop.trade_up_cost(Piece.Tier.RARE), 7, "rares")
+	check_eq(Shop.trade_up_cost(Piece.Tier.LEGENDARY), 0, "legendaries can't go higher")
+
+func test_five_pawns_trade_up_and_offer_uncommon_cards() -> void:
 	var run := _run()
 	var pawns := _ids_of(run, PAWN, 3) + _give(run, PAWN, 2)
 	check_eq(pawns.size(), 5, "five pawns")
 	var check := Shop.check_trade_up(run, pawns)
-	check(check.ok and check.from == Piece.Tier.COMMON and check.to == Piece.Tier.UNCOMMON, "a valid common -> uncommon trade")
+	check(check.ok and check.from == Piece.Tier.COMMON and check.to == Piece.Tier.UNCOMMON and check.count == 5, "a valid common -> uncommon trade")
 	var before := run.roster.size()
-	var result := Shop.trade_up(run, pawns)
-	check(result.ok, "traded")
-	check_eq(Piece.tier(result.gained), Piece.Tier.UNCOMMON, "got an uncommon piece")
-	check_eq(run.roster.size(), before - 5 + 1, "five out, one in")
+	var result := Shop.trade_up(run, pawns, RandomNumberGenerator.new())
+	check(result.ok and result.to == Piece.Tier.UNCOMMON, "traded")
+	check_eq(run.roster.size(), before - 5, "the five are gone and nothing is granted yet")
+	check(run.pending.kind == "cards" and run.pending.tier == Piece.Tier.UNCOMMON and run.pending.source == "trade_up", "a choice of uncommon cards waits")
 	for id in pawns:
 		check(run.roster_entry(id).is_empty(), "the sacrificed pawn %d is gone" % id)
+	Lottery.pick_card(run, 0)
+	check_eq(run.roster.size(), before - 5 + 1, "one piece in return once you pick")
 
-func test_five_uncommon_pieces_trade_up_to_a_queen() -> void:
+func test_five_uncommons_offer_rare_cards() -> void:
 	var run := _run()
-	var ids := _ids_of(run, ROOK, 1) + _ids_of(run, KNIGHT, 1) + _ids_of(run, BISHOP, 1) + _give(run, KNIGHT, 1) + _give(run, BISHOP, 1)
+	var ids := _ids_of(run, KNIGHT, 1) + _ids_of(run, BISHOP, 1) + _give(run, KNIGHT, 2) + _give(run, Piece.Type.CAMEL, 1)
 	var result := Shop.trade_up(run, ids)
-	check(result.ok, "traded")
-	check_eq(result.gained, QUEEN, "the only legendary piece")
-	check(run.roster.any(func(e): return e.type == QUEEN), "the queen is in the roster")
+	check(result.ok and result.to == Piece.Tier.RARE, "traded up to rare")
+	check_eq(run.pending.tier, Piece.Tier.RARE, "rare cards")
+	check(run.pending.cards.all(func(c): return Piece.tier(c.type) == Piece.Tier.RARE), "all rare")
 
-func test_a_trade_up_gives_a_varied_uncommon_piece() -> void:
-	var seen := {}
-	for i in 60:
-		var run := _run()
-		var ids := _ids_of(run, PAWN, 3) + _give(run, PAWN, 2)
-		var gained: Piece.Type = Shop.trade_up(run, ids).gained
-		check_eq(Piece.tier(gained), Piece.Tier.UNCOMMON, "always one tier up")
-		seen[gained] = true
-	check(seen.size() >= 5, "many different uncommon pieces turn up over many trades: %s" % str(seen.keys()))
+func test_seven_rares_are_needed_for_a_legendary() -> void:
+	var run := _run()
+	var rares := _ids_of(run, ROOK, 1) + _give(run, ROOK, 4)
+	check(not Shop.check_trade_up(run, rares).ok, "five rares aren't enough")
+	check_eq(Shop.check_trade_up(run, rares).reason, "Select 7 rare pieces (5 selected)", "and it says why")
+	rares += _give(run, ROOK, 1)
+	check(not Shop.check_trade_up(run, rares).ok, "six isn't either")
+	rares += _give(run, ROOK, 1)
+	var check := Shop.check_trade_up(run, rares)
+	check(check.ok and check.to == Piece.Tier.LEGENDARY and check.count == 7, "seven works")
+	check(not Shop.check_trade_up(run, rares + _give(run, ROOK, 1)).ok, "eight doesn't")
 
-func test_trade_up_needs_exactly_five_pieces_of_one_tier() -> void:
+func test_trade_up_needs_exactly_the_right_number_of_one_tier() -> void:
 	var run := _run()
 	var pawns := _ids_of(run, PAWN, 3) + _give(run, PAWN, 2)
 	check(not Shop.check_trade_up(run, pawns.slice(0, 4)).ok, "four isn't enough")
 	check(not Shop.check_trade_up(run, pawns + _give(run, PAWN, 1)).ok, "six isn't five")
-	var mixed := pawns.slice(0, 4) + _ids_of(run, ROOK, 1)
+	check(not Shop.check_trade_up(run, []).ok, "nothing selected")
+	var mixed := pawns.slice(0, 4) + _ids_of(run, KNIGHT, 1)
 	check(not Shop.check_trade_up(run, mixed).ok, "mixed tiers are refused")
-	check_eq(Shop.check_trade_up(run, mixed).reason, "All five must be the same tier", "with a reason")
+	check_eq(Shop.check_trade_up(run, mixed).reason, "All the pieces must be the same tier", "with a reason")
 	check(not Shop.check_trade_up(run, [pawns[0], pawns[0], pawns[1], pawns[2], pawns[3]]).ok, "the same piece twice")
 	check(not Shop.check_trade_up(run, [pawns[0], pawns[1], pawns[2], pawns[3], 9999]).ok, "a piece you don't own")
 	var before := run.roster.size()
 	var refused := Shop.trade_up(run, mixed)
 	check(not refused.ok, "a refused trade reports failure")
 	check_eq(run.roster.size(), before, "and changes nothing")
+	check(run.pending.is_empty(), "and offers nothing")
 
 func test_legendary_pieces_cannot_be_traded_up() -> void:
 	var run := _run()
-	var queens := _give(run, QUEEN, 5)
+	var queens := _give(run, QUEEN, 2)
 	var check := Shop.check_trade_up(run, queens)
 	check(not check.ok, "refused")
 	check_eq(check.reason, "Legendary pieces can't be traded up", "reason")
@@ -96,6 +107,15 @@ func test_you_choose_which_pieces_to_sacrifice() -> void:
 	var result := Shop.trade_up(run, extra + _ids_of(run, KNIGHT, 1))     # keep the rook, give up five knights
 	check(result.ok, "traded")
 	check(not run.roster_entry(rook).is_empty(), "the rook you didn't pick is still yours")
+
+func test_sacrificing_a_whole_type_frees_its_slot_for_the_offer() -> void:
+	var run := _run()
+	for type in [Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.CRAB, Piece.Type.DRUMMER]:
+		_give(run, type, 1)
+	check_eq(run.free_slots(Piece.Tier.COMMON), 0, "common is full")
+	var ids := _ids_of(run, Piece.Type.SCOUT, 1) + _ids_of(run, Piece.Type.SERF, 1) + _ids_of(run, Piece.Type.CRAB, 1) + _ids_of(run, Piece.Type.DRUMMER, 1) + _ids_of(run, PAWN, 1)
+	Shop.trade_up(run, ids)
+	check_eq(run.free_slots(Piece.Tier.COMMON), 4, "four common slots are open again")
 
 # ---- upgrades ----------------------------------------------------------------------
 

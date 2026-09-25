@@ -182,7 +182,8 @@ func apply_setup(setup: Dictionary) -> void:
 	_rebuild_size_controls(setup.board_sizes.size(), setup.board_sizes)
 	white_zone_spin_box.value = setup.white_zone
 	black_zone_spin_box.value = setup.black_zone
-	black_points_spin_box.value = setup.ai_budget
+	# a boss's own piece comes on top of its army's budget, so count it in the readout
+	black_points_spin_box.value = setup.ai_budget + (Piece.value(setup.boss_piece) if setup.get("boss_piece", -1) >= 0 else 0)
 	moves_spin_box.value = setup.moves
 	target_spin_box.value = setup.target
 	round_option.select(PieceSelector.ROUND_MODIFIERS.keys().find(setup.round_type))

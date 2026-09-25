@@ -9,7 +9,7 @@ var active: bool = false
 var complete: bool = false
 var round_number: int = 1
 var match_number: int = 1
-var boss_order: Array = []     # this run's knights, one per round
+var boss_order: Array = []     # this run's bosses (Piece.Types), one per round
 
 ## What you may field per match: total piece value, and zone size (king's square included).
 var allocated_points: int = RunConfig.PLAYER_POINTS_START
@@ -25,12 +25,18 @@ var zone_upgrades_bought: int = 0
 var roster: Array = []
 var _next_roster_id: int = 1
 
+## Boss legendaries you have beaten this run: you can upgrade into them even after giving one up.
+var unlocked_legendaries: Array = []
+
+## A choice you must make before leaving the shop ({} when none). See Lottery and Legendaries.
+var pending: Dictionary = {}
+
 func begin() -> void:
 	active = true
 	complete = false
 	round_number = 1
 	match_number = 1
-	boss_order = RunConfig.KNIGHTS.duplicate()
+	boss_order = RunConfig.BOSSES.duplicate()
 	boss_order.shuffle()
 	allocated_points = RunConfig.PLAYER_POINTS_START
 	zone_tiles = RunConfig.PLAYER_ZONE_TILES
@@ -39,6 +45,8 @@ func begin() -> void:
 	zone_upgrades_bought = 0
 	roster.clear()
 	_next_roster_id = 1
+	unlocked_legendaries = []
+	pending = {}
 	for type in RunConfig.STARTING_ROSTER:
 		add_to_roster(type)
 
@@ -47,6 +55,29 @@ func add_to_roster(type: Piece.Type) -> int:
 	_next_roster_id += 1
 	roster.append({ "id": id, "type": type })
 	return id
+
+## The different piece types you hold in `tier`, in the order you first got them.
+func held_types(tier: Piece.Tier) -> Array:
+	var types: Array = []
+	for entry in roster:
+		if Piece.tier(entry.type) == tier and not types.has(entry.type):
+			types.append(entry.type)
+	return types
+
+func count_of(type: Piece.Type) -> int:
+	return roster.filter(func(entry): return entry.type == type).size()
+
+func free_slots(tier: Piece.Tier) -> int:
+	return maxi(RunConfig.SLOTS_PER_TIER[tier] - held_types(tier).size(), 0)
+
+## Every piece of type `from` becomes type `to` (same ids, same number of pieces).
+func retype(from: Piece.Type, to: Piece.Type) -> void:
+	for entry in roster:
+		if entry.type == from:
+			entry.type = to
+
+func remove_all_of_type(type: Piece.Type) -> void:
+	roster = roster.filter(func(entry): return entry.type != type)
 
 func roster_entry(id: int) -> Dictionary:
 	for entry in roster:
@@ -70,12 +101,20 @@ func matches_in_round() -> int:
 func is_boss() -> bool:
 	return match_number == matches_in_round()
 
+## The legendary piece this match's boss fields and drops (a Piece.Type), or -1 when
+## the match has no such boss (an ordinary match, or Arthur).
+func boss_piece() -> int:
+	if not is_boss() or is_final_round() or boss_order.size() < round_number:
+		return -1
+	return boss_order[round_number - 1]
+
 func boss_name() -> String:
 	if not is_boss():
 		return ""
 	if is_final_round():
 		return RunConfig.FINAL_BOSS
-	return "Sir %s" % boss_order[round_number - 1] if boss_order.size() >= round_number else "Sir Knight"
+	var type := boss_piece()
+	return Piece.display_name(type) if type >= 0 else "Boss"
 
 ## How many matches came before this one in the run.
 func matches_played() -> int:

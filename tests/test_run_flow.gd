@@ -27,8 +27,15 @@ func _force_result(main: Node, result: String) -> void:
 func _continue(main: Node) -> void:
 	main.result_screen.continue_button.pressed.emit()
 
+# Leaves the shop, first deciding anything it asks (the last option each time: it turns a third
+# legendary down, since a full run hands out a boss piece every round and the slots fill up).
 func _leave_shop(main: Node) -> void:
-	main.shop_screen.leave_button.pressed.emit()
+	var shop: ShopScreen = main.shop_screen
+	for i in 4:
+		if not shop.is_busy():
+			break
+		shop.choice_row.get_children().back().pressed.emit()
+	shop.leave_button.pressed.emit()
 
 # Win, press Next Match, leave the shop, and get the following match going.
 func _win_and_continue(main: Node) -> void:
@@ -104,7 +111,8 @@ func test_the_third_match_is_a_boss_with_a_boss_army() -> void:
 	_win_and_continue(main)
 	var run: RunState = main.state.run
 	check(run.is_boss(), "match 3 is a boss")
-	check(main.panel.run_status_label.text.contains("BOSS: Sir "), main.panel.run_status_label.text)
+	check(main.panel.run_status_label.text.contains("BOSS: %s" % run.boss_name()), main.panel.run_status_label.text)
+	check(not main.panel.run_status_label.text.contains("Sir "), "no knights any more")
 	check_eq(main.panel.round_option.get_item_text(main.panel.round_option.selected), "Boss", "boss army type")
 	var normal_target := int(RunConfig.TARGET_BASE + RunConfig.TARGET_PER_MATCH * 1)
 	check(main.state.current_match.target_score > normal_target, "a tougher target than match 2")
@@ -140,12 +148,12 @@ func test_a_full_run_is_thirty_seven_matches_then_arthur_then_done() -> void:
 		_ready_up(main)
 		matches += 1
 	check_eq(matches, 37, "36 ordinary matches plus Arthur")
-	check_eq(boss_names.size(), 13, "12 knights and Arthur")
+	check_eq(boss_names.size(), 13, "12 legendary bosses and Arthur")
 	check_eq(boss_names[12], "Arthur", "Arthur last")
 	var unique := {}
 	for n in boss_names.slice(0, 12):
 		unique[n] = true
-	check_eq(unique.size(), 12, "every knight faced exactly once")
+	check_eq(unique.size(), 12, "every boss faced exactly once")
 	_continue(main)
 	check(main.state.run.complete and not main.state.run.active, "run complete")
 	check_eq(main.panel.run_status_label.text, "Run complete!", "status")

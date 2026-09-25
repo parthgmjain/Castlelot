@@ -502,7 +502,7 @@ horizontal_alignment = 1
 
 [node name="PiecesHeader" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
 layout_mode = 2
-text = "PIECES  -  select 5 of one tier to trade up"
+text = "PIECES  -  select pieces of one tier to trade up (5 commons, 5 uncommons or 7 rares)"
 
 [node name="RosterBox" type="VBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
 layout_mode = 2

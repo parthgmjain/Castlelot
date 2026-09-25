@@ -30,8 +30,10 @@ static func remove(state: GameState) -> void:
 ## Rebuilds a side's army from scratch (kings stay): buys pieces with its
 ## allocated points and drops them on random free squares of its zone. The
 ## allocation is a hard cap, so the round type's budget multiplier is not applied.
+## `reserved` pieces (a boss's own piece) are placed first and come on top of the
+## allocation: the army is still bought with the full allocation.
 ## Returns a status message for the UI.
-static func auto_place(boards: Array, side: Piece.Side, allocated: int, round_type: String) -> String:
+static func auto_place(boards: Array, side: Piece.Side, allocated: int, round_type: String, reserved: Array = []) -> String:
 	for b in boards:
 		for square in b.pieces.keys():
 			var piece: Dictionary = b.pieces[square]
@@ -47,6 +49,17 @@ static func auto_place(boards: Array, side: Piece.Side, allocated: int, round_ty
 	if free_squares.is_empty():
 		return "No free zone squares - generate zones first"
 
+	var total_free := free_squares.size()
+	free_squares.shuffle()
+	var spent := 0
+	var placed := 0
+	for type in reserved:
+		if free_squares.is_empty():
+			break
+		var slot: Dictionary = free_squares.pop_back()
+		slot.board.place_piece(slot.square, type, side)
+		placed += 1
+
 	var picks: Array = PieceSelector.pick_pieces(
 		allocated,
 		PieceSelector.working_weights(round_type),
@@ -55,9 +68,8 @@ static func auto_place(boards: Array, side: Piece.Side, allocated: int, round_ty
 		RandomNumberGenerator.new(),
 		free_squares.size(),
 	)
-	free_squares.shuffle()
-	var spent := 0
 	for i in picks.size():
 		free_squares[i].board.place_piece(free_squares[i].square, picks[i], side)
 		spent += Piece.value(picks[i])
-	return "Placed %d pieces (%d pts) in %d free squares" % [picks.size(), spent, free_squares.size()]
+	placed += picks.size()
+	return "Placed %d pieces (%d pts) in %d free squares" % [placed, spent, total_free]

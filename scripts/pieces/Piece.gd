@@ -13,7 +13,7 @@ enum Type {
 	EMPRESS, PALADIN, STORM_WITCH, ORACLE, CHRONOMANCER,
 }
 enum Side { WHITE, BLACK }
-enum Tier { COMMON, UNCOMMON, LEGENDARY }
+enum Tier { COMMON, UNCOMMON, RARE, LEGENDARY }
 
 const SYMBOLS := {
 	Side.WHITE: {
@@ -49,10 +49,10 @@ const TIERS := {
 	Type.PAWN: Tier.COMMON,
 	Type.KNIGHT: Tier.UNCOMMON,
 	Type.BISHOP: Tier.UNCOMMON,
-	Type.ROOK: Tier.UNCOMMON,
+	Type.ROOK: Tier.RARE,
 	Type.QUEEN: Tier.LEGENDARY,
 }
-const TIER_NAMES := { Tier.COMMON: "Common", Tier.UNCOMMON: "Uncommon", Tier.LEGENDARY: "Legendary" }
+const TIER_NAMES := { Tier.COMMON: "Common", Tier.UNCOMMON: "Uncommon", Tier.RARE: "Rare", Tier.LEGENDARY: "Legendary" }
 
 ## Standard chess values. King is 0 - it doesn't count against a point budget.
 const VALUES := {
@@ -63,6 +63,10 @@ const VALUES := {
 	Type.KNIGHT: 3,
 	Type.PAWN: 1,
 }
+
+## "Storm Witch", "Pawn", ... (the piece's name for messages and titles).
+static func display_name(type: Piece.Type) -> String:
+	return Type.find_key(type).capitalize()
 
 ## Text symbol for buttons and messages. Data-driven pieces have no chess glyph;
 ## the board draws them as a labelled disc instead.

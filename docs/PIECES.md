@@ -2,8 +2,36 @@
 
 Design by the game's author. Status: [x] built, [ ] not yet. Values are placeholders (points budget / capture score x10).
 "Forward" for a piece means its heading toward the enemy zone (`PawnMovement.heading`), "sideways" is perpendicular to it.
-Legendary pieces are rewards for beating a Knight of the Round Table (there is no ability choice any more).
+The twelve legendary pieces ARE the twelve round bosses (`RunConfig.BOSSES`; the Knights of the Round Table are gone): each round's boss is named after its piece, fields that piece in its army, and the piece joins your roster when you win. There is no ability choice any more. Arthur (round 13) stays as the final boss.
 Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everything below is new.
+
+## Tiers, points and slots (the shop's economy)
+
+Four tiers. Points are what a piece costs against your allocated points (and capture score is points x10). Values are placeholders to balance later; the source of truth is `PieceDefs.gd` / `Piece.gd`.
+
+**Common** (hold up to 5 types) - 11 pieces:
+- 1 pt: Crab, Drummer, Pawn, Scout, Serf
+- 2 pt: Archer, Militia, Pilgrim, Shieldbearer, Squire, Torchbearer
+
+**Uncommon** (hold up to 5 types) - 13 pieces:
+- 2 pt: Bard, Ferz Guard
+- 3 pt: Bishop, Camel, Charger, Golem, Hawk, Knight, Monk, Ranger, Spearman, Tortoise, Zebra
+
+**Rare** (hold up to 3 types) - 11 pieces:
+- 4 pt: Alchemist, Catapult, Grasshopper, Lancer, Mirror, Ninja, Twin Rider
+- 5 pt: Cannon, Ghost, Griffon, Rook
+
+**Legendary** (hold up to 2 types) - 13 pieces:
+- 9 pt: Queen
+- 10 pt: Chronomancer, Hydra, Lich, Oracle, Phoenix, Titan, Warlord, Wraith
+- 11 pt: Dragon, Paladin, Storm Witch
+- 12 pt: Empress
+
+How the shop uses them:
+- You can hold at most 5 common, 5 uncommon, 3 rare and 2 legendary **types** at a time (`RunConfig.SLOTS_PER_TIER`); each type can be owned several times, except legendaries (one of each).
+- A lottery pull pays, reveals the tier (common 60 / uncommon 30 / rare 10, legendaries are never drawn), then shows 5 cards from that tier: up to 3 types you already hold (+1 copy) and the rest new types. A new type takes a free slot, or, if the tier is full, replaces one of your types and keeps its number of pieces.
+- Trading up: 5 commons -> a choice of uncommon cards, 5 uncommons -> a choice of rare cards, 7 rares -> a legendary (the queen, or any boss piece you have beaten this run and don't currently hold).
+- Legendaries come only from those upgrades and from beating a boss. With both slots full you choose which of the three to give up (or decline the new one).
 
 ## Pawn tier (common)
 - [x] Scout: 1 forward or 1 sideways (no capture); captures diagonally forward.
@@ -83,3 +111,5 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - Oracle: "every second turn" counts the owner's completed turns: on turns 2, 4, 6, ... if the Oracle is the piece that moves, it may move once more (free, optional, never chains). Moving any other piece on those turns earns nothing.
 - Chronomancer: "once per game" is once per match, per Chronomancer. The rewind is free and doesn't end your turn (you then move normally). It undoes the opponent's most recent move, including anything it set off, and is offered (right-click the orange ring on the square that piece moved to) only right after the opponent has moved. The AI never rewinds.
 - Titan and Dragon are boss rewards: not in the lottery, and rewards are not wired to the knights yet.
+- Boss matches: the boss's own piece is placed first and comes ON TOP of the boss army's budget (the army is still bought with the full budget, so a boss is never just its piece). The black points readout counts the boss piece too. A boss's piece is played by the ordinary greedy AI; the AI's Chronomancer never rewinds, and its Paladin/Storm Witch teleport like anyone's.
+- Rewards are added to your roster as soon as you win the boss match (before the shop); a lost boss match gives nothing.
