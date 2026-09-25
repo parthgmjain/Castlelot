@@ -9,12 +9,12 @@
 script = ExtResource("1_main")
 
 [node name="BoardsContainer" type="Node2D" parent="."]
-position = Vector2(40, 350)
+position = Vector2(40, 390)
 
 [node name="UI" type="Control" parent="."]
 anchors_preset = 0
 offset_right = 1280.0
-offset_bottom = 350.0
+offset_bottom = 390.0
 script = ExtResource("2_panel")
 
 [node name="VBox" type="VBoxContainer" parent="UI"]
@@ -22,8 +22,20 @@ layout_mode = 0
 offset_left = 20.0
 offset_top = 10.0
 offset_right = 1260.0
-offset_bottom = 340.0
+offset_bottom = 380.0
 theme_override_constants/separation = 10
+
+[node name="RunRow" type="HBoxContainer" parent="UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="StartRunButton" type="Button" parent="UI/VBox/RunRow"]
+layout_mode = 2
+text = "Start Run"
+
+[node name="RunStatusLabel" type="Label" parent="UI/VBox/RunRow"]
+layout_mode = 2
+text = "No run in progress"
 
 [node name="CountRow" type="HBoxContainer" parent="UI/VBox"]
 layout_mode = 2
@@ -308,6 +320,10 @@ theme_override_constants/separation = 14
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "VICTORY"
+horizontal_alignment = 1
+
+[node name="Context" type="Label" parent="ResultLayer/ResultScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
 horizontal_alignment = 1
 
 [node name="Reason" type="Label" parent="ResultLayer/ResultScreen/Center/Panel/Margin/VBox"]

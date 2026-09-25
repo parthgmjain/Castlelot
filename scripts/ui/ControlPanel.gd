@@ -11,10 +11,13 @@ signal zone_edit_toggled(enabled: bool)
 signal place_requested(type: Piece.Type)
 signal remove_requested
 signal start_match_requested(moves: int, target: int)
+signal start_run_requested
 
 const MIN_DIM := 2
 const MAX_DIM := 10
 
+@onready var start_run_button: Button = $VBox/RunRow/StartRunButton
+@onready var run_status_label: Label = $VBox/RunRow/RunStatusLabel
 @onready var count_spin_box: SpinBox = $VBox/CountRow/CountSpinBox
 @onready var refresh_button: Button = $VBox/CountRow/RefreshButton
 @onready var sizes_row: HBoxContainer = $VBox/SizesRow
@@ -68,6 +71,7 @@ func _ready() -> void:
 	pawn_button.pressed.connect(_on_place_pressed.bind(Piece.Type.PAWN))
 	remove_button.pressed.connect(func(): remove_requested.emit())
 	start_match_button.pressed.connect(func(): start_match_requested.emit(int(moves_spin_box.value), int(target_spin_box.value)))
+	start_run_button.pressed.connect(func(): start_run_requested.emit())
 
 	_rebuild_size_controls(board_count())
 
@@ -98,6 +102,21 @@ func set_auto_place_status(text: String) -> void:
 func set_match_status(text: String) -> void:
 	match_status_label.text = text
 
+func set_run_status(text: String) -> void:
+	run_status_label.text = text
+
+## Mirrors a match setup (see RunConfig.match_setup) into the visible controls.
+func apply_setup(setup: Dictionary) -> void:
+	count_spin_box.set_value_no_signal(setup.board_sizes.size())
+	_rebuild_size_controls(setup.board_sizes.size(), setup.board_sizes)
+	white_zone_spin_box.value = setup.white_zone
+	black_zone_spin_box.value = setup.black_zone
+	white_points_spin_box.value = setup.player_budget
+	black_points_spin_box.value = setup.ai_budget
+	moves_spin_box.value = setup.moves
+	target_spin_box.value = setup.target
+	round_option.select(PieceSelector.ROUND_MODIFIERS.keys().find(setup.round_type))
+
 func set_wallet(currency: int) -> void:
 	wallet_label.text = "Gold: %d" % currency
 
@@ -108,7 +127,7 @@ func set_sandbox_enabled(enabled: bool) -> void:
 		count_spin_box, refresh_button, white_zone_spin_box, black_zone_spin_box, generate_zones_button,
 		white_points_spin_box, black_points_spin_box, round_option, auto_place_white_button, auto_place_black_button,
 		side_check_button, zone_edit_button, king_button, queen_button, rook_button, bishop_button, knight_button,
-		pawn_button, remove_button, moves_spin_box, target_spin_box, start_match_button,
+		pawn_button, remove_button, moves_spin_box, target_spin_box, start_match_button, start_run_button,
 	]
 	controls.append_array(_width_boxes)
 	controls.append_array(_height_boxes)
@@ -127,7 +146,8 @@ func _on_place_pressed(type: Piece.Type) -> void:
 func _on_size_value_changed(value: float, index: int, is_width: bool) -> void:
 	board_size_changed.emit(index, is_width, int(value))
 
-func _rebuild_size_controls(count: int) -> void:
+## `sizes` (Vector2i per board) fills the boxes; without it they get random values.
+func _rebuild_size_controls(count: int, sizes: Array = []) -> void:
 	for child in sizes_row.get_children():
 		child.queue_free()
 	_width_boxes.clear()
@@ -138,21 +158,21 @@ func _rebuild_size_controls(count: int) -> void:
 		label.text = "Board %d:" % (i + 1)
 		sizes_row.add_child(label)
 
-		var width_box := _make_size_box()
+		var width_box := _make_size_box(sizes[i].x if i < sizes.size() else -1)
 		width_box.value_changed.connect(_on_size_value_changed.bind(i, true))
 		sizes_row.add_child(width_box)
 
-		var height_box := _make_size_box()
+		var height_box := _make_size_box(sizes[i].y if i < sizes.size() else -1)
 		height_box.value_changed.connect(_on_size_value_changed.bind(i, false))
 		sizes_row.add_child(height_box)
 
 		_width_boxes.append(width_box)
 		_height_boxes.append(height_box)
 
-func _make_size_box() -> SpinBox:
+func _make_size_box(value: int = -1) -> SpinBox:
 	var box := SpinBox.new()
 	box.min_value = MIN_DIM
 	box.max_value = MAX_DIM
-	box.value = randi_range(MIN_DIM, MAX_DIM)
+	box.value = value if value >= 0 else randi_range(MIN_DIM, MAX_DIM)
 	box.custom_minimum_size = Vector2(60, 0)
 	return box

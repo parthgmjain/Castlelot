@@ -5,6 +5,7 @@ signal continue_pressed
 
 @onready var panel: PanelContainer = $Center/Panel
 @onready var title_label: Label = $Center/Panel/Margin/VBox/Title
+@onready var context_label: Label = $Center/Panel/Margin/VBox/Context
 @onready var reason_label: Label = $Center/Panel/Margin/VBox/Reason
 @onready var details_label: Label = $Center/Panel/Margin/VBox/Details
 @onready var wallet_label: Label = $Center/Panel/Margin/VBox/Wallet
@@ -14,12 +15,15 @@ func _ready() -> void:
 	panel.add_theme_stylebox_override("panel", ModalStyle.panel())
 	continue_button.pressed.connect(_on_continue_pressed)
 
-## `payout` is Payout.calculate's result for a win and {} for a loss.
+## `payout` is Payout.calculate's result for a win and {} for a loss. `context`
+## says where in the run this was; `button_text` overrides the default label.
 ## Its full-screen backdrop swallows clicks until the button is pressed.
-func show_result(current: MatchState, payout: Dictionary, wallet: int) -> void:
+func show_result(current: MatchState, payout: Dictionary, wallet: int, context: String = "", button_text: String = "") -> void:
 	var won := current.result == "win"
 	title_label.text = "VICTORY" if won else "DEFEAT"
 	title_label.add_theme_color_override("font_color", Color(0.55, 0.9, 0.55) if won else Color(0.95, 0.45, 0.45))
+	context_label.text = context
+	context_label.visible = context != ""
 	reason_label.text = current.result_reason
 
 	var lines := ["Score: %d / %d" % [current.scores[current.player_side], current.target_score]]
@@ -34,7 +38,7 @@ func show_result(current: MatchState, payout: Dictionary, wallet: int) -> void:
 		wallet_label.text = "Gold lost: %d" % wallet
 	details_label.text = "\n".join(lines)
 
-	continue_button.text = "Continue" if won else "Restart Run"
+	continue_button.text = button_text if button_text != "" else ("Continue" if won else "Restart Run")
 	show()
 	continue_button.grab_focus()
 

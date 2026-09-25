@@ -23,6 +23,7 @@ func _ready() -> void:
 	panel.place_requested.connect(_on_place)
 	panel.remove_requested.connect(_on_remove)
 	panel.start_match_requested.connect(_on_start_match)
+	panel.start_run_requested.connect(_start_run)
 	promotion_picker.piece_chosen.connect(_on_promotion_chosen)
 	result_screen.continue_pressed.connect(_on_result_continue)
 
@@ -65,9 +66,10 @@ func _refresh_view() -> void:
 	MoveController.refresh(state)
 	_update_points_status()
 	panel.set_match_status(MatchController.status_text(state))
-	panel.set_sandbox_enabled(not state.current_match.active)
+	panel.set_sandbox_enabled(not state.current_match.active and not state.run.active)
 	_settle_match_if_finished()
 	panel.set_wallet(state.run.currency)
+	panel.set_run_status(state.run.title())
 
 ## Pays out a won match (once) and shows the result screen for either outcome.
 func _settle_match_if_finished() -> void:
@@ -79,12 +81,47 @@ func _settle_match_if_finished() -> void:
 	if current.result == "win":
 		payout = Payout.calculate(current, state.run.currency)
 		state.run.currency += payout.total
-	result_screen.show_result(current, payout, state.run.currency)
+	var context := ""
+	var button := ""
+	if state.run.active:
+		context = state.run.title()
+		if current.result == "loss":
+			button = "Restart Run"
+		else:
+			button = "Finish Run" if state.run.is_final_round() else "Next Match"
+	result_screen.show_result(current, payout, state.run.currency, context, button)
 
-## A win carries on with the run; a loss ends it, so start a fresh one.
+## In a run: a win moves on to the next match (or finishes the run after
+## Arthur) and a loss starts a new run. Outside a run a loss just wipes the gold.
 func _on_result_continue() -> void:
-	if state.current_match.result == "loss":
+	var lost := state.current_match.result == "loss"
+	if state.run.active:
+		if lost:
+			_start_run()
+		elif state.run.advance():
+			_begin_run_match()
+		else:
+			_refresh_view()
+		return
+	if lost:
 		state.run = RunState.new()
+	_refresh_view()
+
+func _start_run() -> void:
+	state.run = RunState.new()
+	state.run.begin()
+	_begin_run_match()
+
+## Builds the run's current match from RunConfig and starts it.
+func _begin_run_match() -> void:
+	var setup := RunConfig.match_setup(state.run)
+	panel.apply_setup(setup)
+	_generate_boards()
+	ZoneController.generate(state.boards, setup.white_zone, setup.black_zone)
+	ArmyPlacer.auto_place(state.boards, Piece.Side.BLACK, setup.ai_budget, setup.round_type)
+	ArmyPlacer.auto_place(state.boards, Piece.Side.WHITE, setup.player_budget, "normal")
+	MatchController.start(state, setup.moves, setup.target)
+	_mark_last_move({})
 	_refresh_view()
 
 func _update_points_status() -> void:
