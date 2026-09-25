@@ -61,19 +61,64 @@ const SUPPLY_LIMITS := {
 	Piece.Type.PAWN: 8,
 }
 
-## This game's starting weights: BASE_WEIGHTS * the round type's modifiers.
-## Always a fresh copy, so decay never leaks into shared config or other games.
-static func working_weights(round_type: String) -> Dictionary:
+## The AI's armies start as classic chess pieces only (round 1) and gradually pick up the extra
+## pieces as a run goes on: a tier's weight is 0 before `start`, ramps linearly to full strength
+## by `full`, and stays there after. Legendaries never appear here - they're earned, not bought
+## (a boss still fields its own, separately, via ArmyPlacer.auto_place's `reserved`).
+const EXTRA_TIER_UNLOCK := {
+	Piece.Tier.COMMON: { "start": 2, "full": 5 },
+	Piece.Tier.UNCOMMON: { "start": 4, "full": 8 },
+	Piece.Tier.RARE: { "start": 7, "full": 12 },
+}
+## An extra piece's weight/decay/supply once fully unlocked, by tier (placeholders, kept modest
+## next to a pawn's 45 so early exotic pieces are a sprinkle, not a takeover).
+const EXTRA_TIER_WEIGHTS := { Piece.Tier.COMMON: 4.0, Piece.Tier.UNCOMMON: 5.0, Piece.Tier.RARE: 4.0 }
+const EXTRA_TIER_DECAYS := { Piece.Tier.COMMON: 0.8, Piece.Tier.UNCOMMON: 0.6, Piece.Tier.RARE: 0.5 }
+const EXTRA_TIER_SUPPLY := { Piece.Tier.COMMON: 3, Piece.Tier.UNCOMMON: 2, Piece.Tier.RARE: 1 }
+
+## Every data-driven type that can turn up in a random AI army: not a boss-only legendary.
+static func _extra_types() -> Array:
+	return PieceDefs.types().filter(func(t): return not Piece.is_reward_only(t) and PieceDefs.tier(t) != Piece.Tier.LEGENDARY)
+
+## How unlocked `tier` is on `round_number`: 0 before "start", already a little unlocked
+## right on "start", ramping up to fully unlocked (1) by "full" and staying there.
+## `round_number` < 0 means no run context (the sandbox), so nothing is unlocked.
+static func extras_factor(tier: Piece.Tier, round_number: int) -> float:
+	if round_number < 0 or not EXTRA_TIER_UNLOCK.has(tier):
+		return 0.0
+	var range: Dictionary = EXTRA_TIER_UNLOCK[tier]
+	if round_number < range.start:
+		return 0.0
+	return clampf(float(round_number - range.start + 1) / float(range.full - range.start + 1), 0.0, 1.0)
+
+## This game's starting weights: BASE_WEIGHTS * the round type's modifiers, plus whichever
+## extra pieces `round_number` has unlocked so far (see EXTRA_TIER_UNLOCK). Always a fresh
+## copy, so decay never leaks into shared config or other games.
+static func working_weights(round_type: String, round_number: int = -1) -> Dictionary:
 	var weights: Dictionary = {}
 	var modifiers: Dictionary = ROUND_MODIFIERS[round_type]
 	for type in BASE_WEIGHTS:
 		weights[type] = BASE_WEIGHTS[type] * modifiers[type]
+	for type in _extra_types():
+		var factor := extras_factor(PieceDefs.tier(type), round_number)
+		if factor > 0.0:
+			weights[type] = EXTRA_TIER_WEIGHTS[PieceDefs.tier(type)] * factor
 	return weights
 
-static func working_decays(round_type: String) -> Dictionary:
+static func working_decays(round_type: String, round_number: int = -1) -> Dictionary:
 	var decays: Dictionary = DECAY_FACTORS.duplicate()
 	decays.merge(ROUND_DECAY_OVERRIDES[round_type], true)
+	for type in _extra_types():
+		decays[type] = EXTRA_TIER_DECAYS[PieceDefs.tier(type)]
 	return decays
+
+## SUPPLY_LIMITS plus caps for whatever extra pieces are unlocked (unlimited copies otherwise
+## isn't right once they're in the weight table too).
+static func working_supply(round_number: int = -1) -> Dictionary:
+	var supply: Dictionary = SUPPLY_LIMITS.duplicate()
+	for type in _extra_types():
+		supply[type] = EXTRA_TIER_SUPPLY[PieceDefs.tier(type)]
+	return supply
 
 ## Probabilities over just `keys`, renormalized so they sum to 1.
 static func normalized(weights: Dictionary, keys: Array) -> Dictionary:
@@ -89,13 +134,13 @@ static func normalized(weights: Dictionary, keys: Array) -> Dictionary:
 ## multiplier). Returns the picked Piece.Types in purchase order.
 ## `max_pieces` is the number of free squares in the side's zone (zone tiles
 ## minus the king's square); -1 means no limit.
-static func select_army(budget: int, round_type: String = "normal", rng: RandomNumberGenerator = null, respect_supply: bool = true, max_pieces: int = -1) -> Array:
+static func select_army(budget: int, round_type: String = "normal", rng: RandomNumberGenerator = null, respect_supply: bool = true, max_pieces: int = -1, round_number: int = -1) -> Array:
 	var effective_budget: int = int(round(budget * ROUND_BUDGET_MULTIPLIERS[round_type]))
 	return pick_pieces(
 		effective_budget,
-		working_weights(round_type),
-		working_decays(round_type),
-		SUPPLY_LIMITS if respect_supply else {},
+		working_weights(round_type, round_number),
+		working_decays(round_type, round_number),
+		working_supply(round_number) if respect_supply else {},
 		rng if rng != null else RandomNumberGenerator.new(),
 		max_pieces,
 	)

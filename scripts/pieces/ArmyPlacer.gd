@@ -31,9 +31,11 @@ static func remove(state: GameState) -> void:
 ## allocated points and drops them on random free squares of its zone. The
 ## allocation is a hard cap, so the round type's budget multiplier is not applied.
 ## `reserved` pieces (a boss's own piece) are placed first and come on top of the
-## allocation: the army is still bought with the full allocation.
+## allocation: the army is still bought with the full allocation. `round_number` gates which
+## extra pieces (beyond the six chess ones) can be bought - see PieceSelector.EXTRA_TIER_UNLOCK;
+## -1 (the sandbox's Auto Place buttons) means chess pieces only.
 ## Returns a status message for the UI.
-static func auto_place(boards: Array, side: Piece.Side, allocated: int, round_type: String, reserved: Array = []) -> String:
+static func auto_place(boards: Array, side: Piece.Side, allocated: int, round_type: String, reserved: Array = [], round_number: int = -1) -> String:
 	for b in boards:
 		for square in b.pieces.keys():
 			var piece: Dictionary = b.pieces[square]
@@ -62,9 +64,9 @@ static func auto_place(boards: Array, side: Piece.Side, allocated: int, round_ty
 
 	var picks: Array = PieceSelector.pick_pieces(
 		allocated,
-		PieceSelector.working_weights(round_type),
-		PieceSelector.working_decays(round_type),
-		PieceSelector.SUPPLY_LIMITS,
+		PieceSelector.working_weights(round_type, round_number),
+		PieceSelector.working_decays(round_type, round_number),
+		PieceSelector.working_supply(round_number),
 		RandomNumberGenerator.new(),
 		free_squares.size(),
 	)

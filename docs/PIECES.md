@@ -113,3 +113,13 @@ How the shop uses them:
 - Titan and Dragon are boss rewards: not in the lottery, and rewards are not wired to the knights yet.
 - Boss matches: the boss's own piece is placed first and comes ON TOP of the boss army's budget (the army is still bought with the full budget, so a boss is never just its piece). The black points readout counts the boss piece too. A boss's piece is played by the ordinary greedy AI; the AI's Chronomancer never rewinds, and its Paladin/Storm Witch teleport like anyone's.
 - Rewards are added to your roster as soon as you win the boss match (before the shop); a lost boss match gives nothing.
+
+## The AI's random armies (2026-09-25)
+The AI's incidental army each match (not the boss's own piece, which is always fielded via `reserved`) starts as chess pieces only and gradually picks up the other 38 pieces as a run goes on:
+- Round 1 is exactly the five chess types (queen, rook, bishop, knight, pawn) - no extras at all.
+- From round 2, common-tier extras start turning up, reaching full weight by round 5.
+- From round 4, uncommon-tier extras start, full weight by round 8.
+- From round 7, rare-tier extras start, full weight by round 12 (and Arthur, round 13).
+- Legendaries never appear in a random army - they're earned, not drawn (a boss still always fields its own).
+
+See `PieceSelector.EXTRA_TIER_UNLOCK` / `EXTRA_TIER_WEIGHTS` / `EXTRA_TIER_DECAYS` / `EXTRA_TIER_SUPPLY` for the placeholder numbers, and `RunFlow.begin_match` for where the run's round number is threaded in. The sandbox's own "Auto Place" buttons are unaffected (no round context = chess only), so existing sandbox testing keeps working as before.

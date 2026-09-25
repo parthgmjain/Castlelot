@@ -31,7 +31,7 @@ func begin_match() -> void:
 	generate_boards.call()
 	ZoneController.generate(state.boards, setup.white_zone, setup.black_zone)
 	var boss_army: Array = [setup.boss_piece] if setup.boss_piece >= 0 else []
-	ArmyPlacer.auto_place(state.boards, Piece.Side.BLACK, setup.ai_budget, setup.round_type, boss_army)
+	ArmyPlacer.auto_place(state.boards, Piece.Side.BLACK, setup.ai_budget, setup.round_type, boss_army, state.run.round_number)
 	state.deployment.begin(setup)
 	MoveController.mark_last_move(state, {})
 	view_changed.emit()
