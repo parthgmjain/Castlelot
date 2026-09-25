@@ -46,7 +46,7 @@ static func deploy(run: RunState, boards: Array, id: int, board: Board, square: 
 	var entry := run.roster_entry(id)
 	if entry.is_empty() or on_field(boards).has(id):
 		return false
-	if not ignore_budget and points_used(run, boards) + Piece.value(entry.type) > run.allocated_points:
+	if not ignore_budget and points_used(run, boards) + Piece.value(entry.type) > run.effective_points():
 		return false
 	if not board.is_in_bounds(square) or board.zone_owner.get(square) != PLAYER_SIDE or board.pieces.has(square):
 		return false

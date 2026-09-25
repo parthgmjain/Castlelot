@@ -51,16 +51,27 @@ func _finish(result: Dictionary, index: int) -> void:
 		return
 	if result.get("needs_choice", false):
 		_choosing_index = index
-		var options: Array = result.options.map(func(type): return { "text": Piece.display_name(type), "value": type })
-		strip.show_choice("Which piece type?", options)
+		var options: Array = result.options.map(func(opt): return { "text": _label(opt), "value": opt })
+		strip.show_choice(result.get("prompt", "Which piece type?"), options)
 		strip.set_message("")
 		return
 	_cancel_choice()
 	strip.set_message("")
 	view_changed.emit()
 
+## A choice's raw value can be a Piece.Type (Blessing of the Blade) or a piece
+## reference { board, square } (Sanctuary, Stone Ward, Wings, Swap Fates, Waypoint).
+func _label(option: Variant) -> String:
+	if option is Dictionary:
+		var piece = option.board.pieces.get(option.square)
+		if piece != null:
+			return "%s at %s" % [Piece.display_name(piece.type), option.square]
+		return "Empty square %s" % option.square
+	return Piece.display_name(option)
+
 func _cancel_choice() -> void:
 	_choosing_index = -1
+	Prophecies.cancel_choice(state)
 	if strip != null:
 		strip.hide_choice()
 

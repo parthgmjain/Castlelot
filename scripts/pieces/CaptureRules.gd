@@ -36,6 +36,10 @@ static func _unprotected(victims: Array, attacker: Dictionary) -> Array:
 
 ## Whether `attacker` may capture `victim` ({ piece, board, square }).
 static func can_capture(attacker: Dictionary, victim: Dictionary) -> bool:
+	if victim.piece.get("shielded", 0) > 0:          # Sanctuary: follows the piece
+		return false
+	if victim.board.warded_squares.get(victim.square, 0) > 0:  # Stone Ward: stays on the square
+		return false
 	var type: Piece.Type = victim.piece.type
 	if PieceDefs.has(type):
 		for rule in PieceDefs.protection(type):

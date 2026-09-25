@@ -102,6 +102,8 @@ static func execute(state: GameState, move: Dictionary) -> Dictionary:
 	if move.get("undo", false):
 		return _rewind(state, from_board, from_square)
 	var piece: Dictionary = from_board.pieces[from_square]
+	if piece.has("wings"):
+		piece.erase("wings")               # its one queen-like move is spent, win or lose
 	var snapshot := MoveEffects.take_snapshot(state, piece.side) if state.current_match.active else {}
 	var victims := victims_of(move)
 	for victim in victims:

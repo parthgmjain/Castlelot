@@ -191,11 +191,11 @@ func test_a_card_is_refused_on_the_ais_turn() -> void:
 	check(_play(state).ok, "debug mode lets you play whenever")
 
 func test_armed_and_shop_cards_cannot_be_played_in_a_match() -> void:
-	var state := _game([], ["final_blow", "purse_of_gold", "frozen_moment"])
-	for index in 3:
+	var state := _game([], ["final_blow", "purse_of_gold"])
+	for index in 2:
 		var result := _play(state, index)
 		check(not result.ok, "card %d is refused: %s" % [index, result.reason])
-	check_eq(state.run.hand.size(), 3, "none were used")
+	check_eq(state.run.hand.size(), 2, "none were used")
 
 func test_a_card_waits_while_a_promotion_or_bonus_move_is_pending() -> void:
 	var state := _game([], ["rising_tide"])
@@ -215,7 +215,10 @@ func test_playing_a_card_is_free_and_shows_in_the_event_line() -> void:
 	check(state.current_match.last_event.contains("Rising Tide"), state.current_match.last_event)
 
 func test_every_built_match_card_is_playable() -> void:
-	for id in ProphecyDefs.ready_ids().filter(func(c): return ProphecyDefs.timing(c) == "match"):
+	# swap_fates (needs a second piece of yours) and turning_tide (needs an opponent move already
+	# in the history) need their own setup; they get dedicated tests in test_prophecy_time_position.gd.
+	var needs_setup := ["swap_fates", "turning_tide"]
+	for id in ProphecyDefs.ready_ids().filter(func(c): return ProphecyDefs.timing(c) == "match" and not needs_setup.has(c)):
 		var state := _game([[V(3, 4), KNIGHT, WHITE]], [id])
 		var result := _play(state)
 		check(result.ok, "%s can be played: %s" % [id, result.reason])

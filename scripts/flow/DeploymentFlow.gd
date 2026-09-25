@@ -37,7 +37,7 @@ func refresh_ui() -> void:
 	var free := Roster.free_squares(state.boards, Piece.Side.WHITE)
 	panel.set_bench(bench, deployment.armed_id)
 	panel.set_deploy_status("%d on the bench | %d free zone squares | Points %d/%d" % [
-		bench.size(), free.size(), Roster.points_used(state.run, state.boards), state.run.allocated_points])
+		bench.size(), free.size(), Roster.points_used(state.run, state.boards), state.run.effective_points()])
 	var markers := {}
 	for slot in free:
 		if not markers.has(slot.board):

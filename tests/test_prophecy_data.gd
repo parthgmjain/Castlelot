@@ -31,13 +31,15 @@ func test_the_rarer_the_card_the_pricier_and_the_less_likely() -> void:
 	for id in ProphecyDefs.ids():
 		check_eq(Prophecies.price(id), RunConfig.PROPHECY_PRICES[ProphecyDefs.rarity(id)], "%s costs what its rarity says" % id)
 
-func test_stage_one_builds_twenty_one_cards() -> void:
+func test_stages_one_and_two_build_thirty_five_cards() -> void:
 	var ready := ProphecyDefs.ready_ids()
-	check_eq(ready.size(), 21, "scoring, economy and the shop cards")
+	check_eq(ready.size(), 35, "scoring, economy, shop, time and position cards")
 	for id in ["omen_of_plunder", "rising_tide", "blood_moon", "blessing_of_the_blade", "song_of_the_small", "giant_slayer", "final_blow", "chain_of_fate", "prophecy_of_ruin", "gilded_ledger",
-			"purse_of_gold", "golden_tithe", "lucky_draw", "loaded_dice", "wider_net", "fair_trade", "hagglers_charm", "second_sight", "queens_favor", "unsealed_tomb", "merlins_bargain"]:
+			"purse_of_gold", "golden_tithe", "lucky_draw", "loaded_dice", "wider_net", "fair_trade", "hagglers_charm", "second_sight", "queens_favor", "unsealed_tomb", "merlins_bargain",
+			"quickening", "borrowed_hour", "turning_tide", "frozen_moment", "second_chance", "twin_sun", "haste",
+			"sanctuary", "stone_ward", "waypoint", "swap_fates", "broaden_the_realm", "reinforcements", "wings"]:
 		check(ready.has(id), "%s is built" % id)
-	check(not ProphecyDefs.is_ready("frozen_moment"), "the rest are still to come")
+	check(not ProphecyDefs.is_ready("call_to_arms"), "the piece and enemy cards are still to come")
 
 func test_the_shop_only_ever_offers_built_cards_and_never_the_same_twice() -> void:
 	var rng := RandomNumberGenerator.new()

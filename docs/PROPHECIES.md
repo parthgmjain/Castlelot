@@ -11,10 +11,10 @@ Shop: 4 random built cards are for sale each visit (rarity odds 55 / 30 / 12 / 3
 - [x] **Rising Tide** [M]: Every capture for the rest of the match scores +10.
 - [x] **Blood Moon** [M]: Your next 3 captures score x1.5.
 - [x] **Song of the Small** [M]: Captures by common-tier pieces score x1.5 this match.
-- [ ] **Waypoint** [M]: Move any of your pieces to an empty square in your zone.
-- [ ] **Swap Fates** [M]: Swap any two of your pieces.
-- [ ] **Wings** [M]: A piece of yours moves like a queen this turn.
-- [ ] **Broaden the Realm** [A]: Arm before a match: your zone is 6 tiles bigger.
+- [x] **Waypoint** [M]: Move any of your pieces to an empty square in your zone.
+- [x] **Swap Fates** [M]: Swap any two of your pieces.
+- [x] **Wings** [M]: A piece of yours moves like a queen this turn.
+- [x] **Broaden the Realm** [A]: Arm before a match: your zone is 6 tiles bigger.
 - [ ] **Call to Arms** [M]: Two temporary pawns appear in your zone.
 - [ ] **Iron Skin** [M]: A piece of yours can't be captured by pawns or knights this match.
 - [ ] **Curse of Stillness** [M]: An enemy piece can't move for 2 of the AI's turns.
@@ -32,11 +32,11 @@ Shop: 4 random built cards are for sale each visit (rarity odds 55 / 30 / 12 / 3
 - [x] **Blessing of the Blade** [M]: Pick a piece type: its captures score x1.5 this match.
 - [x] **Giant Slayer** [M]: Capturing a piece worth more than your capturer scores x1.5 this match.
 - [ ] **Marked for Death** [M]: Pick an enemy piece: capturing it scores x2.
-- [ ] **Quickening** [M]: +2 moves this match.
-- [ ] **Second Chance** [A]: Arm before a match: if you'd run out of moves short of the target, gain 2 moves once.
-- [ ] **Haste** [M]: Your next 3 moves cost nothing.
-- [ ] **Sanctuary** [M]: A piece of yours can't be captured for 3 of your turns.
-- [ ] **Reinforcements** [A]: Arm before a match: +5 allocated points this match.
+- [x] **Quickening** [M]: +2 moves this match.
+- [x] **Second Chance** [A]: Arm before a match: if you'd run out of moves short of the target, gain 2 moves once.
+- [x] **Haste** [M]: Your next 3 moves cost nothing.
+- [x] **Sanctuary** [M]: A piece of yours can't be captured for 3 of your turns.
+- [x] **Reinforcements** [A]: Arm before a match: +5 allocated points this match.
 - [ ] **Rite of Rebirth** [M]: The last piece you lost this match returns to its starting square.
 - [ ] **Transmutation** [M]: A piece of yours becomes another of the same tier for this match.
 - [ ] **Guardian Spirit** [A]: Arm before a match: the first piece you'd lose for good stays in your roster.
@@ -46,10 +46,10 @@ Shop: 4 random built cards are for sale each visit (rarity odds 55 / 30 / 12 / 3
 - [x] **Fair Trade** [S]: Your next trade-up costs 2 fewer pieces.
 
 ### Rare (11) - 15 gold
-- [ ] **Borrowed Hour** [M]: Take an extra move right now.
-- [ ] **Twin Sun** [M]: This turn you may move two different pieces.
-- [ ] **Turning Tide** [M]: Rewind the opponent's last move.
-- [ ] **Stone Ward** [M]: No piece can capture on a chosen square for 3 turns.
+- [x] **Borrowed Hour** [M]: Take an extra move right now.
+- [x] **Twin Sun** [M]: This turn you may move two different pieces.
+- [x] **Turning Tide** [M]: Rewind the opponent's last move.
+- [x] **Stone Ward** [M]: No piece can capture on a chosen square for 3 turns.
 - [x] **Chain of Fate** [M]: Captures on consecutive turns build a multiplier: x1, x1.5, x2... It resets when you miss.
 - [x] **Prophecy of Ruin** [M]: This match's target score is 20% lower.
 - [x] **Gilded Ledger** [M]: Add 15% of the target score to your score now.
@@ -60,7 +60,7 @@ Shop: 4 random built cards are for sale each visit (rarity odds 55 / 30 / 12 / 3
 
 ### Legendary (5) - 30 gold
 - [x] **Final Blow** [A]: Arm before a match: captures on your last move score x3.
-- [ ] **Frozen Moment** [M]: The AI skips its next turn.
+- [x] **Frozen Moment** [M]: The AI skips its next turn.
 - [ ] **Echo of Steel** [M]: Copy one of your pieces onto a free zone square for this match.
 - [x] **Queen's Favor** [S]: Your next 7-rare upgrade costs 5 rares.
 - [x] **Unsealed Tomb** [S]: Unlock a random boss legendary for upgrades this run.
@@ -74,3 +74,13 @@ Shop: 4 random built cards are for sale each visit (rarity odds 55 / 30 / 12 / 3
 - Golden Tithe adds half of the win's payout (rounded) and is used up on that win.
 - Shop effects wait in `RunState.shop_effects`: Lucky Draw, Loaded Dice, Wider Net, Fair Trade and Queen's Favor last until the next pull / offer / trade-up; Haggler's Charm ends when you leave the shop. A free pull does not make the next pull dearer.
 - Merlin's Bargain lists your pieces (no king is ever in your roster); you can back out and keep the card.
+
+## Stage 2 notes (time & position)
+- Borrowed Hour and Twin Sun both grant one free move with any piece (the `bonus.kind = "any"` mechanism, same plumbing as a Ninja's bonus step). Twin Sun does not enforce "a *different* piece" - documented simplification.
+- Sanctuary sets a `shielded` counter on the piece dict (ticks down on the owner's own turns, like a Dragon's `rest`); it follows the piece if it moves. Stone Ward sets `warded_squares` on the Board itself (ticks down every ply, either side) - so it stays on the square even if the original piece leaves.
+- Frozen Moment adds to `MatchState.frozen_enemy_turns`; `MatchController.end_turn` hands the turn straight back to the player when the side about to move is frozen.
+- Second Chance is armed like Final Blow: it becomes a `ProphecyEffect` at match start and is checked in `end_turn` right where "Out of moves" would otherwise finish the match.
+- Turning Tide reuses `MoveEffects.rewind()` (the Chronomancer's own power) with no piece of its own; refused if the last move in history was your own or there is no history yet.
+- Waypoint and Swap Fates are two-step choices: `MatchState.prophecy_pick` holds the first pick between calls to `Prophecies.play_in_match`; starting a fresh Play, or playing a *different* card, resets it. Waypoint's destinations are always inside your own zone (`Roster.free_squares`), so a pawn sent there can never promote - Swap Fates can (already tested), since your pieces can be anywhere on the board.
+- Wings sets a `wings` flag read by `Piece.get_legal_moves`, generating queen moves instead of the piece's own for its very next move; the flag is cleared the moment it moves (in `MoveController.execute`), and capture-rule checks still use the piece's true type.
+- Broaden the Realm and Reinforcements are consumed at `RunFlow.begin_match()` (before zones/deployment are set up), not during the match - so an unused armed card still shows correctly as armed if you never reach a new match.

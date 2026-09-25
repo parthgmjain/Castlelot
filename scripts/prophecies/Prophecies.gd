@@ -12,6 +12,12 @@ const RUIN_CUT := 0.20
 const LEDGER_SHARE := 0.15
 const TITHE_BONUS := 0.5
 const BARGAIN_MULTIPLIER := 3
+const ZONE_BONUS := 6
+const POINTS_BONUS := 5
+const HASTE_MOVES := 3
+const QUICKENING_MOVES := 2
+const SANCTUARY_TURNS := 3
+const WARD_TURNS := 3
 
 # ---- the shop ---------------------------------------------------------------------------------
 
@@ -82,6 +88,16 @@ static func discard(run: RunState, index: int) -> Dictionary:
 static func end_shop(run: RunState) -> void:
 	run.shop_effects.erase("haggle")
 
+## Removes the first armed copy of `id` from your hand, if you hold one. Used for cards that
+## are consumed outside a running match (Broaden the Realm, Reinforcements at zone/deployment
+## setup time). Returns whether one was found and removed.
+static func consume_armed(run: RunState, id: String) -> bool:
+	for i in run.hand.size():
+		if run.hand[i].id == id and run.hand[i].armed:
+			run.hand.remove_at(i)
+			return true
+	return false
+
 # ---- arming ------------------------------------------------------------------------------------
 
 ## Arms (or disarms) a card that fires on its own during the next match.
@@ -93,10 +109,11 @@ static func set_armed(run: RunState, index: int, armed: bool) -> Dictionary:
 	run.hand[index].armed = armed
 	return { "ok": true, "reason": "" }
 
-## At the start of a match: armed cards that work on scoring become effects for it.
+## At the start of a match: armed cards that work on scoring, or that watch for a moment
+## during the match (Second Chance), become effects for it.
 static func begin_match(state: GameState) -> void:
 	for entry in state.run.hand:
-		if entry.armed and entry.id == "final_blow":
+		if entry.armed and (entry.id == "final_blow" or entry.id == "second_chance"):
 			var effect := ProphecyEffect.make(entry.id)
 			effect.armed_card = true
 			state.current_match.prophecies.append(effect)
@@ -234,6 +251,8 @@ static func play_in_match(state: GameState, index: int, choice: Variant = null) 
 			return _no("%s must be armed before a match." % ProphecyDefs.display_name(id))
 		"shop":
 			return _no("%s is played in the shop." % ProphecyDefs.display_name(id))
+	if choice == null or current.prophecy_pick.get("id", "") != id:
+		current.prophecy_pick = {}      # a fresh Play, or a switch to a different card, restarts any multi-step pick
 	match id:
 		"omen_of_plunder":
 			current.prophecies.append(ProphecyEffect.make(id, 1))
@@ -254,6 +273,98 @@ static func play_in_match(state: GameState, index: int, choice: Variant = null) 
 			current.target_score = maxi(int(round(current.target_score * (1.0 - RUIN_CUT))), 1)
 		"gilded_ledger":
 			current.scores[current.player_side] += int(round(current.target_score * LEDGER_SHARE))
+		"quickening":
+			current.moves_left += QUICKENING_MOVES
+		"haste":
+			current.free_moves += HASTE_MOVES
+		"frozen_moment":
+			current.frozen_enemy_turns += 1
+		"borrowed_hour", "twin_sun":
+			# Both simply grant one free move with any piece; see docs/PROPHECIES.md for the
+			# simplification (Twin Sun doesn't insist the second piece differs from the first).
+			current.bonus = { "kind": "any", "side": current.player_side, "label": "%s: move any piece for free" % ProphecyDefs.display_name(id) }
+		"turning_tide":
+			if current.history.is_empty() or current.history.back().side == current.player_side:
+				return _no("There's no enemy move to turn back yet.")
+			var rewind_note := MoveEffects.rewind(state)
+			run.hand.remove_at(index)
+			current.last_event = "You played %s. %s" % [ProphecyDefs.display_name(id), rewind_note]
+			return { "ok": true, "reason": "", "note": rewind_note, "needs_choice": false }
+		"sanctuary":
+			var refs := _piece_refs_on_board(state, current.player_side)
+			if choice == null:
+				return { "ok": true, "reason": "", "prompt": "Pick a piece to protect:", "needs_choice": true, "options": refs }
+			if not _refs_has(refs, choice):
+				return _no("Pick one of your pieces.")
+			choice.board.pieces[choice.square]["shielded"] = SANCTUARY_TURNS
+		"stone_ward":
+			var ward_refs := _piece_refs_on_board(state, current.player_side)
+			if choice == null:
+				return { "ok": true, "reason": "", "prompt": "Pick a square of yours to ward:", "needs_choice": true, "options": ward_refs }
+			if not _refs_has(ward_refs, choice):
+				return _no("Pick a square one of your pieces stands on.")
+			choice.board.warded_squares[choice.square] = WARD_TURNS
+		"wings":
+			var wing_refs := _piece_refs_on_board(state, current.player_side)
+			if choice == null:
+				return { "ok": true, "reason": "", "prompt": "Pick a piece to give wings:", "needs_choice": true, "options": wing_refs }
+			if not _refs_has(wing_refs, choice):
+				return _no("Pick one of your pieces.")
+			choice.board.pieces[choice.square]["wings"] = true
+		"swap_fates":
+			var swap_options := _piece_refs_on_board(state, current.player_side)
+			if swap_options.size() < 2:
+				return _no("You need at least two pieces to swap.")
+			if current.prophecy_pick.has("first"):
+				var first: Dictionary = current.prophecy_pick.first
+				if choice == null or not _refs_has(swap_options, choice) or (choice.board == first.board and choice.square == first.square):
+					return _no("Pick a second, different piece of yours.")
+				var a: Dictionary = first.board.pieces[first.square]
+				var b: Dictionary = choice.board.pieces[choice.square]
+				first.board.pieces[first.square] = b
+				choice.board.pieces[choice.square] = a
+				if PawnMovement.reached_promotion(b, first.board, first.square):
+					state.pending_promotion = { "piece": b, "board": first.board, "square": first.square }
+				elif PawnMovement.reached_promotion(a, choice.board, choice.square):
+					state.pending_promotion = { "piece": a, "board": choice.board, "square": choice.square }
+				first.board.queue_redraw()
+				choice.board.queue_redraw()
+				current.prophecy_pick = {}
+			elif choice == null:
+				return { "ok": true, "reason": "", "prompt": "Pick a piece to swap:", "needs_choice": true, "options": swap_options }
+			elif not _refs_has(swap_options, choice):
+				return _no("Pick one of your pieces.")
+			else:
+				current.prophecy_pick = { "id": "swap_fates", "first": choice }
+				var remaining := swap_options.filter(func(o): return not (o.board == choice.board and o.square == choice.square))
+				return { "ok": true, "reason": "", "prompt": "Pick the piece to swap it with:", "needs_choice": true, "options": remaining }
+		"waypoint":
+			var move_options := _piece_refs_on_board(state, current.player_side)
+			if current.prophecy_pick.has("piece"):
+				var piece_ref: Dictionary = current.prophecy_pick.piece
+				var empties := Roster.free_squares(state.boards, current.player_side)
+				if choice == null or not empties.any(func(e): return e.board == choice.board and e.square == choice.square):
+					return _no("Pick an empty square in your zone.")
+				# Destinations are always inside your own zone (Roster.free_squares), so a pawn
+				# sent here can never land in the enemy zone: this never promotes.
+				var moved: Dictionary = piece_ref.board.pieces[piece_ref.square]
+				piece_ref.board.pieces.erase(piece_ref.square)
+				choice.board.pieces[choice.square] = moved
+				piece_ref.board.queue_redraw()
+				choice.board.queue_redraw()
+				current.prophecy_pick = {}
+			elif choice == null:
+				if move_options.is_empty():
+					return _no("You have no pieces to move.")
+				return { "ok": true, "reason": "", "prompt": "Pick a piece to move:", "needs_choice": true, "options": move_options }
+			elif not _refs_has(move_options, choice):
+				return _no("Pick one of your pieces.")
+			else:
+				var destinations := Roster.free_squares(state.boards, current.player_side)
+				if destinations.is_empty():
+					return _no("There's no empty square in your zone.")
+				current.prophecy_pick = { "id": "waypoint", "piece": choice }
+				return { "ok": true, "reason": "", "prompt": "Pick where to send it:", "needs_choice": true, "options": destinations }
 		_:
 			return _no("That prophecy isn't available yet.")
 	run.hand.remove_at(index)
@@ -268,6 +379,23 @@ static func _piece_types_on_board(state: GameState, side: Piece.Side) -> Array:
 			if piece.side == side and piece.type != Piece.Type.KING and not types.has(piece.type):
 				types.append(piece.type)
 	return types
+
+## Every one of `side`'s pieces (never the king), as [{ board, square }].
+static func _piece_refs_on_board(state: GameState, side: Piece.Side) -> Array:
+	var refs: Array = []
+	for board in state.boards:
+		for square in board.pieces:
+			var piece: Dictionary = board.pieces[square]
+			if piece.side == side and piece.type != Piece.Type.KING:
+				refs.append({ "board": board, "square": square })
+	return refs
+
+static func _refs_has(refs: Array, ref: Variant) -> bool:
+	return ref is Dictionary and refs.any(func(r): return r.board == ref.board and r.square == ref.square)
+
+## Cancels any multi-step prophecy pick in progress (called when a choice is abandoned).
+static func cancel_choice(state: GameState) -> void:
+	state.current_match.prophecy_pick = {}
 
 # ---- helpers -------------------------------------------------------------------------------------
 

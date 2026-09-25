@@ -38,6 +38,15 @@ var turns_taken: Dictionary = { Piece.Side.WHITE: 0, Piece.Side.BLACK: 0 }
 ## Pieces waiting to return to the board: [{ piece, board, square, turns, side }].
 var revivals: Array = []
 
+## Haste: this many of your next moves don't spend from moves_left.
+var free_moves: int = 0
+
+## Frozen Moment: the AI's next this many turns are skipped.
+var frozen_enemy_turns: int = 0
+
+## A multi-step prophecy (Waypoint, Swap Fates) mid-choice: { id, ... }. See Prophecies.
+var prophecy_pick: Dictionary = {}
+
 ## Set once the result has been paid out / shown, so it only happens once.
 var settled: bool = false
 

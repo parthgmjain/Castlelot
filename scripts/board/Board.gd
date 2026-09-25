@@ -29,6 +29,7 @@ var move_squares: Array = []
 var capture_squares: Array = []
 var swap_squares: Array = []        # friendly pieces the selected piece can trade places with
 var special_squares: Array = []     # attacks that don't move the piece (right-click)
+var warded_squares: Dictionary = {} # square -> turns left (Stone Ward): nobody may capture there
 var zone_owner: Dictionary = {}
 
 # Populated by Main: Vector2i -> Array[{ direction: Vector2i, target_board: Board, target_square: Vector2i }]

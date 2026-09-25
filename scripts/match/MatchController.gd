@@ -46,7 +46,10 @@ static func record_move(state: GameState, result: Dictionary, free: bool = false
 	var other := Piece.opponent(mover)
 	current.last_mover = mover
 	if mover == current.player_side and not free:
-		current.moves_left -= 1
+		if current.free_moves > 0:
+			current.free_moves -= 1        # Haste
+		else:
+			current.moves_left -= 1
 
 	for victim in result.victims:
 		if victim.piece.type == Piece.Type.KING:
@@ -105,21 +108,42 @@ static func end_turn(state: GameState) -> void:
 	current.bonus = {}
 	current.turns_taken[current.turn_side] += 1
 	_tick_rest(state, current.turn_side)
+	_tick_wards(state)
 	MoveEffects.tick_revivals(state, current.turn_side)
 	if current.turn_side == current.player_side and current.moves_left <= 0:
-		_finish(current, false, "Out of moves")
-		return
+		var chance := current.prophecies.filter(func(e): return e.id == "second_chance" and not e.spent)
+		if chance.is_empty():
+			_finish(current, false, "Out of moves")
+			return
+		chance[0].spent = true
+		current.moves_left += 2
 
 	current.turn_side = Piece.opponent(current.turn_side)
+	if current.turn_side != current.player_side and current.frozen_enemy_turns > 0:
+		current.frozen_enemy_turns -= 1       # Frozen Moment: give the turn straight back
+		current.turn_side = current.player_side
+		return
 	if current.turn_side == current.player_side and not has_legal_move(state, current.player_side):
 		_finish(current, false, "No legal moves")
 
-## A side's pieces recover one step from resting at the end of each of its own turns.
+## A side's pieces recover one step from resting, and Sanctuary wears off, at the end of each
+## of their own turns.
 static func _tick_rest(state: GameState, side: Piece.Side) -> void:
 	for board in state.boards:
 		for piece in board.pieces.values():
-			if piece.side == side and piece.get("rest", 0) > 0:
-				piece["rest"] -= 1
+			if piece.side == side:
+				if piece.get("rest", 0) > 0:
+					piece["rest"] -= 1
+				if piece.get("shielded", 0) > 0:
+					piece["shielded"] -= 1
+
+## Stone Ward counts down every ply, whoever's turn it was.
+static func _tick_wards(state: GameState) -> void:
+	for board in state.boards:
+		for square in board.warded_squares.keys().duplicate():
+			board.warded_squares[square] -= 1
+			if board.warded_squares[square] <= 0:
+				board.warded_squares.erase(square)
 
 static func has_legal_move(state: GameState, side: Piece.Side) -> bool:
 	for board in state.boards:

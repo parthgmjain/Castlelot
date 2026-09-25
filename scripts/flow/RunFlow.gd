@@ -21,6 +21,12 @@ func start_run() -> void:
 ## Builds the run's current match from RunConfig and starts deployment.
 func begin_match() -> void:
 	var setup := RunConfig.match_setup(state.run)
+	state.run.temp_points_bonus = 0
+	if state.run.active:
+		if Prophecies.consume_armed(state.run, "broaden_the_realm"):
+			setup.white_zone += Prophecies.ZONE_BONUS
+		if Prophecies.consume_armed(state.run, "reinforcements"):
+			state.run.temp_points_bonus = Prophecies.POINTS_BONUS
 	panel.apply_setup(setup)
 	generate_boards.call()
 	ZoneController.generate(state.boards, setup.white_zone, setup.black_zone)

@@ -39,6 +39,10 @@ var prophecy_offers: Array = []
 ## queens_favor (used up by the next pull / offer / trade-up) and haggle (this shop visit only).
 var shop_effects: Dictionary = {}
 
+## Reinforcements: added to allocated_points for the match currently being set up. Reset to 0
+## at the start of every begin_match, so it only ever affects the one match it was armed for.
+var temp_points_bonus: int = 0
+
 ## A choice you must make before leaving the shop ({} when none). See Lottery and Legendaries.
 var pending: Dictionary = {}
 
@@ -104,6 +108,10 @@ func remove_from_roster(id: int) -> void:
 		if roster[i].id == id:
 			roster.remove_at(i)
 			return
+
+## What you may field this match, including a temporary Reinforcements bonus.
+func effective_points() -> int:
+	return allocated_points + temp_points_bonus
 
 ## Arthur's round, after the last ordinary one.
 func is_final_round() -> bool:

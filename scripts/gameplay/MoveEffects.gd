@@ -84,6 +84,8 @@ static func moves_for(state: GameState, piece: Dictionary, board: Board, square:
 		"pawn":
 			if piece.type == Piece.Type.PAWN:
 				return Piece.get_legal_moves(piece.type, piece.side, board, square)
+		"any":
+			return Piece.get_legal_moves(piece.type, piece.side, board, square)
 	return []
 
 ## Actions a piece can take instead of moving. The Chronomancer's rewind is offered on the
@@ -110,8 +112,9 @@ static func take_snapshot(state: GameState, side: Piece.Side) -> Dictionary:
 		"revivals": current.revivals.map(func(r): return r.duplicate()), "last_event": current.last_event }
 
 ## Puts everything back the way the newest snapshot recorded it, and marks the Chronomancer at
-## `square` as spent. Returns a note for the event line.
-static func rewind(state: GameState, board: Board, square: Vector2i) -> String:
+## `square` as spent (when given one - the Turning Tide card rewinds with no piece of its own).
+## Returns a note for the event line.
+static func rewind(state: GameState, board: Board = null, square: Vector2i = Vector2i(-1, -1)) -> String:
 	var current := state.current_match
 	var snapshot: Dictionary = current.history.pop_back()
 	for saved in snapshot.boards:
@@ -121,7 +124,7 @@ static func rewind(state: GameState, board: Board, square: Vector2i) -> String:
 	current.revivals = snapshot.revivals.map(func(r): return r.duplicate())
 	current.bonus = {}
 	state.pending_promotion = {}
-	var chronomancer = board.pieces.get(square)
+	var chronomancer = board.pieces.get(square) if board != null else null
 	if chronomancer != null:
 		chronomancer["undo_used"] = true
 	current.last_event = "%s turned back time: the last move never happened" % ("You" if snapshot.side != current.player_side else "The AI")
