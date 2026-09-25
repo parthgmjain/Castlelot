@@ -120,7 +120,7 @@ func test_the_ai_promotes_to_a_queen_without_opening_the_picker() -> void:
 	ai_match.moves_left = 5
 	ai_match.target_score = 999
 	state.current_match = ai_match
-	await main._run_ai_turn()
+	await main.turn_flow.run_ai_turn()
 	var black_piece: Dictionary = pieces_of(state.boards, BLACK)[0].piece
 	check_eq(black_piece.type, PawnMovement.PROMOTION_CHOICES[0], "promoted to a queen")
 	check(not main.promotion_picker.visible and state.pending_promotion.is_empty(), "no picker for the AI")

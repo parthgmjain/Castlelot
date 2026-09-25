@@ -89,8 +89,8 @@ func make_rig(rows: Array, size: int = 5) -> Array:
 ## random_sizes = true (or change the board count) to get random ones.
 func load_main(random_sizes: bool = false) -> Node:
 	var main = MainScene.instantiate()
-	main.ai_delay = 0.0
 	tree.root.add_child(main)
+	main.turn_flow.ai_delay = 0.0
 	main.shop_screen.reveal_delay = 0.0
 	track(main)
 	await pump(2)

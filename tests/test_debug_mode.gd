@@ -256,17 +256,17 @@ func test_go_jumps_to_any_round_and_match_and_starts_a_run_if_needed() -> void:
 	check(run.active and run.round_number == 5 and run.match_number == 3, "started at 5-3")
 	check(main.panel.run_status_label.text.contains("Round 5/12 - Match 3/3 - BOSS: Sir "), main.panel.run_status_label.text)
 	check(main.state.deployment.active, "dealt and waiting for deployment")
-	main._on_debug_goto(99, 9)
+	main.debug_flow.goto(99, 9)
 	check(run.round_number == RunConfig.ROUNDS + 1 and run.match_number == 1, "out-of-range values are clamped to Arthur")
 	check_eq(run.boss_name(), "Arthur", "Arthur")
 
 func test_go_inside_a_run_keeps_your_gold_and_roster() -> void:
 	var main = await load_main()
 	_debug(main)
-	main._on_debug_goto(1, 1)
+	main.debug_flow.goto(1, 1)
 	main.state.run.currency = 42
 	main.state.run.remove_from_roster(main.state.run.roster[0].id)
-	main._on_debug_goto(7, 2)
+	main.debug_flow.goto(7, 2)
 	check_eq(main.state.run.currency, 42, "gold kept")
 	check_eq(main.state.run.roster.size(), 5, "roster kept")
 	check_eq(main.state.run.title(), "Round 7/12 - Match 2/3", "moved")

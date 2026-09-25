@@ -6,7 +6,7 @@ var attach_info: Array = []
 var connections: Array = []
 
 ## Debug mode: you control both sides, the AI never moves on its own, and the
-## sandbox tools stay available during runs. See Main._on_debug_toggled.
+## sandbox tools stay available during runs. See DebugFlow.toggled.
 var debug_mode: bool = false
 
 var current_side: Piece.Side = Piece.Side.WHITE

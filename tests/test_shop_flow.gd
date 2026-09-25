@@ -37,7 +37,10 @@ func test_the_shop_opens_after_a_win_and_shows_everything() -> void:
 	check_eq(_row(shop, 1).size(), 3, "rook, knight and bishop in the uncommon row")
 	check_eq(_row(shop, 2).size(), 0, "no legendary pieces yet")
 	check_eq(shop.pull_button.text, "Lottery Pull - %d gold" % RunConfig.PULL_PRICE_BASE, "the lottery button")
-	check(shop.odds_label.text.contains("Common 70%") and shop.odds_label.text.contains("Uncommon 27%") and shop.odds_label.text.contains("Legendary 3%"), shop.odds_label.text)
+	var odds := Lottery.odds(main.state.run)
+	for tier in odds:
+		var shown := "%s %d%%" % [Piece.TIER_NAMES[tier], roundi(odds[tier] * 100.0)]
+		check(shop.odds_label.text.contains(shown), "odds label shows '%s': %s" % [shown, shop.odds_label.text])
 	check(shop.points_upgrade_button.text.begins_with("Allocated points 14 -> 16"), shop.points_upgrade_button.text)
 	check(shop.zone_upgrade_button.text.begins_with("Zone size 10 -> 11"), shop.zone_upgrade_button.text)
 	check_eq(shop.cards_row.get_child_count(), ShopScreen.CARD_SLOTS, "a row of trading-card slots")
