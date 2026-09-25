@@ -61,14 +61,30 @@ static func points(piece: Dictionary) -> int:
 ## Steps one square from `square` on `board` in `direction`. If that lands
 ## off the board, follows a portal at `square` whose direction matches, if
 ## one exists (a piece can only pass through a board edge at a connecting
-## square). Returns {} when there's nowhere to go.
+## square). A diagonal step that leaves the board is made as two straight
+## steps, so it can cross a seam even when the square beside the piece has no
+## portal but the one above or below it does. Returns {} when there's nowhere to go.
 static func step_across(board: Board, square: Vector2i, direction: Vector2i) -> Dictionary:
 	var target: Vector2i = square + direction
 	if board.is_in_bounds(target):
 		return { "board": board, "square": target }
+	if direction.x != 0 and direction.y != 0:
+		return _step_diagonally_across(board, square, direction)
 	for portal in board.portals.get(square, []):
 		if portal.direction == direction:
 			return { "board": portal.target_board, "square": portal.target_square }
+	return {}
+
+static func _step_diagonally_across(board: Board, square: Vector2i, direction: Vector2i) -> Dictionary:
+	var horizontal := Vector2i(direction.x, 0)
+	var vertical := Vector2i(0, direction.y)
+	for order in [[horizontal, vertical], [vertical, horizontal]]:
+		var first: Dictionary = step_across(board, square, order[0])
+		if first.is_empty():
+			continue
+		var second: Dictionary = step_across(first.board, first.square, order[1])
+		if not second.is_empty():
+			return second
 	return {}
 
 ## Every move is { board: Board, square: Vector2i, capture: bool }. `board`
