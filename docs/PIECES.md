@@ -7,7 +7,7 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 
 ## Pawn tier (common)
 - [x] Scout: 1 forward or 1 sideways (no capture); captures diagonally forward.
-- [ ] Shieldbearer: pawn move/capture, but can't be captured by a piece directly in front of it.
+- [x] Shieldbearer: pawn move/capture, but can't be captured by a piece directly in front of it.
 - [x] Archer: 1 forward. Instead of moving it can capture a piece exactly 2 squares straight ahead and stay put.
 - [x] Serf: 1 diagonally forward (no capture); captures straight forward.
 - [x] Militia: 1 orthogonally in any direction incl. backward (no capture); captures diagonally forward.
@@ -28,16 +28,16 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - [x] Ranger: up to 3 squares orthogonally.
 - [x] Lancer: any distance forward, only 1 square backward or sideways.
 - [x] Catapult: never moves. Captures any piece exactly 3 squares away orthogonally, over blockers.
-- [ ] Tortoise: up to 2 squares orthogonally; can only be captured from behind or the sides.
+- [x] Tortoise: up to 2 squares orthogonally; can only be captured from behind or the sides.
 - [x] Mirror: bishop move that can bounce off a board edge once per move.
 - [x] Monk: up to 3 squares diagonally, or 1 square orthogonally without capturing.
 - [x] Ferz Guard: 1 square diagonally or leaps 2 squares diagonally.
 - [x] Grasshopper: along any queen line, must hop over one piece and land directly behind it.
-- [ ] Golem: 1 square orthogonally; can't be captured by pawns or knights.
+- [x] Golem: 1 square orthogonally; can't be captured by pawns or knights.
 - [ ] Alchemist: king move, or swaps places with any friendly piece within 2 squares.
 - [x] Ghost: up to 2 squares in any direction, passing through pieces.
 - [x] Spearman: 1 square any direction; captures up to 2 squares straight ahead.
-- [ ] Bard: king move, can't capture. Adjacent friendly pieces can't be captured by pawns.
+- [x] Bard: king move, can't capture. Adjacent friendly pieces can't be captured by pawns.
 - [x] Griffon: 1 square diagonally, then up to 3 squares straight outward.
 
 ## Legendary tier (queen level, one per knight boss)
@@ -47,7 +47,7 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - [x] Dragon: rook move, or breathes fire capturing every enemy up to 3 squares along one line, then rests a turn.
 - [ ] Phoenix: queen move. The first time it is captured it returns to its starting square 3 turns later.
 - [ ] Hydra: up to 2 squares any direction. When captured it splits into 4 knights (none adjacent) or 2 (any adjacent), never more than the empty squares beside it.
-- [ ] Wraith: queen move, phases through pieces. Can only be captured by pawns or other legendaries.
+- [x] Wraith: queen move, phases through pieces. Can only be captured by pawns or other legendaries.
 - [ ] Lich: king move or 2-square leap. Every piece it captures returns as your pawn on your back rank.
 - [ ] Chronomancer: bishop move. Once per game it can undo the opponent's last move.
 - [x] Titan: rook move that can capture up to 2 pieces in its path in one move.
@@ -63,4 +63,11 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - Archer's arrow needs a clear line (anything between blocks it, and it can't hit the adjacent square). Catapult lobs over blockers.
 - Titan: after taking a piece it may run on over empty squares and take a second enemy, landing there. A friend behind the first piece blocks it.
 - Dragon: fire is orthogonal, burns every enemy within 3 squares in one line and passes over friends unharmed. It rests through its side's next turn (not in the sandbox, where there are no turns).
+- Protection is one rule for every attack (`CaptureRules`, applied around `Piece.get_legal_moves`): protected pieces just drop out of an attacker's moves, and a Dragon's flame skips them but still burns the rest of the line.
+- Shieldbearer: "directly in front" means the one square ahead of it along its heading; a rook further up the file can still take it.
+- Tortoise: "from the front" means any attacker on the front side of it (measured along its heading, across board seams too); beside or behind is fine.
+- Golem: "pawns or knights" means only the real Pawn and Knight types.
+- Bard: its aura shields the friendly pieces on the 8 squares around it (including across seams) from pawns only; the Bard itself is not covered.
+- Wraith: "legendaries" includes the queen; pawns can still take it.
+- Paladin is left for the teleport batch, since it needs both its aura and the king teleport.
 - Titan and Dragon are boss rewards: not in the lottery, and rewards are not wired to the knights yet.

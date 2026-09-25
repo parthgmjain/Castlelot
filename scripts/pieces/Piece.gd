@@ -8,6 +8,7 @@ enum Type {
 	CAMEL, ZEBRA, TWIN_RIDER, HAWK, CANNON, CHARGER, RANGER, LANCER, MIRROR, MONK,
 	FERZ_GUARD, GRASSHOPPER, GHOST, SPEARMAN, GRIFFON,
 	ARCHER, CATAPULT, TITAN, DRAGON,
+	SHIELDBEARER, TORTOISE, GOLEM, BARD, WRAITH,
 }
 enum Side { WHITE, BLACK }
 enum Tier { COMMON, UNCOMMON, LEGENDARY }
@@ -127,6 +128,10 @@ static func _step_diagonally_across(board: Board, square: Vector2i, direction: V
 ## Every move is { board: Board, square: Vector2i, capture: bool }. `board`
 ## may differ from the piece's origin board when the move crosses a portal.
 static func get_legal_moves(type: Piece.Type, side: Piece.Side, board: Board, from: Vector2i) -> Array:
+	var moves := _generate_moves(type, side, board, from)
+	return CaptureRules.filter(moves, { "type": type, "side": side, "board": board, "square": from })
+
+static func _generate_moves(type: Piece.Type, side: Piece.Side, board: Board, from: Vector2i) -> Array:
 	if PieceDefs.has(type):
 		return PieceMoves.generate(type, side, board, from)
 	match type:

@@ -3,16 +3,19 @@ extends RefCounted
 ## Turns a PieceDefs rule list into legal moves, following portals across
 ## boards like every other piece. Moves are { board, square, capture }.
 
+## Safety net for endless slides (e.g. a piece passing through everything).
+const MAX_SLIDE := 200
+
 static func generate(type: Piece.Type, side: Piece.Side, board: Board, from: Vector2i) -> Array:
 	var moves: Array = []
-	var frame: Dictionary = {}
+	var facing: Dictionary = {}
 	var self_piece = board.pieces.get(from)
 	if self_piece != null and self_piece.get("rest", 0) > 0:
 		return moves           # still recovering (a Dragon after breathing fire)
 	for rule in PieceDefs.rules(type):
-		if rule.get("local", false) and frame.is_empty():
-			frame = _frame(board, from, side)
-		var vectors := _vectors(rule, frame)
+		if rule.get("local", false) and facing.is_empty():
+			facing = frame(board, from, side)
+		var vectors := _vectors(rule, facing)
 		var mode: String = rule.get("mode", "any")
 		match rule.kind:
 			"step":
@@ -41,20 +44,20 @@ static func generate(type: Piece.Type, side: Piece.Side, board: Board, from: Vec
 				_fire(vectors, rule, side, board, from, moves)
 	return _without_duplicates(moves)
 
-## Which way is "forward" (toward the enemy zone, like a pawn's heading) and
-## which way is to the piece's right.
-static func _frame(board: Board, from: Vector2i, side: Piece.Side) -> Dictionary:
+## Which way is "forward" for a piece standing here (toward the enemy zone, like a pawn's
+## heading) and which way is to its right.
+static func frame(board: Board, from: Vector2i, side: Piece.Side) -> Dictionary:
 	var forward := PawnMovement.heading(board, from, side)
 	if forward == Vector2i.ZERO:
 		forward = PawnMovement.home_direction(side)
 	return { "forward": forward, "right": Vector2i(-forward.y, forward.x) }
 
 ## The rule's vectors in board terms. Local ones are (sideways, forward).
-static func _vectors(rule: Dictionary, frame: Dictionary) -> Array:
+static func _vectors(rule: Dictionary, facing: Dictionary) -> Array:
 	var raw: Array = rule.get("to", rule.get("dirs", []))
 	if not rule.get("local", false):
 		return raw
-	return raw.map(func(v: Vector2i) -> Vector2i: return v.x * frame.right + v.y * frame.forward)
+	return raw.map(func(v: Vector2i) -> Vector2i: return v.x * facing.right + v.y * facing.forward)
 
 ## Adds the move if `mode` allows what is on the square. Returns whether it was empty.
 static func _emit(moves: Array, dest: Dictionary, side: Piece.Side, mode: String) -> bool:
@@ -92,7 +95,7 @@ static func _slide(dirs: Array, options: Dictionary, side: Piece.Side, board: Bo
 		var current_square: Vector2i = from
 		var bounces_left: int = options.get("bounce", 0)
 		var steps := 0
-		while highest == 0 or steps < highest:
+		while (highest == 0 or steps < highest) and steps < MAX_SLIDE:
 			var dest: Dictionary = Piece.step_across(current_board, current_square, heading)
 			if dest.is_empty() and bounces_left > 0:
 				var rebound := _rebound(current_board, current_square, heading)

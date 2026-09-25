@@ -15,6 +15,9 @@ extends RefCounted
 ##   slide options: min, max (0 = unlimited), through (pass over pieces), bounce,
 ##                  double_capture (after taking a piece, may run on and take a second)
 ##   shot options: distance, clear_line (nothing may stand in between)
+##
+## A definition may also carry `protection` (who can't capture the piece) and
+## `aura` (who can't capture its neighbours) - see CaptureRules.
 ##   step_slide: then_max (how far the straight part goes)
 
 static var _cache: Dictionary = {}
@@ -39,6 +42,14 @@ static func label(type: Piece.Type) -> String:
 ## Reward-only pieces come from beating a knight, not from the shop.
 static func is_reward_only(type: Piece.Type) -> bool:
 	return _defs()[type].reward
+
+## Who may not capture this piece (rules for CaptureRules).
+static func protection(type: Piece.Type) -> Array:
+	return _defs()[type].protection
+
+## Rules that shield friendly pieces standing next to this one.
+static func aura(type: Piece.Type) -> Array:
+	return _defs()[type].aura
 
 static func rules(type: Piece.Type) -> Array:
 	return _defs()[type].rules
@@ -66,7 +77,13 @@ static func _symmetric(a: int, b: int) -> Array:
 	return out
 
 static func _def(tier_value: Piece.Tier, value_points: int, text: String, rule_list: Array, reward: bool = false) -> Dictionary:
-	return { "tier": tier_value, "value": value_points, "label": text, "rules": rule_list, "reward": reward }
+	return { "tier": tier_value, "value": value_points, "label": text, "rules": rule_list, "reward": reward, "protection": [], "aura": [] }
+
+## The same definition, with capture protection for the piece itself and/or an aura for its neighbours.
+static func _guarded(definition: Dictionary, own: Array, neighbours: Array = []) -> Dictionary:
+	definition["protection"] = own
+	definition["aura"] = neighbours
+	return definition
 
 static func _build() -> Dictionary:
 	var common := Piece.Tier.COMMON
@@ -98,6 +115,10 @@ static func _build() -> Dictionary:
 			{ "kind": "step", "to": beside, "mode": "move", "local": true },
 			{ "kind": "step", "to": DIAGONAL, "mode": "capture" },
 		]),
+		Piece.Type.SHIELDBEARER: _guarded(_def(common, 2, "Sb", [
+			{ "kind": "step", "to": forward, "mode": "move", "local": true },
+			{ "kind": "step", "to": front_diagonals, "mode": "capture", "local": true },
+		]), [{ "kind": "front_adjacent" }]),
 		Piece.Type.ARCHER: _def(common, 2, "Ar", [
 			{ "kind": "step", "to": forward, "mode": "move", "local": true },
 			{ "kind": "shot", "dirs": forward, "distance": 2, "clear_line": true, "local": true },
@@ -130,9 +151,17 @@ static func _build() -> Dictionary:
 			{ "kind": "slide", "dirs": forward, "max": 2, "mode": "capture", "local": true },
 		]),
 		Piece.Type.GRIFFON: _def(uncommon, 4, "Gf", [{ "kind": "step_slide", "dirs": DIAGONAL, "then_max": 3 }]),
+		Piece.Type.TORTOISE: _guarded(_def(uncommon, 3, "To", [{ "kind": "slide", "dirs": ORTHOGONAL, "max": 2 }]),
+			[{ "kind": "from_front" }]),
+		Piece.Type.GOLEM: _guarded(_def(uncommon, 3, "Go", [{ "kind": "step", "to": ORTHOGONAL }]),
+			[{ "kind": "attacker_types", "types": [Piece.Type.PAWN, Piece.Type.KNIGHT] }]),
+		Piece.Type.BARD: _guarded(_def(uncommon, 2, "Ba", [{ "kind": "step", "to": ALL_DIRECTIONS, "mode": "move" }]),
+			[], [{ "kind": "attacker_types", "types": [Piece.Type.PAWN] }]),
 		Piece.Type.CATAPULT: _def(uncommon, 3, "Ct", [{ "kind": "shot", "dirs": ORTHOGONAL, "distance": 3 }]),
 		# ---- legendary tier (boss rewards)
 		Piece.Type.TITAN: _def(legendary, 10, "Ti", [{ "kind": "slide", "dirs": ORTHOGONAL, "double_capture": true }], true),
+		Piece.Type.WRAITH: _guarded(_def(legendary, 10, "Wr", [{ "kind": "slide", "dirs": ALL_DIRECTIONS, "through": true }], true),
+			[{ "kind": "only_attackers", "types": [Piece.Type.PAWN], "tiers": [Piece.Tier.LEGENDARY] }]),
 		Piece.Type.DRAGON: _def(legendary, 11, "Dr", [
 			{ "kind": "slide", "dirs": ORTHOGONAL },
 			{ "kind": "fire", "dirs": ORTHOGONAL, "range": 3, "rest": 2 },
