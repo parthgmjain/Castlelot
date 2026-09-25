@@ -75,6 +75,12 @@ func settle_if_finished() -> void:
 		state.run.currency += payout.total
 		if state.run.active:
 			var waiting: Array = current.revivals.map(func(r): return r.piece.get("roster_id", -1))
+			var alive := Roster.on_field(state.boards)
+			var first_lost: Array = current.deployed_roster_ids.filter(func(id): return not alive.has(id) and not waiting.has(id))
+			if not first_lost.is_empty() and Prophecies.has_armed(state.run, "guardian_spirit"):
+				waiting.append(first_lost[0])
+				Prophecies.consume_armed(state.run, "guardian_spirit")
+				notes.append("Guardian Spirit kept your %s in your roster!" % Piece.display_name(state.run.roster_entry(first_lost[0]).type))
 			notes.append(_report_losses(Roster.settle(state.run, state.boards, current.deployed_roster_ids, waiting)))
 			var reward := state.run.boss_piece()
 			if reward >= 0:

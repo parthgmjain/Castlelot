@@ -305,21 +305,14 @@ func test_in_debug_black_can_promote_through_the_picker() -> void:
 
 # ---- debug prophecy picker --------------------------------------------------------------------
 
-func test_the_debug_prophecy_picker_lists_every_card_built_or_not() -> void:
+func test_the_debug_prophecy_picker_lists_every_card() -> void:
 	var main = await load_main()
 	var picker: OptionButton = main.panel.debug_prophecy_picker
 	check_eq(picker.item_count, ProphecyDefs.ids().size() + 1, "one entry per card plus the prompt")
-	var built := false
-	var unbuilt := false
 	for index in range(1, picker.item_count):
 		var id: String = picker.get_item_metadata(index)
-		if ProphecyDefs.is_ready(id):
-			check(not picker.get_item_text(index).contains("not built"), "%s is built: %s" % [id, picker.get_item_text(index)])
-			built = true
-		else:
-			check(picker.get_item_text(index).contains("not built"), "%s is flagged unbuilt: %s" % [id, picker.get_item_text(index)])
-			unbuilt = true
-	check(built and unbuilt, "the list covers both")
+		check(ProphecyDefs.is_ready(id), "%s is built (all 50 are, by stage 3)" % id)
+		check(not picker.get_item_text(index).contains("not built"), "so nothing is flagged unbuilt: %s" % picker.get_item_text(index))
 
 func test_picking_a_prophecy_and_pressing_add_gives_it_to_you_for_free() -> void:
 	var main = await load_main()
@@ -361,16 +354,6 @@ func test_a_debug_added_prophecy_can_be_armed_and_played_like_any_other() -> voi
 	check(result.ok, "playable")
 	check_eq(main.state.current_match.moves_left, moves_before + Prophecies.QUICKENING_MOVES, "worked normally")
 
-func test_an_unbuilt_debug_added_prophecy_shows_in_hand_but_refuses_to_play() -> void:
-	var main = await load_main()
-	main.panel.start_run_button.pressed.emit()
-	main.debug_flow.add_prophecy("call_to_arms")
-	check_eq(main.state.run.hand.size(), 1, "you can hold it")
-	main.panel.auto_deploy_button.pressed.emit()
-	main.panel.ready_button.pressed.emit()
-	var result := Prophecies.play_in_match(main.state, 0)
-	check(not result.ok, "but playing it is refused, same as any not-yet-built card")
-	check_eq(main.state.run.hand.size(), 1, "and it's kept")
 
 func test_adding_an_unknown_id_does_nothing() -> void:
 	var main = await load_main()

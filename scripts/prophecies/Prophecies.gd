@@ -98,6 +98,10 @@ static func consume_armed(run: RunState, id: String) -> bool:
 			return true
 	return false
 
+## Whether you hold an armed copy of `id`, without spending it.
+static func has_armed(run: RunState, id: String) -> bool:
+	return run.hand.any(func(entry): return entry.id == id and entry.armed)
+
 # ---- arming ------------------------------------------------------------------------------------
 
 ## Arms (or disarms) a card that fires on its own during the next match.
@@ -113,7 +117,7 @@ static func set_armed(run: RunState, index: int, armed: bool) -> Dictionary:
 ## during the match (Second Chance), become effects for it.
 static func begin_match(state: GameState) -> void:
 	for entry in state.run.hand:
-		if entry.armed and (entry.id == "final_blow" or entry.id == "second_chance"):
+		if entry.armed and (entry.id == "final_blow" or entry.id == "second_chance" or entry.id == "mantle_of_the_phoenix"):
 			var effect := ProphecyEffect.make(entry.id)
 			effect.armed_card = true
 			state.current_match.prophecies.append(effect)
@@ -365,6 +369,173 @@ static func play_in_match(state: GameState, index: int, choice: Variant = null) 
 					return _no("There's no empty square in your zone.")
 				current.prophecy_pick = { "id": "waypoint", "piece": choice }
 				return { "ok": true, "reason": "", "prompt": "Pick where to send it:", "needs_choice": true, "options": destinations }
+		"call_to_arms":
+			var arms_free := Roster.free_squares(state.boards, current.player_side)
+			if arms_free.is_empty():
+				return _no("There's no empty square in your zone.")
+			arms_free.shuffle()
+			for i in mini(2, arms_free.size()):
+				MoveEffects.spawn(arms_free[i].board, arms_free[i].square, Piece.Type.PAWN, current.player_side)
+		"iron_skin":
+			var skin_refs := _piece_refs_on_board(state, current.player_side)
+			if choice == null:
+				return { "ok": true, "reason": "", "prompt": "Pick a piece to harden:", "needs_choice": true, "options": skin_refs }
+			if not _refs_has(skin_refs, choice):
+				return _no("Pick one of your pieces.")
+			choice.board.pieces[choice.square]["iron_skin"] = true
+		"curse_of_stillness":
+			var still_refs := _piece_refs_on_board(state, Piece.opponent(current.player_side))
+			if choice == null:
+				if still_refs.is_empty():
+					return _no("The enemy has no pieces to curse.")
+				return { "ok": true, "reason": "", "prompt": "Curse which enemy piece?", "needs_choice": true, "options": still_refs }
+			if not _refs_has(still_refs, choice):
+				return _no("Pick an enemy piece.")
+			choice.board.pieces[choice.square]["frozen"] = 2
+		"banishing":
+			var banish_refs := _piece_refs_on_board(state, Piece.opponent(current.player_side)).filter(
+				func(r): return Piece.tier(r.board.pieces[r.square].type) == Piece.Tier.COMMON)
+			if choice == null:
+				if banish_refs.is_empty():
+					return _no("The enemy has no common-tier piece to banish.")
+				return { "ok": true, "reason": "", "prompt": "Banish which enemy piece?", "needs_choice": true, "options": banish_refs }
+			if not _refs_has(banish_refs, choice):
+				return _no("Pick a common-tier enemy piece.")
+			choice.board.pieces.erase(choice.square)
+			choice.board.queue_redraw()
+		"sow_discord":
+			current.confused_moves += 1
+		"marked_for_death":
+			var mark_refs := _piece_refs_on_board(state, Piece.opponent(current.player_side))
+			if choice == null:
+				if mark_refs.is_empty():
+					return _no("The enemy has no pieces to mark.")
+				return { "ok": true, "reason": "", "prompt": "Mark which enemy piece?", "needs_choice": true, "options": mark_refs }
+			if not _refs_has(mark_refs, choice):
+				return _no("Pick an enemy piece.")
+			choice.board.pieces[choice.square]["marked_for_death"] = true
+			current.prophecies.append(ProphecyEffect.make(id))
+		"rite_of_rebirth":
+			if current.lost_this_match.is_empty():
+				return _no("You haven't lost a piece this match.")
+			var lost: Dictionary = current.lost_this_match.back()
+			if not lost.has("home") or not is_instance_valid(lost.home.board):
+				return _no("That piece has nowhere to return to.")
+			if lost.home.board.pieces.has(lost.home.square):
+				return _no("Its home square is occupied right now.")
+			current.lost_this_match.pop_back()
+			for flag in ["shielded", "wings", "frozen", "iron_skin", "marked_for_death", "rest"]:
+				lost.erase(flag)
+			lost.home.board.pieces[lost.home.square] = lost
+			lost.home.board.queue_redraw()
+		"transmutation":
+			if current.prophecy_pick.has("piece"):
+				var trans_ref: Dictionary = current.prophecy_pick.piece
+				var original: Dictionary = trans_ref.board.pieces.get(trans_ref.square, {})
+				if original.is_empty():
+					current.prophecy_pick = {}
+					return _no("That piece is gone.")
+				var trans_choices: Array = Piece.types_in_tier(Piece.tier(original.type)).filter(func(t): return t != original.type)
+				if choice == null or not trans_choices.has(choice):
+					return _no("Pick a %s-tier piece to become." % Piece.TIER_NAMES[Piece.tier(original.type)].to_lower())
+				original.type = choice
+				trans_ref.board.queue_redraw()
+				current.prophecy_pick = {}
+			elif choice == null:
+				var trans_refs := _piece_refs_on_board(state, current.player_side)
+				if trans_refs.is_empty():
+					return _no("You have no pieces.")
+				return { "ok": true, "reason": "", "prompt": "Pick a piece to transmute:", "needs_choice": true, "options": trans_refs }
+			elif not _refs_has(_piece_refs_on_board(state, current.player_side), choice):
+				return _no("Pick one of your pieces.")
+			else:
+				var target: Dictionary = choice.board.pieces[choice.square]
+				var options_left: Array = Piece.types_in_tier(Piece.tier(target.type)).filter(func(t): return t != target.type)
+				if options_left.is_empty():
+					return _no("There's nothing else in that tier to become.")
+				current.prophecy_pick = { "id": "transmutation", "piece": choice }
+				return { "ok": true, "reason": "", "prompt": "Become which piece?", "needs_choice": true, "options": options_left }
+		"field_promotion":
+			if current.prophecy_pick.has("piece"):
+				var promo_ref: Dictionary = current.prophecy_pick.piece
+				var pawn: Dictionary = promo_ref.board.pieces.get(promo_ref.square, {})
+				if pawn.is_empty() or pawn.type != Piece.Type.PAWN:
+					current.prophecy_pick = {}
+					return _no("That pawn is gone.")
+				var promo_choices := [Piece.Type.ROOK, Piece.Type.BISHOP, Piece.Type.KNIGHT]
+				if choice == null or not promo_choices.has(choice):
+					return _no("Pick knight, bishop or rook.")
+				PawnMovement.promote(pawn, choice)
+				promo_ref.board.queue_redraw()
+				current.prophecy_pick = {}
+			elif choice == null:
+				var pawns := _piece_refs_on_board(state, current.player_side).filter(func(r): return r.board.pieces[r.square].type == Piece.Type.PAWN)
+				if pawns.is_empty():
+					return _no("You have no pawns.")
+				return { "ok": true, "reason": "", "prompt": "Pick a pawn to promote:", "needs_choice": true, "options": pawns }
+			elif not _refs_has(_piece_refs_on_board(state, current.player_side), choice) or choice.board.pieces[choice.square].type != Piece.Type.PAWN:
+				return _no("Pick one of your pawns.")
+			else:
+				current.prophecy_pick = { "id": "field_promotion", "piece": choice }
+				return { "ok": true, "reason": "", "prompt": "Promote it to:", "needs_choice": true, "options": [Piece.Type.ROOK, Piece.Type.BISHOP, Piece.Type.KNIGHT] }
+		"echo_of_steel":
+			if current.prophecy_pick.has("piece"):
+				var echo_ref: Dictionary = current.prophecy_pick.piece
+				var source: Dictionary = echo_ref.board.pieces.get(echo_ref.square, {})
+				if source.is_empty():
+					current.prophecy_pick = {}
+					return _no("That piece is gone.")
+				var echo_empties := Roster.free_squares(state.boards, current.player_side)
+				if choice == null or not echo_empties.any(func(e): return e.board == choice.board and e.square == choice.square):
+					return _no("Pick an empty square in your zone.")
+				MoveEffects.spawn(choice.board, choice.square, source.type, current.player_side)
+				current.prophecy_pick = {}
+			elif choice == null:
+				var echo_refs := _piece_refs_on_board(state, current.player_side)
+				if echo_refs.is_empty():
+					return _no("You have no pieces to copy.")
+				return { "ok": true, "reason": "", "prompt": "Pick a piece to copy:", "needs_choice": true, "options": echo_refs }
+			elif not _refs_has(_piece_refs_on_board(state, current.player_side), choice):
+				return _no("Pick one of your pieces.")
+			else:
+				if Roster.free_squares(state.boards, current.player_side).is_empty():
+					return _no("There's no empty square in your zone.")
+				current.prophecy_pick = { "id": "echo_of_steel", "piece": choice }
+				return { "ok": true, "reason": "", "prompt": "Place the copy where?", "needs_choice": true, "options": Roster.free_squares(state.boards, current.player_side) }
+		"hex_of_the_boss":
+			var boss_type := state.run.boss_piece()
+			if boss_type < 0:
+				return _no("There's no boss legendary in this match.")
+			var hexed := false
+			for board in state.boards:
+				for square in board.pieces:
+					var piece: Dictionary = board.pieces[square]
+					if piece.side != current.player_side and piece.type == boss_type:
+						piece["frozen"] = 3
+						hexed = true
+			if not hexed:
+				return _no("The boss's piece isn't on the board.")
+		"shattered_shields":
+			var enemy_side := Piece.opponent(current.player_side)
+			var shattered := 0
+			for board in state.boards:
+				for piece in board.pieces.values():
+					if piece.side == enemy_side:
+						piece["shields_broken"] = true
+						shattered += 1
+			if shattered == 0:
+				return _no("The enemy has nothing to shatter.")
+		"reveal_weakness":
+			var weakness_side := Piece.opponent(current.player_side)
+			var revealed := false
+			for board in state.boards:
+				for square in board.pieces:
+					var piece: Dictionary = board.pieces[square]
+					if piece.side == weakness_side and piece.type == Piece.Type.KING:
+						piece["frozen"] = 3
+						revealed = true
+			if not revealed:
+				return _no("Can't find the enemy king.")
 		_:
 			return _no("That prophecy isn't available yet.")
 	run.hand.remove_at(index)

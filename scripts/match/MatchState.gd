@@ -47,6 +47,13 @@ var frozen_enemy_turns: int = 0
 ## A multi-step prophecy (Waypoint, Swap Fates) mid-choice: { id, ... }. See Prophecies.
 var prophecy_pick: Dictionary = {}
 
+## Your own pieces removed from the board this match, newest last (Rite of Rebirth).
+## Each is the actual piece Dictionary that was on the board, so it keeps its roster_id, home, etc.
+var lost_this_match: Array = []
+
+## Sow Discord: this many of the AI's next moves are picked at random instead of greedily.
+var confused_moves: int = 0
+
 ## Set once the result has been paid out / shown, so it only happens once.
 var settled: bool = false
 

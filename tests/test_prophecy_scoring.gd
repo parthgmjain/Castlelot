@@ -215,9 +215,11 @@ func test_playing_a_card_is_free_and_shows_in_the_event_line() -> void:
 	check(state.current_match.last_event.contains("Rising Tide"), state.current_match.last_event)
 
 func test_every_built_match_card_is_playable() -> void:
-	# swap_fates (needs a second piece of yours) and turning_tide (needs an opponent move already
-	# in the history) need their own setup; they get dedicated tests in test_prophecy_time_position.gd.
-	var needs_setup := ["swap_fates", "turning_tide"]
+	# These all need specific board state (an opponent's piece, a zone, a prior loss, a boss
+	# match, a pawn...) that this minimal one-knight setup doesn't provide; they get dedicated
+	# tests in test_prophecy_time_position.gd and test_prophecy_pieces_enemies.gd instead.
+	var needs_setup := ["swap_fates", "turning_tide", "call_to_arms", "curse_of_stillness", "banishing",
+		"marked_for_death", "rite_of_rebirth", "hex_of_the_boss", "field_promotion"]
 	for id in ProphecyDefs.ready_ids().filter(func(c): return ProphecyDefs.timing(c) == "match" and not needs_setup.has(c)):
 		var state := _game([[V(3, 4), KNIGHT, WHITE]], [id])
 		var result := _play(state)

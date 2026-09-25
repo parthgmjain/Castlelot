@@ -8,8 +8,25 @@ const APPROACH_WEIGHT := 2.0
 ## Picks `side`'s move: take the most valuable capture it can, but count what
 ## the opponent could take back next turn, and when nothing is worth taking
 ## close in on the enemy. Returns { board, square, move } or {} with no moves.
+## Sow Discord spends one of `confused_moves` to make this pick uniformly at random instead.
 static func choose_move(state: GameState, side: Piece.Side) -> Dictionary:
+	var current := state.current_match
+	if side != current.player_side and current.confused_moves > 0:
+		current.confused_moves -= 1
+		return _random_move(state, side)
 	return _best_move(state, side, -INF)
+
+static func _random_move(state: GameState, side: Piece.Side) -> Dictionary:
+	var options: Array = []
+	for board in state.boards:
+		for square in board.pieces.keys():
+			var piece: Dictionary = board.pieces[square]
+			if piece.side != side:
+				continue
+			for move in MoveEffects.moves_for(state, piece, board, square):
+				if not move.get("undo", false):
+					options.append({ "board": board, "square": square, "move": move })
+	return options.pick_random() if not options.is_empty() else {}
 
 ## The same for a bonus move, which is optional: {} unless it is worth making.
 static func choose_bonus_move(state: GameState, side: Piece.Side) -> Dictionary:

@@ -40,8 +40,12 @@ static func can_capture(attacker: Dictionary, victim: Dictionary) -> bool:
 		return false
 	if victim.board.warded_squares.get(victim.square, 0) > 0:  # Stone Ward: stays on the square
 		return false
+	if victim.piece.get("iron_skin", false) and (attacker.type == Piece.Type.PAWN or attacker.type == Piece.Type.KNIGHT):
+		return false
 	var type: Piece.Type = victim.piece.type
-	if PieceDefs.has(type):
+	# Shattered Shields marks every enemy piece "shields_broken" for the match: their own
+	# PieceDefs protection, and any aura they'd otherwise lend a neighbour, both stop working.
+	if not victim.piece.get("shields_broken", false) and PieceDefs.has(type):
 		for rule in PieceDefs.protection(type):
 			if _forbids(rule, attacker, victim):
 				return false
@@ -50,7 +54,7 @@ static func can_capture(attacker: Dictionary, victim: Dictionary) -> bool:
 		if neighbour.is_empty():
 			continue
 		var friend = neighbour.board.pieces.get(neighbour.square)
-		if friend != null and friend.side == victim.piece.side and PieceDefs.has(friend.type):
+		if friend != null and friend.side == victim.piece.side and PieceDefs.has(friend.type) and not friend.get("shields_broken", false):
 			for rule in PieceDefs.aura(friend.type):
 				if _forbids(rule, attacker, victim):
 					return false

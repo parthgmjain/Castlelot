@@ -45,6 +45,9 @@ func on_capture(context: Dictionary) -> void:
 			if context.moves_left <= 0:
 				context.mult *= 3.0
 				spent = true
+		"marked_for_death":
+			if context.victim.get("marked_for_death", false):
+				context.mult *= 2.0
 
 ## Called after each of your moves: `captured` is whether it took something.
 func on_player_move(captured: bool) -> void:

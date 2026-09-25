@@ -130,14 +130,12 @@ static func rewind(state: GameState, board: Board = null, square: Vector2i = Vec
 	current.last_event = "%s turned back time: the last move never happened" % ("You" if snapshot.side != current.player_side else "The AI")
 	return current.last_event
 
-## Notes a piece's `home` when a match starts, so a Phoenix knows where to return.
+## Notes every piece's starting square when a match begins: a Phoenix (or Mantle of the
+## Phoenix) needs it to know where to return, and Rite of Rebirth needs it for any piece.
 static func mark_homes(state: GameState) -> void:
 	for board in state.boards:
 		for square in board.pieces:
-			var piece: Dictionary = board.pieces[square]
-			for effect in _effects(piece, "on_captured"):
-				if effect.kind == "rebirth":
-					piece["home"] = { "board": board, "square": square }
+			board.pieces[square]["home"] = { "board": board, "square": square }
 
 ## At the end of `side`'s turn: revivals count down and return once due (and the square is free).
 static func tick_revivals(state: GameState, side: Piece.Side) -> void:
@@ -169,7 +167,7 @@ static func _split(state: GameState, victim: Dictionary, effect: Dictionary, res
 	var crowded := empty.size() < neighbours.size()
 	var count := mini(effect.crowded if crowded else effect.alone, empty.size())
 	for i in count:
-		_spawn(empty[i].board, empty[i].square, Piece.Type.KNIGHT, victim.piece.side)
+		spawn(empty[i].board, empty[i].square, Piece.Type.KNIGHT, victim.piece.side)
 	result.notes.append("the %s split into %d knight%s" % [_name(victim.piece), count, "" if count == 1 else "s"])
 
 static func _raise_pawn(state: GameState, attacker: Dictionary, result: Dictionary) -> void:
@@ -177,7 +175,7 @@ static func _raise_pawn(state: GameState, attacker: Dictionary, result: Dictiona
 	if slot.is_empty():
 		result.notes.append("no room to raise a pawn")
 		return
-	_spawn(slot.board, slot.square, Piece.Type.PAWN, attacker.side)
+	spawn(slot.board, slot.square, Piece.Type.PAWN, attacker.side)
 	result.notes.append("a pawn rises on your back rank")
 
 ## Where a pawn raised for `side` appears: the empty square of its own zone farthest
@@ -214,12 +212,17 @@ static func _neighbours(board: Board, square: Vector2i) -> Array:
 			found.append(next)
 	return found
 
-static func _spawn(board: Board, square: Vector2i, type: Piece.Type, side: Piece.Side) -> void:
+## A temporary piece (Hydra's knights, a raised pawn, Call to Arms, Echo of Steel): no roster_id,
+## so it's never counted as lost and simply disappears when the boards are next regenerated.
+static func spawn(board: Board, square: Vector2i, type: Piece.Type, side: Piece.Side) -> void:
 	board.pieces[square] = { "type": type, "side": side, "spawned": true }
 	board.queue_redraw()
 
+## `key`'s effects for this piece: its type's own (PieceDefs) plus any granted just to this one
+## instance for the match (Mantle of the Phoenix uses "extra_on_captured").
 static func _effects(piece: Dictionary, key: String) -> Array:
-	return PieceDefs.effects(piece.type, key) if PieceDefs.has(piece.type) else []
+	var base: Array = PieceDefs.effects(piece.type, key) if PieceDefs.has(piece.type) else []
+	return base + piece.get("extra_" + key, [])
 
 static func _name(piece: Dictionary) -> String:
 	return Piece.Type.find_key(piece.type).capitalize()

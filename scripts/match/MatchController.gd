@@ -62,6 +62,8 @@ static func record_move(state: GameState, result: Dictionary, free: bool = false
 			_finish(current, mover != current.player_side, "King destroyed")
 			return
 
+	var mantle_note := _track_losses(current, result)
+
 	var gained := 0
 	var names: Array = []
 	for victim in result.victims:
@@ -83,11 +85,32 @@ static func record_move(state: GameState, result: Dictionary, free: bool = false
 		current.last_event += " (+%d for the other side)" % retaliation
 	for note in result.notes:
 		current.last_event += " | %s" % note
+	if mantle_note != "":
+		current.last_event += " | %s" % mantle_note
 	if mover == current.player_side:
 		for effect in current.prophecies:
 			effect.on_player_move(not result.victims.is_empty())
 	current.prophecies = current.prophecies.filter(func(effect): return not effect.is_used_up())
 	check_target(state)
+
+## Remembers your own pieces leaving the board this match (Rite of Rebirth), and lets an armed
+## Mantle of the Phoenix claim the first one to queue its return, same as a real Phoenix.
+## Returns a note for the event line (added after it's built, so it doesn't get overwritten), or "".
+static func _track_losses(current: MatchState, result: Dictionary) -> String:
+	var gone: Array = result.victims.map(func(v): return v.piece)
+	gone.append_array(result.losses.map(func(l): return l.piece))
+	var note := ""
+	for piece in gone:
+		if piece.side != current.player_side or not piece.has("home"):
+			continue
+		current.lost_this_match.append(piece)
+		for effect in current.prophecies:
+			if effect.id == "mantle_of_the_phoenix" and not effect.spent:
+				effect.spent = true
+				current.revivals.append({ "piece": piece, "board": piece.home.board, "square": piece.home.square, "turns": 3, "side": current.player_side })
+				note = "the Mantle of the Phoenix will bring the %s back in 3 turns" % _name(piece)
+				break
+	return note
 
 ## Wins the match if your score has reached the target (also after a prophecy moves either number).
 static func check_target(state: GameState) -> void:
@@ -126,8 +149,8 @@ static func end_turn(state: GameState) -> void:
 	if current.turn_side == current.player_side and not has_legal_move(state, current.player_side):
 		_finish(current, false, "No legal moves")
 
-## A side's pieces recover one step from resting, and Sanctuary wears off, at the end of each
-## of their own turns.
+## A side's pieces recover one step from resting, and Sanctuary / Curse of Stillness /
+## Reveal Weakness / Hex of the Boss wear off, at the end of each of their own turns.
 static func _tick_rest(state: GameState, side: Piece.Side) -> void:
 	for board in state.boards:
 		for piece in board.pieces.values():
@@ -136,6 +159,8 @@ static func _tick_rest(state: GameState, side: Piece.Side) -> void:
 					piece["rest"] -= 1
 				if piece.get("shielded", 0) > 0:
 					piece["shielded"] -= 1
+				if piece.get("frozen", 0) > 0:
+					piece["frozen"] -= 1
 
 ## Stone Ward counts down every ply, whoever's turn it was.
 static func _tick_wards(state: GameState) -> void:

@@ -146,6 +146,8 @@ static func _step_diagonally_across(board: Board, square: Vector2i, direction: V
 ## may differ from the piece's origin board when the move crosses a portal.
 static func get_legal_moves(type: Piece.Type, side: Piece.Side, board: Board, from: Vector2i) -> Array:
 	var piece = board.pieces.get(from)
+	if piece != null and piece.get("frozen", 0) > 0:      # Curse of Stillness, Reveal Weakness, Hex of the Boss
+		return []
 	var moving_type := Type.QUEEN if piece != null and piece.get("wings", false) else type
 	var moves := _generate_moves(moving_type, side, board, from)
 	return CaptureRules.filter(moves, { "type": type, "side": side, "board": board, "square": from })
