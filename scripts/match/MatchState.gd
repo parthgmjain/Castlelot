@@ -5,6 +5,9 @@ var active: bool = false
 var player_side: Piece.Side = Piece.Side.WHITE
 var turn_side: Piece.Side = Piece.Side.WHITE
 
+## Whoever made the latest move; debug mode passes the turn on from them.
+var last_mover: Piece.Side = Piece.Side.WHITE
+
 ## The player's remaining moves; the match is lost when they run out.
 var moves_left: int = 0
 var target_score: int = 0

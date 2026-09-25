@@ -23,7 +23,7 @@ offset_left = 20.0
 offset_top = 10.0
 offset_right = 1260.0
 offset_bottom = 380.0
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 
 [node name="RunRow" type="HBoxContainer" parent="UI/VBox"]
 layout_mode = 2
@@ -36,6 +36,71 @@ text = "Start Run"
 [node name="RunStatusLabel" type="Label" parent="UI/VBox/RunRow"]
 layout_mode = 2
 text = "No run in progress"
+
+[node name="DebugCheckButton" type="CheckButton" parent="UI/VBox/RunRow"]
+layout_mode = 2
+text = "Debug Mode"
+
+[node name="DebugRow" type="HBoxContainer" parent="UI/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DebugLabel" type="Label" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+text = "DEBUG:"
+
+[node name="DebugWinButton" type="Button" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+text = "Win Match"
+
+[node name="DebugLoseButton" type="Button" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+text = "Lose Match"
+
+[node name="DebugPassButton" type="Button" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+text = "Pass Turn"
+
+[node name="DebugRoundLabel" type="Label" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+text = "Round:"
+
+[node name="DebugRoundSpin" type="SpinBox" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+min_value = 1.0
+max_value = 13.0
+value = 1.0
+
+[node name="DebugMatchLabel" type="Label" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+text = "Match:"
+
+[node name="DebugMatchSpin" type="SpinBox" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+min_value = 1.0
+max_value = 3.0
+value = 1.0
+
+[node name="DebugGoButton" type="Button" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+text = "Go"
+
+[node name="DebugGoldLabel" type="Label" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+text = "Gold:"
+
+[node name="DebugGoldSpin" type="SpinBox" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+max_value = 99999.0
+
+[node name="DebugMovesLabel" type="Label" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+text = "Moves left:"
+
+[node name="DebugMovesSpin" type="SpinBox" parent="UI/VBox/DebugRow"]
+layout_mode = 2
+max_value = 999.0
 
 [node name="DeployRow" type="HBoxContainer" parent="UI/VBox"]
 visible = false

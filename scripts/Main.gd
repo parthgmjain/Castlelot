@@ -27,6 +27,13 @@ func _ready() -> void:
 	panel.bench_piece_selected.connect(_on_bench_selected)
 	panel.auto_deploy_requested.connect(_on_auto_deploy)
 	panel.ready_requested.connect(_on_ready)
+	panel.debug_toggled.connect(_on_debug_toggled)
+	panel.debug_win_requested.connect(_on_debug_force_result.bind(true))
+	panel.debug_lose_requested.connect(_on_debug_force_result.bind(false))
+	panel.debug_pass_requested.connect(_on_debug_pass)
+	panel.debug_goto_requested.connect(_on_debug_goto)
+	panel.debug_gold_changed.connect(_on_debug_gold)
+	panel.debug_moves_changed.connect(_on_debug_moves)
 	promotion_picker.piece_chosen.connect(_on_promotion_chosen)
 	result_screen.continue_pressed.connect(_on_result_continue)
 
@@ -70,7 +77,9 @@ func _refresh_view() -> void:
 	MoveController.refresh(state)
 	_update_points_status()
 	panel.set_match_status(MatchController.status_text(state))
-	panel.set_sandbox_enabled(not state.current_match.active and not state.run.active)
+	panel.set_sandbox_enabled(state.debug_mode or (not state.current_match.active and not state.run.active))
+	if state.debug_mode:
+		panel.sync_debug_values(state.run.round_number, state.run.match_number, state.run.currency, state.current_match.moves_left)
 	_settle_match_if_finished()
 	panel.set_wallet(state.run.currency)
 	panel.set_run_status(state.run.title())
@@ -203,7 +212,7 @@ func _on_board_size_changed(index: int, is_width: bool, value: int) -> void:
 func _on_square_selected(square: Vector2i, board: Board) -> void:
 	if state.zone_edit_mode:
 		board.set_zone(square, state.current_side)
-	elif state.deployment.active:
+	elif state.deployment.active and (not state.debug_mode or state.deployment.armed_id != -1):
 		_deploy_click(square, board)
 	elif not MatchController.accepts_click(state, board, square):
 		MoveController.clear_selection(state)
@@ -268,13 +277,13 @@ func _finish_turn() -> void:
 	MatchController.end_turn(state)
 	_refresh_view()
 	var current := state.current_match
-	if current.active and current.turn_side != current.player_side:
+	if current.active and current.turn_side != current.player_side and not state.debug_mode:
 		_run_ai_turn()
 
 func _run_ai_turn() -> void:
 	await get_tree().create_timer(ai_delay).timeout
 	var current := state.current_match
-	if not current.active or current.turn_side == current.player_side:
+	if not current.active or current.turn_side == current.player_side or state.debug_mode:
 		return
 
 	var choice := GreedyAI.choose_move(state, current.turn_side)
@@ -299,3 +308,66 @@ func _mark_last_move(result: Dictionary) -> void:
 		squares[result.board].append(result.square)
 	for b in state.boards:
 		b.set_last_move_squares(squares.get(b, []))
+
+# ---- debug mode --------------------------------------------------------------
+
+## On: you play both sides (the AI never moves on its own), any piece can move
+## at any time, and the setup tools stay usable during runs. Off: black goes
+## back to the AI.
+func _on_debug_toggled(enabled: bool) -> void:
+	state.debug_mode = enabled
+	panel.set_debug_visible(enabled)
+	_refresh_view()
+	var current := state.current_match
+	if not enabled and current.active and current.turn_side != current.player_side:
+		_run_ai_turn()
+
+## Ends the current match as a win or a loss. While you're still deploying it
+## starts the match first, so the buttons work right after Start Run.
+func _on_debug_force_result(won: bool) -> void:
+	if state.deployment.active:
+		_on_ready()
+	var current := state.current_match
+	if not current.active:
+		_debug_message("no match to end - press Start Run (or Start Match) first")
+		return
+	current.active = false
+	current.result = "win" if won else "loss"
+	current.result_reason = "Debug"
+	state.pending_promotion = {}
+	_refresh_view()
+
+## Ends the side-to-move's turn without a move.
+func _on_debug_pass() -> void:
+	var current := state.current_match
+	if not current.active:
+		_debug_message("no match in progress - press Start Match to begin fighting first")
+		return
+	current.last_mover = current.turn_side
+	MoveController.clear_selection(state)
+	_finish_turn()
+
+## Jumps to any round/match of a run (starting a run if none is going) and deals it.
+func _on_debug_goto(round_number: int, match_number: int) -> void:
+	if not state.run.active:
+		state.run = RunState.new()
+		state.run.begin()
+	state.run.round_number = clampi(round_number, 1, RunConfig.ROUNDS + 1)
+	state.run.match_number = clampi(match_number, 1, state.run.matches_in_round())
+	_begin_run_match()
+
+func _on_debug_gold(amount: int) -> void:
+	state.run.currency = amount
+	_refresh_view()
+
+func _on_debug_moves(amount: int) -> void:
+	var current := state.current_match
+	if not current.active:
+		_debug_message("no match in progress, so there are no moves to set")
+		return
+	current.moves_left = amount
+	_refresh_view()
+
+## Debug buttons that can't do anything say so instead of failing silently.
+func _debug_message(text: String) -> void:
+	panel.set_match_status("DEBUG: %s" % text)

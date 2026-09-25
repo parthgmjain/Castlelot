@@ -13,13 +13,14 @@ static func points_used(boards: Array, side: Piece.Side) -> int:
 
 ## Places `type` for the current side on the selected square, unless it
 ## would push that side past `allocated` points (King is always free).
+## Debug mode ignores both the budget and the zones.
 static func place(state: GameState, type: Piece.Type, allocated: int) -> void:
 	if state.active_board == null:
 		return
-	if type != Piece.Type.KING:
+	if type != Piece.Type.KING and not state.debug_mode:
 		if points_used(state.boards, state.current_side) + Piece.value(type) > allocated:
 			return
-	state.active_board.place_piece(state.active_square, type, state.current_side)
+	state.active_board.place_piece(state.active_square, type, state.current_side, state.debug_mode)
 
 static func remove(state: GameState) -> void:
 	if state.active_board == null:

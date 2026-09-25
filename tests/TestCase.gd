@@ -141,6 +141,20 @@ func click_at(position: Vector2) -> void:
 	event.pressed = true
 	tree.root.push_input(event, true)
 
+## A full mouse click on a control: buttons only fire on release, so this sends
+## the press and the release (and lets a frame pass between them). `await` it.
+func click_control(control: Control) -> void:
+	var position := control.get_global_rect().get_center()
+	for pressed in [true, false]:
+		var event := InputEventMouseButton.new()
+		event.position = position
+		event.global_position = position
+		event.button_index = MOUSE_BUTTON_LEFT
+		event.pressed = pressed
+		event.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+		tree.root.push_input(event, true)
+		await tree.process_frame
+
 func square_position(board: Board, square: Vector2i) -> Vector2:
 	return board.get_global_transform() * board.local_square_center(square)
 

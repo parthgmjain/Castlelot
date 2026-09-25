@@ -15,10 +15,27 @@ signal start_run_requested
 signal bench_piece_selected(id: int)
 signal auto_deploy_requested
 signal ready_requested
+signal debug_toggled(enabled: bool)
+signal debug_win_requested
+signal debug_lose_requested
+signal debug_pass_requested
+signal debug_goto_requested(round_number: int, match_number: int)
+signal debug_gold_changed(amount: int)
+signal debug_moves_changed(amount: int)
 
 const MIN_DIM := 2
 const MAX_DIM := 10
 
+@onready var debug_check: CheckButton = $VBox/RunRow/DebugCheckButton
+@onready var debug_row: HBoxContainer = $VBox/DebugRow
+@onready var debug_win_button: Button = $VBox/DebugRow/DebugWinButton
+@onready var debug_lose_button: Button = $VBox/DebugRow/DebugLoseButton
+@onready var debug_pass_button: Button = $VBox/DebugRow/DebugPassButton
+@onready var debug_round_spin: SpinBox = $VBox/DebugRow/DebugRoundSpin
+@onready var debug_match_spin: SpinBox = $VBox/DebugRow/DebugMatchSpin
+@onready var debug_go_button: Button = $VBox/DebugRow/DebugGoButton
+@onready var debug_gold_spin: SpinBox = $VBox/DebugRow/DebugGoldSpin
+@onready var debug_moves_spin: SpinBox = $VBox/DebugRow/DebugMovesSpin
 @onready var deploy_row: HBoxContainer = $VBox/DeployRow
 @onready var bench_box: HBoxContainer = $VBox/DeployRow/BenchBox
 @onready var auto_deploy_button: Button = $VBox/DeployRow/AutoDeployButton
@@ -81,6 +98,13 @@ func _ready() -> void:
 	start_match_button.pressed.connect(func(): start_match_requested.emit(int(moves_spin_box.value), int(target_spin_box.value)))
 	start_run_button.pressed.connect(func(): start_run_requested.emit())
 	auto_deploy_button.pressed.connect(func(): auto_deploy_requested.emit())
+	debug_check.toggled.connect(func(pressed: bool): debug_toggled.emit(pressed))
+	debug_win_button.pressed.connect(func(): debug_win_requested.emit())
+	debug_lose_button.pressed.connect(func(): debug_lose_requested.emit())
+	debug_pass_button.pressed.connect(func(): debug_pass_requested.emit())
+	debug_go_button.pressed.connect(func(): debug_goto_requested.emit(int(debug_round_spin.value), int(debug_match_spin.value)))
+	debug_gold_spin.value_changed.connect(func(value: float): debug_gold_changed.emit(int(value)))
+	debug_moves_spin.value_changed.connect(func(value: float): debug_moves_changed.emit(int(value)))
 	ready_button.pressed.connect(func(): ready_requested.emit())
 
 	_rebuild_size_controls(board_count())
@@ -111,6 +135,16 @@ func set_auto_place_status(text: String) -> void:
 
 func set_match_status(text: String) -> void:
 	match_status_label.text = text
+
+func set_debug_visible(shown: bool) -> void:
+	debug_row.visible = shown
+
+## Shows the live values in the debug row without firing its change signals.
+func sync_debug_values(round_number: int, match_number: int, gold: int, moves_left: int) -> void:
+	debug_round_spin.set_value_no_signal(round_number)
+	debug_match_spin.set_value_no_signal(match_number)
+	debug_gold_spin.set_value_no_signal(gold)
+	debug_moves_spin.set_value_no_signal(moves_left)
 
 func set_deployment_visible(shown: bool) -> void:
 	deploy_row.visible = shown

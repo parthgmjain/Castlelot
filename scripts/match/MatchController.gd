@@ -22,7 +22,7 @@ static func start(state: GameState, moves: int, target: int) -> String:
 ## highlighted destination) on the player's turn.
 static func accepts_click(state: GameState, board: Board, square: Vector2i) -> bool:
 	var current := state.current_match
-	if not current.active:
+	if not current.active or state.debug_mode:
 		return true
 	if current.turn_side != current.player_side:
 		return false
@@ -40,6 +40,7 @@ static func record_move(state: GameState, result: Dictionary) -> void:
 		return
 
 	var mover: Piece.Side = result.piece.side
+	current.last_mover = mover
 	if mover == current.player_side:
 		current.moves_left -= 1
 	var victim = result.victim
@@ -65,6 +66,9 @@ static func end_turn(state: GameState) -> void:
 	if not current.active:
 		return
 
+	if state.debug_mode:
+		current.turn_side = current.last_mover      # anyone may move; the turn goes to the other side
+
 	if current.turn_side == current.player_side and current.moves_left <= 0:
 		_finish(current, false, "Out of moves")
 		return
@@ -86,6 +90,8 @@ static func status_text(state: GameState) -> String:
 	var score := "Score %d/%d" % [current.scores[current.player_side], current.target_score]
 	if current.active:
 		var turn := "Your turn" if current.turn_side == current.player_side else "AI thinking..."
+		if state.debug_mode:
+			turn = "%s to move (debug)" % ("White" if current.turn_side == Piece.Side.WHITE else "Black")
 		return "%s | Moves left: %d | %s | %s" % [turn, current.moves_left, score, current.last_event]
 	if current.result != "":
 		return "%s: %s | %s | %s" % [current.result.to_upper(), current.result_reason, score, current.last_event]

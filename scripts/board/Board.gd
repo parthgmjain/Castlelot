@@ -103,8 +103,8 @@ func clear_zone(square: Vector2i) -> void:
 func is_zone_allowed(square: Vector2i, side: Piece.Side) -> bool:
 	return not zone_owner.has(square) or zone_owner[square] == side
 
-func place_piece(square: Vector2i, type: Piece.Type, side: Piece.Side) -> void:
-	if not is_in_bounds(square) or not is_zone_allowed(square, side):
+func place_piece(square: Vector2i, type: Piece.Type, side: Piece.Side, ignore_zone: bool = false) -> void:
+	if not is_in_bounds(square) or not (ignore_zone or is_zone_allowed(square, side)):
 		return
 	pieces[square] = { "type": type, "side": side }
 	queue_redraw()
