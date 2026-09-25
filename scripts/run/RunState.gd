@@ -11,6 +11,15 @@ var round_number: int = 1
 var match_number: int = 1
 var boss_order: Array = []     # this run's knights, one per round
 
+## What you may field per match: total piece value, and zone size (king's square included).
+var allocated_points: int = RunConfig.PLAYER_POINTS_START
+var zone_tiles: int = RunConfig.PLAYER_ZONE_TILES
+
+## Purchases so far - each one makes the next of its kind cost more.
+var pulls_made: int = 0
+var points_upgrades_bought: int = 0
+var zone_upgrades_bought: int = 0
+
 ## Every piece you own except the king: [{ id, type }]. Pieces are removed for
 ## good when they are captured in a match you go on to win.
 var roster: Array = []
@@ -23,6 +32,11 @@ func begin() -> void:
 	match_number = 1
 	boss_order = RunConfig.KNIGHTS.duplicate()
 	boss_order.shuffle()
+	allocated_points = RunConfig.PLAYER_POINTS_START
+	zone_tiles = RunConfig.PLAYER_ZONE_TILES
+	pulls_made = 0
+	points_upgrades_bought = 0
+	zone_upgrades_bought = 0
 	roster.clear()
 	_next_roster_id = 1
 	for type in RunConfig.STARTING_ROSTER:

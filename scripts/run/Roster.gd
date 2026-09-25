@@ -21,6 +21,16 @@ static func bench(run: RunState, boards: Array) -> Array:
 	var placed := on_field(boards)
 	return run.roster.filter(func(entry): return not placed.has(entry.id))
 
+## Total value of the roster pieces on the boards (by what they are in the roster,
+## so a promoted pawn still counts as a pawn). The king is free.
+static func points_used(run: RunState, boards: Array) -> int:
+	var total := 0
+	for id in on_field(boards):
+		var entry := run.roster_entry(id)
+		if not entry.is_empty():
+			total += Piece.value(entry.type)
+	return total
+
 ## Empty squares in `side`'s zone, as [{ board, square }].
 static func free_squares(boards: Array, side: Piece.Side) -> Array:
 	var out: Array = []
@@ -30,10 +40,13 @@ static func free_squares(boards: Array, side: Piece.Side) -> Array:
 				out.append({ "board": board, "square": square })
 	return out
 
-## Puts a bench piece on an empty square of your zone. Returns whether it worked.
-static func deploy(run: RunState, boards: Array, id: int, board: Board, square: Vector2i) -> bool:
+## Puts a bench piece on an empty square of your zone, if it fits in your
+## allocated points (unless `ignore_budget`). Returns whether it worked.
+static func deploy(run: RunState, boards: Array, id: int, board: Board, square: Vector2i, ignore_budget: bool = false) -> bool:
 	var entry := run.roster_entry(id)
 	if entry.is_empty() or on_field(boards).has(id):
+		return false
+	if not ignore_budget and points_used(run, boards) + Piece.value(entry.type) > run.allocated_points:
 		return false
 	if not board.is_in_bounds(square) or board.zone_owner.get(square) != PLAYER_SIDE or board.pieces.has(square):
 		return false
@@ -50,16 +63,20 @@ static func withdraw(board: Board, square: Vector2i) -> bool:
 	board.queue_redraw()
 	return true
 
-## Fills free zone squares with bench pieces at random; returns how many were placed.
-static func auto_deploy(run: RunState, boards: Array) -> int:
+## Fills free zone squares with bench pieces, most valuable first, on random
+## squares, as far as your points allow; returns how many were placed.
+static func auto_deploy(run: RunState, boards: Array, ignore_budget: bool = false) -> int:
 	var free := free_squares(boards, PLAYER_SIDE)
 	free.shuffle()
+	var candidates := bench(run, boards)
+	candidates.sort_custom(func(a, b): return Piece.value(a.type) > Piece.value(b.type))
 	var placed := 0
-	for entry in bench(run, boards):
+	for entry in candidates:
 		if free.is_empty():
 			break
-		var slot: Dictionary = free.pop_back()
-		if deploy(run, boards, entry.id, slot.board, slot.square):
+		var slot: Dictionary = free.back()
+		if deploy(run, boards, entry.id, slot.board, slot.square, ignore_budget):
+			free.pop_back()
 			placed += 1
 	return placed
 

@@ -6,6 +6,7 @@ const BOARD_SCENE := preload("res://scenes/Board.tscn")
 @onready var panel: ControlPanel = $UI
 @onready var promotion_picker: PromotionPicker = $PromotionLayer/PromotionPicker
 @onready var result_screen: ResultScreen = $ResultLayer/ResultScreen
+@onready var shop_screen: ShopScreen = $ShopLayer/ShopScreen
 
 ## Pause before the AI moves so its move can be followed.
 var ai_delay := 0.6
@@ -36,6 +37,8 @@ func _ready() -> void:
 	panel.debug_moves_changed.connect(_on_debug_moves)
 	promotion_picker.piece_chosen.connect(_on_promotion_chosen)
 	result_screen.continue_pressed.connect(_on_result_continue)
+	shop_screen.closed.connect(_begin_run_match)
+	shop_screen.changed.connect(_refresh_view)
 
 	_generate_boards()
 
@@ -51,6 +54,7 @@ func _generate_boards() -> void:
 	state.deployment = DeploymentState.new()
 	promotion_picker.hide()
 	result_screen.hide()
+	shop_screen.hide()
 
 	for i in panel.board_count():
 		var board: Board = BOARD_SCENE.instantiate()
@@ -116,7 +120,7 @@ func _on_result_continue() -> void:
 		if lost:
 			_start_run()
 		elif state.run.advance():
-			_begin_run_match()
+			shop_screen.open(state.run, state.run.title())
 		else:
 			_refresh_view()
 		return
@@ -156,7 +160,7 @@ func _on_bench_selected(id: int) -> void:
 	_refresh_view()
 
 func _on_auto_deploy() -> void:
-	Roster.auto_deploy(state.run, state.boards)
+	Roster.auto_deploy(state.run, state.boards, state.debug_mode)
 	state.deployment.armed_id = -1
 	_refresh_view()
 
@@ -166,7 +170,7 @@ func _deploy_click(square: Vector2i, board: Board) -> void:
 	var piece = board.pieces.get(square)
 	if piece != null:
 		Roster.withdraw(board, square)
-	elif state.deployment.armed_id != -1 and Roster.deploy(state.run, state.boards, state.deployment.armed_id, board, square):
+	elif state.deployment.armed_id != -1 and Roster.deploy(state.run, state.boards, state.deployment.armed_id, board, square, state.debug_mode):
 		state.deployment.armed_id = -1
 	MoveController.clear_selection(state)
 	_refresh_view()
@@ -179,7 +183,8 @@ func _refresh_deployment_ui() -> void:
 	var bench := Roster.bench(state.run, state.boards)
 	var free := Roster.free_squares(state.boards, Piece.Side.WHITE)
 	panel.set_bench(bench, deployment.armed_id)
-	panel.set_deploy_status("%d on the bench | %d free zone squares" % [bench.size(), free.size()])
+	panel.set_deploy_status("%d on the bench | %d free zone squares | Points %d/%d" % [
+		bench.size(), free.size(), Roster.points_used(state.run, state.boards), state.run.allocated_points])
 	var markers := {}
 	for slot in free:
 		if not markers.has(slot.board):

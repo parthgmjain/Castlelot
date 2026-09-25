@@ -43,6 +43,7 @@ func _process(_delta: float) -> bool:
 	return false
 
 func _run(filter: String) -> void:
+	await process_frame       # started from _init: let the tree finish starting so the first test's scenes get their _ready
 	var files: Array = []
 	for file in DirAccess.get_files_at(TEST_DIR):
 		if file.begins_with("test_") and file.ends_with(".gd") and (filter == "" or file.contains(filter)):

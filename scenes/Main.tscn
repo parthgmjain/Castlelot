@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://bqx7n8m0k3v1a"]
+[gd_scene load_steps=6 format=3 uid="uid://bqx7n8m0k3v1a"]
 
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ui/ControlPanel.gd" id="2_panel"]
 [ext_resource type="Script" path="res://scripts/ui/PromotionPicker.gd" id="3_picker"]
 [ext_resource type="Script" path="res://scripts/ui/ResultScreen.gd" id="4_result"]
+[ext_resource type="Script" path="res://scripts/ui/ShopScreen.gd" id="5_shop"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -433,3 +434,119 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "Continue"
+
+[node name="ShopLayer" type="CanvasLayer" parent="."]
+layer = 12
+
+[node name="ShopScreen" type="Control" parent="ShopLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5_shop")
+
+[node name="Dim" type="ColorRect" parent="ShopLayer/ShopScreen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Center" type="CenterContainer" parent="ShopLayer/ShopScreen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="ShopLayer/ShopScreen/Center"]
+custom_minimum_size = Vector2(780, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="ShopLayer/ShopScreen/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 9
+
+[node name="Title" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "SHOP"
+horizontal_alignment = 1
+
+[node name="Gold" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Gold: 0"
+horizontal_alignment = 1
+
+[node name="Message" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="PiecesHeader" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "PIECES  -  select 5 of one tier to trade up"
+
+[node name="RosterBox" type="VBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="OddsLabel" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = ""
+
+[node name="PieceActions" type="HBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PullButton" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox/PieceActions"]
+layout_mode = 2
+text = "Lottery Pull"
+
+[node name="TradeUpButton" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox/PieceActions"]
+layout_mode = 2
+text = "Trade up"
+
+[node name="UpgradesHeader" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "UPGRADES  -  what you can field each match"
+
+[node name="UpgradeActions" type="HBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PointsUpgradeButton" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox/UpgradeActions"]
+layout_mode = 2
+text = "Allocated points"
+
+[node name="ZoneUpgradeButton" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox/UpgradeActions"]
+layout_mode = 2
+text = "Zone size"
+
+[node name="CardsHeader" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "TRADING CARDS  -  planets and jokers (coming soon)"
+
+[node name="CardsRow" type="HBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Leave" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Next Match"

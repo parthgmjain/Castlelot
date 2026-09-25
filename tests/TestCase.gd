@@ -91,6 +91,7 @@ func load_main(random_sizes: bool = false) -> Node:
 	var main = MainScene.instantiate()
 	main.ai_delay = 0.0
 	tree.root.add_child(main)
+	main.shop_screen.reveal_delay = 0.0
 	track(main)
 	await pump(2)
 	if not random_sizes:

@@ -16,6 +16,26 @@ const STARTING_ROSTER := [
 	Piece.Type.PAWN, Piece.Type.PAWN, Piece.Type.PAWN,
 ]
 
+# ---- roster economy (placeholders): what you can field, and what the shop charges
+const PLAYER_POINTS_START := 14        # exactly what the starting roster costs
+const MAX_ZONE_TILES := 50
+const MAX_ALLOCATED_POINTS := 100
+const TRADE_UP_COUNT := 5              # this many pieces of one tier become one of the next
+const PULL_PRICE_BASE := 4             # one lottery pull: reveals a tier, then a piece from it
+const PULL_PRICE_STEP := 1             # each pull made costs this much more
+## Relative chance of each tier per pull. Tiers with no pieces are never drawn.
+const TIER_WEIGHTS := {
+	Piece.Tier.COMMON: 60.0,
+	Piece.Tier.UNCOMMON: 30.0,
+	Piece.Tier.LEGENDARY: 10.0,
+}
+const POINTS_UPGRADE_AMOUNT := 2
+const POINTS_UPGRADE_PRICE_BASE := 10
+const POINTS_UPGRADE_PRICE_STEP := 5
+const ZONE_UPGRADE_AMOUNT := 1
+const ZONE_UPGRADE_PRICE_BASE := 8
+const ZONE_UPGRADE_PRICE_STEP := 4
+
 # ---- placeholder scaling: every value below is meant to be tuned ---------
 # A value grows by "PER_MATCH" for every match played so far in the run.
 const MOVES := 15
@@ -56,7 +76,7 @@ static func match_setup(run: RunState) -> Dictionary:
 
 	return {
 		"board_sizes": board_sizes,
-		"white_zone": PLAYER_ZONE_TILES,
+		"white_zone": run.zone_tiles,
 		"black_zone": int(AI_ZONE_TILES_BASE + AI_ZONE_TILES_PER_MATCH * index),
 		"ai_budget": int(round(ai_budget)),
 		"moves": MOVES,

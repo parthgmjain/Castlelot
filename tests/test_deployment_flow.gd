@@ -155,6 +155,7 @@ func test_captured_pieces_leave_your_roster_when_you_win() -> void:
 	check(state.run.roster_entry(knight_id).is_empty(), "the knight is gone from the roster")
 	check_eq(state.run.roster.size(), 5, "five pieces left")
 	main.result_screen.continue_button.pressed.emit()
+	main.shop_screen.leave_button.pressed.emit()
 	check_eq(_bench_buttons(main).size(), 5, "the next bench has five pieces")
 	check(not _bench_buttons(main).any(func(b): return b.text.contains("Knight")), "and no knight")
 
@@ -188,6 +189,7 @@ func test_losing_the_run_restores_a_full_roster() -> void:
 	spot.board.pieces.erase(spot.square)
 	_force_result(main, "win")
 	main.result_screen.continue_button.pressed.emit()
+	main.shop_screen.leave_button.pressed.emit()
 	check_eq(main.state.run.roster.size(), 5, "down a piece")
 	_ready_up(main)
 	_force_result(main, "loss")

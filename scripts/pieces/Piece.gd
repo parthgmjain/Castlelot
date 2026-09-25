@@ -3,6 +3,7 @@ extends RefCounted
 
 enum Type { KING, QUEEN, ROOK, BISHOP, KNIGHT, PAWN }
 enum Side { WHITE, BLACK }
+enum Tier { COMMON, UNCOMMON, LEGENDARY }
 
 const SYMBOLS := {
 	Side.WHITE: {
@@ -34,6 +35,15 @@ const KNIGHT_OFFSETS := [
 const ROOK_DIRECTIONS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const BISHOP_DIRECTIONS := [Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]
 
+const TIERS := {
+	Type.PAWN: Tier.COMMON,
+	Type.KNIGHT: Tier.UNCOMMON,
+	Type.BISHOP: Tier.UNCOMMON,
+	Type.ROOK: Tier.UNCOMMON,
+	Type.QUEEN: Tier.LEGENDARY,
+}
+const TIER_NAMES := { Tier.COMMON: "Common", Tier.UNCOMMON: "Uncommon", Tier.LEGENDARY: "Legendary" }
+
 ## Standard chess values. King is 0 - it doesn't count against a point budget.
 const VALUES := {
 	Type.KING: 0,
@@ -46,6 +56,12 @@ const VALUES := {
 
 static func symbol(type: Piece.Type, side: Piece.Side) -> String:
 	return SYMBOLS[side][type]
+
+static func tier(type: Piece.Type) -> Piece.Tier:
+	return TIERS.get(type, Piece.Tier.COMMON)
+
+static func types_in_tier(tier_value: Piece.Tier) -> Array:
+	return TIERS.keys().filter(func(t): return TIERS[t] == tier_value)
 
 static func opponent(side: Piece.Side) -> Piece.Side:
 	return Piece.Side.BLACK if side == Piece.Side.WHITE else Piece.Side.WHITE

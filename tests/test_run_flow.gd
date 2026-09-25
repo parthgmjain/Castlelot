@@ -27,10 +27,14 @@ func _force_result(main: Node, result: String) -> void:
 func _continue(main: Node) -> void:
 	main.result_screen.continue_button.pressed.emit()
 
-# Win, press Next Match, and get the following match going.
+func _leave_shop(main: Node) -> void:
+	main.shop_screen.leave_button.pressed.emit()
+
+# Win, press Next Match, leave the shop, and get the following match going.
 func _win_and_continue(main: Node) -> void:
 	_force_result(main, "win")
 	_continue(main)
+	_leave_shop(main)
 	_ready_up(main)
 
 func test_starting_a_run_builds_the_world_then_waits_for_you_to_deploy() -> void:
@@ -85,6 +89,10 @@ func test_winning_carries_on_to_the_next_matchs_deployment() -> void:
 	check(gold > 0, "paid out (%d)" % gold)
 	_continue(main)
 	check(not screen.visible, "closed")
+	check(main.shop_screen.visible and not main.state.deployment.active, "the shop opens before the next match")
+	check(main.shop_screen.title_label.text.contains("Round 1/12 - Match 2/3"), main.shop_screen.title_label.text)
+	_leave_shop(main)
+	check(not main.shop_screen.visible, "shop closed")
 	check_eq(main.state.run.title(), "Round 1/12 - Match 2/3", "moved to match 2")
 	check(main.state.deployment.active and not main.state.current_match.active, "deploying for it")
 	check_eq(main.state.run.currency, gold, "gold carried over")
@@ -128,6 +136,7 @@ func test_a_full_run_is_thirty_seven_matches_then_arthur_then_done() -> void:
 			check_eq(main.result_screen.continue_button.text, "Finish Run", "the last button")
 			break
 		_continue(main)
+		_leave_shop(main)
 		_ready_up(main)
 		matches += 1
 	check_eq(matches, 37, "36 ordinary matches plus Arthur")

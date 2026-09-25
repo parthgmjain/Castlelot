@@ -128,3 +128,44 @@ func test_a_deployed_piece_that_moved_to_another_board_still_counts_as_alive() -
 	a.pieces.erase(Vector2i(1, 0))
 	b.pieces[Vector2i(2, 2)] = piece
 	check(Roster.settle(run, boards, deployed).is_empty(), "found on the other board")
+
+func test_deploying_is_capped_by_your_allocated_points() -> void:
+	var run := _run()
+	run.allocated_points = 8                                    # rook 5 + knight 3
+	var boards := _world(8)
+	var board: Board = boards[0]
+	var rook: Dictionary = run.roster.filter(func(e): return e.type == ROOK)[0]
+	var knight: Dictionary = run.roster.filter(func(e): return e.type == KNIGHT)[0]
+	var bishop: Dictionary = run.roster.filter(func(e): return e.type == BISHOP)[0]
+	var pawn: Dictionary = run.roster.filter(func(e): return e.type == PAWN)[0]
+	check(Roster.deploy(run, boards, rook.id, board, Vector2i(1, 0)), "the rook fits (5/8)")
+	check(Roster.deploy(run, boards, knight.id, board, Vector2i(2, 0)), "the knight fits (8/8)")
+	check(not Roster.deploy(run, boards, bishop.id, board, Vector2i(3, 0)), "the bishop doesn't (11/8)")
+	check(not Roster.deploy(run, boards, pawn.id, board, Vector2i(3, 0)), "not even a pawn (9/8)")
+	check_eq(Roster.points_used(run, boards), 8, "points in use")
+	check(Roster.deploy(run, boards, bishop.id, board, Vector2i(3, 0), true), "the debug override ignores the budget")
+	Roster.withdraw(board, Vector2i(3, 0))                      # the override-placed bishop
+	Roster.withdraw(board, Vector2i(2, 0))                      # and the knight
+	check_eq(Roster.points_used(run, boards), 5, "only the rook is left")
+	check(Roster.deploy(run, boards, pawn.id, board, Vector2i(2, 0)), "pulling pieces back frees their points")
+
+func test_auto_deploy_respects_points_and_takes_the_most_valuable_pieces_first() -> void:
+	var run := _run()
+	run.allocated_points = 8
+	var boards := _world(8)
+	var placed := Roster.auto_deploy(run, boards)
+	var types := Roster.field_ids(boards).map(func(id): return run.roster_entry(id).type)
+	check(types.has(ROOK), "the rook goes first: %s" % str(types))
+	check(types.has(KNIGHT) or types.has(BISHOP), "then one of the 3-point pieces, not a fistful of pawns: %s" % str(types))
+	check_eq(placed, 2, "two placed")
+	check_eq(Roster.points_used(run, boards), 8, "spending the whole budget")
+	check(Roster.points_used(run, boards) <= 8, "within the budget")
+
+func test_a_promoted_pawn_still_counts_as_a_pawn_for_the_budget() -> void:
+	var run := _run()
+	var boards := _world(8)
+	var board: Board = boards[0]
+	var pawn: Dictionary = run.roster.filter(func(e): return e.type == PAWN)[0]
+	Roster.deploy(run, boards, pawn.id, board, Vector2i(1, 0))
+	PawnMovement.promote(board.pieces[Vector2i(1, 0)], QUEEN)
+	check_eq(Roster.points_used(run, boards), 1, "worth 1, not 9")

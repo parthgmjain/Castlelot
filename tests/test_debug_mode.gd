@@ -184,6 +184,7 @@ func test_win_and_lose_buttons_end_the_match_and_work_while_deploying_too() -> v
 	check_eq(main.result_screen.reason_label.text, "Debug", "reason")
 	check(main.state.run.currency > 0, "and it paid out")
 	main.result_screen.continue_button.pressed.emit()
+	main.shop_screen.leave_button.pressed.emit()
 	check(main.state.deployment.active, "on to the next match's deployment")
 	main.panel.debug_lose_button.pressed.emit()
 	check(main.result_screen.visible and main.result_screen.title_label.text == "DEFEAT", "forced loss from deployment too")
