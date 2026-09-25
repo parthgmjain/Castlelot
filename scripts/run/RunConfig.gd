@@ -52,6 +52,22 @@ const TIER_WEIGHTS := {
 	Piece.Tier.UNCOMMON: 30.0,
 	Piece.Tier.RARE: 10.0,
 }
+# ---- prophecies (placeholders): one-time cards bought in the shop
+const HAND_SIZE := 3                   # how many you can carry
+const PROPHECY_OFFERS := 4             # cards for sale each shop visit
+## Chance of each rarity when the shop picks a card: the rarer, the more powerful.
+const PROPHECY_WEIGHTS := {
+	Piece.Tier.COMMON: 55.0,
+	Piece.Tier.UNCOMMON: 30.0,
+	Piece.Tier.RARE: 12.0,
+	Piece.Tier.LEGENDARY: 3.0,
+}
+const PROPHECY_PRICES := {
+	Piece.Tier.COMMON: 4,
+	Piece.Tier.UNCOMMON: 8,
+	Piece.Tier.RARE: 15,
+	Piece.Tier.LEGENDARY: 30,
+}
 const POINTS_UPGRADE_AMOUNT := 2
 const POINTS_UPGRADE_PRICE_BASE := 10
 const POINTS_UPGRADE_PRICE_STEP := 5

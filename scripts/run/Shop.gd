@@ -3,9 +3,17 @@ extends RefCounted
 
 # ---- trading up: N pieces of one tier become a choice from the next tier ------
 
-## How many pieces of `tier` it takes to trade up (0 when it can't be done).
-static func trade_up_cost(tier: Piece.Tier) -> int:
-	return RunConfig.TRADE_UP_COUNTS.get(tier, 0)
+## How many pieces of `tier` it takes to trade up (0 when it can't be done). With a `run`,
+## Fair Trade (-2 for the next trade-up) and Queen's Favor (-2 on the rare -> legendary one) count.
+static func trade_up_cost(tier: Piece.Tier, run: RunState = null) -> int:
+	var cost: int = RunConfig.TRADE_UP_COUNTS.get(tier, 0)
+	if cost == 0 or run == null:
+		return cost
+	if run.shop_effects.has("fair_trade"):
+		cost -= run.shop_effects.fair_trade
+	if tier == Piece.Tier.RARE and run.shop_effects.get("queens_favor", false):
+		cost -= 2
+	return maxi(cost, 1)
 
 ## Whether these roster ids can be sacrificed. Returns { ok, reason, count, from, to }
 ## (`from`/`to` are Piece.Tiers and `count` the number needed, once the first piece shows the tier).
@@ -25,7 +33,7 @@ static func check_trade_up(run: RunState, ids: Array) -> Dictionary:
 			return { "ok": false, "reason": "All the pieces must be the same tier" }
 		tier = this_tier
 
-	var count := trade_up_cost(tier)
+	var count := trade_up_cost(tier, run)
 	if count == 0:
 		return { "ok": false, "reason": "Legendary pieces can't be traded up" }
 	if ids.size() != count:
@@ -43,6 +51,9 @@ static func trade_up(run: RunState, ids: Array, rng: RandomNumberGenerator = nul
 		return check
 	for id in ids:
 		run.remove_from_roster(id)
+	run.shop_effects.erase("fair_trade")
+	if check.from == Piece.Tier.RARE:
+		run.shop_effects.erase("queens_favor")
 	if check.to == Piece.Tier.LEGENDARY:
 		run.pending = { "kind": "legendary_pick", "options": Legendaries.available_upgrades(run) }
 	else:
@@ -52,7 +63,11 @@ static func trade_up(run: RunState, ids: Array, rng: RandomNumberGenerator = nul
 # ---- upgrades ------------------------------------------------------------------
 
 static func points_upgrade_price(run: RunState) -> int:
-	return RunConfig.POINTS_UPGRADE_PRICE_BASE + run.points_upgrades_bought * RunConfig.POINTS_UPGRADE_PRICE_STEP
+	return _haggled(run, RunConfig.POINTS_UPGRADE_PRICE_BASE + run.points_upgrades_bought * RunConfig.POINTS_UPGRADE_PRICE_STEP)
+
+## Haggler's Charm halves upgrade prices (rounding up) for this shop visit.
+static func _haggled(run: RunState, price: int) -> int:
+	return int(ceil(price / 2.0)) if run.shop_effects.get("haggle", false) else price
 
 static func can_buy_points(run: RunState) -> bool:
 	return run.currency >= points_upgrade_price(run) and run.allocated_points < RunConfig.MAX_ALLOCATED_POINTS
@@ -66,7 +81,7 @@ static func buy_points(run: RunState) -> bool:
 	return true
 
 static func zone_upgrade_price(run: RunState) -> int:
-	return RunConfig.ZONE_UPGRADE_PRICE_BASE + run.zone_upgrades_bought * RunConfig.ZONE_UPGRADE_PRICE_STEP
+	return _haggled(run, RunConfig.ZONE_UPGRADE_PRICE_BASE + run.zone_upgrades_bought * RunConfig.ZONE_UPGRADE_PRICE_STEP)
 
 static func can_buy_zone(run: RunState) -> bool:
 	return run.currency >= zone_upgrade_price(run) and run.zone_tiles < RunConfig.MAX_ZONE_TILES

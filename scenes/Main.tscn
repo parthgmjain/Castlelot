@@ -542,7 +542,7 @@ text = "Zone size"
 
 [node name="CardsHeader" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
 layout_mode = 2
-text = "TRADING CARDS  -  planets and jokers (coming soon)"
+text = "PROPHECIES  -  one-time cards you carry up to 3 (the rarer, the stronger)"
 
 [node name="CardsRow" type="HBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
 layout_mode = 2

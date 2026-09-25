@@ -21,6 +21,9 @@ var last_event: String = ""
 ## Roster ids that were on the board when the match began, to work out which were lost.
 var deployed_roster_ids: Array = []
 
+## Prophecies working this match (ProphecyEffect); unlike `modifiers` they never carry over.
+var prophecies: Array = []
+
 ## A bonus move being offered to the side to move ({} when none): { kind, side, label, ... }.
 ## While it is pending the turn doesn't pass; taking it is free and optional. See MoveEffects.
 var bonus: Dictionary = {}

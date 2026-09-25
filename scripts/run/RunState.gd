@@ -28,6 +28,17 @@ var _next_roster_id: int = 1
 ## Boss legendaries you have beaten this run: you can upgrade into them even after giving one up.
 var unlocked_legendaries: Array = []
 
+## The prophecies you carry: [{ id, armed }], at most RunConfig.HAND_SIZE. An armed card fires
+## in the next match on its own; unused cards carry on from match to match.
+var hand: Array = []
+
+## The shop's prophecies for sale: card ids, "" once bought. Dealt fresh each shop visit.
+var prophecy_offers: Array = []
+
+## One-shot boosts from shop prophecies: free_pull, min_tier, wide_offer, fair_trade,
+## queens_favor (used up by the next pull / offer / trade-up) and haggle (this shop visit only).
+var shop_effects: Dictionary = {}
+
 ## A choice you must make before leaving the shop ({} when none). See Lottery and Legendaries.
 var pending: Dictionary = {}
 
@@ -47,6 +58,9 @@ func begin() -> void:
 	_next_roster_id = 1
 	unlocked_legendaries = []
 	pending = {}
+	hand = []
+	prophecy_offers = []
+	shop_effects = {}
 	for type in RunConfig.STARTING_ROSTER:
 		add_to_roster(type)
 

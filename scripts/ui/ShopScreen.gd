@@ -11,7 +11,6 @@ const TIER_COLORS := {
 	Piece.Tier.RARE: Color(0.45, 0.7, 1.0),
 	Piece.Tier.LEGENDARY: Color(1.0, 0.8, 0.25),
 }
-const CARD_SLOTS := 4
 
 @onready var panel: PanelContainer = $Center/Panel
 @onready var title_label: Label = $Center/Panel/Margin/VBox/Title
@@ -48,13 +47,6 @@ func _ready() -> void:
 	points_upgrade_button.pressed.connect(_on_buy_points)
 	zone_upgrade_button.pressed.connect(_on_buy_zone)
 	leave_button.pressed.connect(_on_leave)
-	for i in CARD_SLOTS:
-		var slot := Button.new()
-		slot.text = "Empty"
-		slot.disabled = true
-		slot.custom_minimum_size = Vector2(120, 64)
-		slot.tooltip_text = "Planet cards and jokers will be sold here."
-		cards_row.add_child(slot)
 	_build_choice_box()
 
 func _build_choice_box() -> void:
@@ -77,6 +69,7 @@ func open(run: RunState, next_title: String) -> void:
 	_message = ""
 	_message_tier = -1
 	_pending_tier = -1
+	Prophecies.refresh_offers(run)
 	show()
 	refresh()
 	leave_button.grab_focus()
@@ -102,6 +95,7 @@ func refresh() -> void:
 		message_label.remove_theme_color_override("font_color")
 	_rebuild_roster()
 	_rebuild_choice()
+	_rebuild_prophecies()
 
 	var odds := Lottery.odds(_run)
 	var parts: Array = []
@@ -183,6 +177,20 @@ func _rebuild_choice() -> void:
 					button.custom_minimum_size = Vector2(130, 56)
 					button.pressed.connect(_on_replace_picked.bind(type))
 					choice_row.add_child(button)
+		"bargain":
+			choice_prompt.add_theme_color_override("font_color", TIER_COLORS[ProphecyDefs.rarity("merlins_bargain")])
+			choice_prompt.text = "Merlin's Bargain: which piece do you give up? You get %dx its points in gold." % Prophecies.BARGAIN_MULTIPLIER
+			for entry in _run.roster:
+				var button := Button.new()
+				button.text = "%s\n-> %d gold" % [Piece.display_name(entry.type), Piece.value(entry.type) * Prophecies.BARGAIN_MULTIPLIER]
+				button.custom_minimum_size = Vector2(110, 56)
+				button.pressed.connect(_on_bargain_picked.bind(entry.id))
+				choice_row.add_child(button)
+			var cancel := Button.new()
+			cancel.text = "Keep my\npieces"
+			cancel.custom_minimum_size = Vector2(110, 56)
+			cancel.pressed.connect(_on_bargain_cancelled)
+			choice_row.add_child(cancel)
 		"legendary_pick":
 			choice_prompt.add_theme_color_override("font_color", TIER_COLORS[Piece.Tier.LEGENDARY])
 			choice_prompt.text = "Choose your LEGENDARY:"
@@ -206,6 +214,105 @@ func _rebuild_choice() -> void:
 			decline.custom_minimum_size = Vector2(130, 64)
 			decline.pressed.connect(_on_give_up.bind(pending.incoming))
 			choice_row.add_child(decline)
+
+# ---- prophecies -----------------------------------------------------------------------------------
+
+func _rebuild_prophecies() -> void:
+	for child in cards_row.get_children():
+		cards_row.remove_child(child)
+		child.queue_free()
+	cards_row.add_theme_constant_override("separation", 24)
+	var busy := is_busy()
+
+	var sale := VBoxContainer.new()
+	var sale_header := Label.new()
+	sale_header.text = "For sale"
+	sale.add_child(sale_header)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
+	for slot in _run.prophecy_offers.size():
+		var id: String = _run.prophecy_offers[slot]
+		var button := Button.new()
+		button.custom_minimum_size = Vector2(250, 80)
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		if id == "":
+			button.text = "Sold"
+			button.disabled = true
+		else:
+			button.text = "%s - %d gold\n%s\n%s" % [ProphecyDefs.display_name(id), Prophecies.price(id), Piece.TIER_NAMES[ProphecyDefs.rarity(id)], ProphecyDefs.text(id)]
+			button.add_theme_color_override("font_color", ProphecyUI.color(id))
+			button.disabled = busy or _run.currency < Prophecies.price(id)
+			button.tooltip_text = "%s (%s)" % [ProphecyDefs.text(id), ProphecyUI.timing_note(id)]
+		button.add_theme_font_size_override("font_size", 12)
+		button.pressed.connect(_on_buy_prophecy.bind(slot))
+		grid.add_child(button)
+	sale.add_child(grid)
+	cards_row.add_child(sale)
+
+	var hand := VBoxContainer.new()
+	hand.custom_minimum_size = Vector2(330, 0)
+	var hand_header := Label.new()
+	hand_header.text = "Your hand (%d/%d)" % [_run.hand.size(), RunConfig.HAND_SIZE]
+	hand.add_child(hand_header)
+	if _run.hand.is_empty():
+		var empty := Label.new()
+		empty.text = "Nothing yet - buy a prophecy."
+		empty.add_theme_font_size_override("font_size", 12)
+		hand.add_child(empty)
+	for i in _run.hand.size():
+		var entry: Dictionary = _run.hand[i]
+		var buttons: Array = []
+		match ProphecyDefs.timing(entry.id):
+			"shop":
+				var second_sight: bool = entry.id == "second_sight" and _run.pending.get("kind") == "cards" and _run.pending.stage == "pick"
+				buttons.append({ "text": "Play", "disabled": (busy and not second_sight) or not ProphecyDefs.is_ready(entry.id), "action": _on_play_prophecy.bind(i) })
+			"armed":
+				buttons.append({ "text": "Disarm" if entry.armed else "Arm", "disabled": busy, "tooltip": "Armed cards fire on their own in the next match.", "action": _on_arm_prophecy.bind(i, not entry.armed) })
+		buttons.append({ "text": "Discard", "disabled": busy, "action": _on_discard_prophecy.bind(i) })
+		hand.add_child(ProphecyUI.hand_row(entry, buttons))
+	cards_row.add_child(hand)
+
+func _on_buy_prophecy(slot: int) -> void:
+	var result := Prophecies.buy(_run, slot)
+	_say("Bought %s." % ProphecyDefs.display_name(result.id) if result.ok else result.reason, ProphecyDefs.rarity(result.id) if result.ok else -1)
+	changed.emit()
+	refresh()
+
+func _on_play_prophecy(index: int) -> void:
+	var name: String = ProphecyDefs.display_name(_run.hand[index].id) if index < _run.hand.size() else ""
+	var result := Prophecies.play_in_shop(_run, index)
+	if not result.ok:
+		_say(result.reason)
+	elif result.waiting:
+		_say(result.note)
+	else:
+		_say("%s: %s" % [name, result.note])
+	changed.emit()
+	refresh()
+
+func _on_arm_prophecy(index: int, armed: bool) -> void:
+	var result := Prophecies.set_armed(_run, index, armed)
+	_say(("%s %s." % [ProphecyDefs.display_name(_run.hand[index].id), "armed for the next match" if armed else "disarmed"]) if result.ok else result.reason)
+	refresh()
+
+func _on_discard_prophecy(index: int) -> void:
+	var result := Prophecies.discard(_run, index)
+	_say("Discarded %s." % ProphecyDefs.display_name(result.id) if result.ok else result.reason)
+	changed.emit()
+	refresh()
+
+func _on_bargain_picked(roster_id: int) -> void:
+	var result := Prophecies.resolve_bargain(_run, roster_id)
+	_say("Merlin takes the %s and leaves you %d gold." % [Piece.display_name(result.piece), result.gold] if result.ok else result.reason)
+	changed.emit()
+	refresh()
+
+func _on_bargain_cancelled() -> void:
+	Prophecies.cancel_bargain(_run)
+	_say("You keep your pieces (and the card).")
+	refresh()
 
 func _card_button(card: Dictionary, tier: Piece.Tier, index: int) -> Button:
 	var button := Button.new()
@@ -334,5 +441,6 @@ func _on_leave() -> void:
 		_say("Make your choice first.")
 		refresh()
 		return
+	Prophecies.end_shop(_run)
 	hide()
 	closed.emit()

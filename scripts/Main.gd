@@ -16,6 +16,8 @@ var run_flow := RunFlow.new()
 var turn_flow := TurnFlow.new()
 var deployment_flow := DeploymentFlow.new()
 var debug_flow := DebugFlow.new()
+var prophecy_flow := ProphecyFlow.new()
+var prophecy_strip := ProphecyStrip.new()
 
 func _ready() -> void:
 	_setup_flows()
@@ -40,7 +42,13 @@ func _setup_flows() -> void:
 	debug_flow.panel = panel
 	debug_flow.run_flow = run_flow
 	debug_flow.turn_flow = turn_flow
-	for flow in [run_flow, turn_flow, deployment_flow, debug_flow]:
+	prophecy_flow.state = state
+	var hand_layer := CanvasLayer.new()             # under the shop and result screens
+	hand_layer.layer = 5
+	add_child(hand_layer)
+	hand_layer.add_child(prophecy_strip)
+	prophecy_flow.connect_strip(prophecy_strip)
+	for flow in [run_flow, turn_flow, deployment_flow, debug_flow, prophecy_flow]:
 		flow.view_changed.connect(_refresh_view)
 		add_child(flow)
 
@@ -115,6 +123,7 @@ func _refresh_view() -> void:
 	panel.set_run_status(state.run.title())
 	panel.set_bonus_visible(not state.current_match.bonus.is_empty() and (state.debug_mode or state.current_match.turn_side == state.current_match.player_side))
 	deployment_flow.refresh_ui()
+	prophecy_flow.refresh_ui()
 
 func _update_points_status() -> void:
 	panel.set_points_status(

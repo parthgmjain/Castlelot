@@ -16,7 +16,9 @@ static func capture_score(current_match: MatchState, attacker: Dictionary, victi
 		"board": board,
 		"square": square,
 		"side": attacker.side,
+		"player_side": current_match.player_side,
+		"moves_left": current_match.moves_left,
 	}
-	for modifier in current_match.modifiers:
+	for modifier in current_match.modifiers + current_match.prophecies:
 		modifier.on_capture(context)
 	return int(round(context.chips * context.mult))

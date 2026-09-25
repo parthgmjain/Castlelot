@@ -56,10 +56,16 @@ func settle_if_finished() -> void:
 	if current.result == "" or current.settled:
 		return
 	current.settled = true
+	if state.run.active:
+		Prophecies.finish_match(state.run, current)
 	var payout := {}
 	var notes: Array = []
 	if current.result == "win":
 		payout = Payout.calculate(current, state.run.currency)
+		if state.run.active:
+			payout = Prophecies.apply_payout(state.run, payout)
+			if payout.has("tithe"):
+				notes.append("Golden Tithe: +%d gold" % payout.tithe)
 		state.run.currency += payout.total
 		if state.run.active:
 			var waiting: Array = current.revivals.map(func(r): return r.piece.get("roster_id", -1))

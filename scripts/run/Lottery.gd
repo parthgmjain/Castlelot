@@ -14,6 +14,8 @@ extends RefCounted
 ##   { kind: "cards", tier, cards, source, stage: "pick" | "replace", card (in "replace") }
 
 static func price(run: RunState) -> int:
+	if run.shop_effects.get("free_pull", false):
+		return 0                                  # Lucky Draw
 	return RunConfig.PULL_PRICE_BASE + run.pulls_made * RunConfig.PULL_PRICE_STEP
 
 ## Weight of each tier for this run's next pull. This is the one place to plug
@@ -68,22 +70,35 @@ static func start_pull(run: RunState, rng: RandomNumberGenerator = null) -> Dict
 	var cost := price(run)
 	if run.currency < cost:
 		return { "ok": false, "reason": "Not enough gold (a pull costs %d)." % cost }
-	run.currency -= cost
-	run.pulls_made += 1
-	return { "ok": true, "reason": "", "tier": roll_tier(tier_weights(run), rng) }
+	if run.shop_effects.get("free_pull", false):
+		run.shop_effects.erase("free_pull")           # a free pull doesn't make the next one dearer
+	else:
+		run.currency -= cost
+		run.pulls_made += 1
+	var weights := tier_weights(run)
+	if run.shop_effects.has("min_tier"):              # Loaded Dice
+		var floor_tier: int = run.shop_effects.min_tier
+		run.shop_effects.erase("min_tier")
+		var raised := weights.duplicate()
+		for tier in weights:
+			if tier < floor_tier:
+				raised.erase(tier)
+		if not raised.is_empty():
+			weights = raised
+	return { "ok": true, "reason": "", "tier": roll_tier(weights, rng) }
 
 ## The cards for a `tier` offer: up to OWNED_CARDS types you hold (each adds a copy) and new
 ## types for the rest, RunConfig.CARDS_OFFERED in all where the pool allows.
-static func offer(run: RunState, tier: Piece.Tier, rng: RandomNumberGenerator = null) -> Array:
+static func offer(run: RunState, tier: Piece.Tier, rng: RandomNumberGenerator = null, count: int = RunConfig.CARDS_OFFERED) -> Array:
 	rng = rng if rng != null else RandomNumberGenerator.new()
 	var owned: Array = run.held_types(tier).filter(func(t): return pool(tier).has(t))
 	var fresh: Array = pool(tier).filter(func(t): return not owned.has(t))
 	_shuffle(owned, rng)
 	_shuffle(fresh, rng)
 	var adds: Array = owned.slice(0, RunConfig.OWNED_CARDS)
-	var news: Array = fresh.slice(0, RunConfig.CARDS_OFFERED - adds.size())
-	if adds.size() + news.size() < RunConfig.CARDS_OFFERED:
-		adds.append_array(owned.slice(adds.size(), adds.size() + RunConfig.CARDS_OFFERED - adds.size() - news.size()))
+	var news: Array = fresh.slice(0, count - adds.size())
+	if adds.size() + news.size() < count:
+		adds.append_array(owned.slice(adds.size(), adds.size() + count - adds.size() - news.size()))
 	var cards: Array = []
 	for type in adds:
 		cards.append({ "type": type, "kind": "add" })
@@ -101,7 +116,11 @@ static func _shuffle(items: Array, rng: RandomNumberGenerator) -> void:
 ## Step 2: lays out the cards for the player to choose from (waits in run.pending).
 ## `source` is "pull" or "trade_up". Returns false when there is nothing to offer.
 static func begin_choice(run: RunState, tier: Piece.Tier, source: String, rng: RandomNumberGenerator = null) -> bool:
-	var cards := offer(run, tier, rng)
+	var count := RunConfig.CARDS_OFFERED
+	if run.shop_effects.get("wide_offer", false):     # Wider Net
+		run.shop_effects.erase("wide_offer")
+		count = Prophecies.WIDE_OFFER_CARDS
+	var cards := offer(run, tier, rng, count)
 	if cards.is_empty():
 		return false
 	run.pending = { "kind": "cards", "tier": tier, "cards": cards, "source": source, "stage": "pick" }
@@ -134,3 +153,10 @@ static func pick_replacement(run: RunState, replaced: Piece.Type) -> Dictionary:
 	run.retype(replaced, incoming)
 	run.pending = {}
 	return { "ok": true, "reason": "", "stage": "done", "gained": incoming, "replaced": replaced }
+
+## Second Sight: deals a fresh set of cards in place of the ones on the table.
+static func reroll(run: RunState, rng: RandomNumberGenerator = null) -> bool:
+	if run.pending.get("kind") != "cards" or run.pending.stage != "pick":
+		return false
+	run.pending.cards = offer(run, run.pending.tier, rng, run.pending.cards.size())
+	return true

@@ -14,6 +14,7 @@ static func start(state: GameState, moves: int, target: int) -> String:
 	fresh.target_score = target
 	fresh.modifiers = state.current_match.modifiers
 	state.current_match = fresh
+	Prophecies.begin_match(state)
 	MoveEffects.mark_homes(state)
 	MoveController.clear_selection(state)
 	return ""
@@ -79,7 +80,16 @@ static func record_move(state: GameState, result: Dictionary, free: bool = false
 		current.last_event += " (+%d for the other side)" % retaliation
 	for note in result.notes:
 		current.last_event += " | %s" % note
-	if current.scores[current.player_side] >= current.target_score:
+	if mover == current.player_side:
+		for effect in current.prophecies:
+			effect.on_player_move(not result.victims.is_empty())
+	current.prophecies = current.prophecies.filter(func(effect): return not effect.is_used_up())
+	check_target(state)
+
+## Wins the match if your score has reached the target (also after a prophecy moves either number).
+static func check_target(state: GameState) -> void:
+	var current := state.current_match
+	if current.active and current.scores[current.player_side] >= current.target_score:
 		_finish(current, true, "Target score reached")
 
 ## Ends the current side's turn (call once the move, including any promotion,

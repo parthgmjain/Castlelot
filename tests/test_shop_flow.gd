@@ -65,8 +65,7 @@ func test_the_shop_opens_after_a_win_and_shows_everything() -> void:
 	check(not shop.choice_box.visible, "no choice waiting")
 	check(shop.points_upgrade_button.text.begins_with("Allocated points 14 -> 16"), shop.points_upgrade_button.text)
 	check(shop.zone_upgrade_button.text.begins_with("Zone size 10 -> 11"), shop.zone_upgrade_button.text)
-	check_eq(shop.cards_row.get_child_count(), ShopScreen.CARD_SLOTS, "a row of trading-card slots")
-	check(shop.cards_row.get_children().all(func(slot): return slot.disabled), "all placeholders for now")
+	check_eq(shop.cards_row.get_child(0).get_child(1).get_child_count(), RunConfig.PROPHECY_OFFERS, "prophecies are for sale")
 	check_eq(shop.leave_button.text, "Next Match", "leave button")
 
 func test_a_pull_pays_then_shows_five_cards_and_the_shop_waits_for_your_pick() -> void:
