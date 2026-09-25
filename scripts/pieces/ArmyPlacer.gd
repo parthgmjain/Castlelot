@@ -8,7 +8,7 @@ static func points_used(boards: Array, side: Piece.Side) -> int:
 		for square in b.pieces:
 			var piece: Dictionary = b.pieces[square]
 			if piece.side == side:
-				total += Piece.value(piece.type)
+				total += Piece.points(piece)
 	return total
 
 ## Places `type` for the current side on the selected square, unless it

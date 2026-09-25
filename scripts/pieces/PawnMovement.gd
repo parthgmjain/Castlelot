@@ -1,7 +1,7 @@
 class_name PawnMovement
 extends RefCounted
 
-const CARDINALS := [Vector2i(0, -1), Vector2i(0, 1), Vector2i(1, 0), Vector2i(-1, 0)]
+const PROMOTION_CHOICES := [Piece.Type.QUEEN, Piece.Type.ROOK, Piece.Type.BISHOP, Piece.Type.KNIGHT]
 
 ## The way a pawn faces by default: White up, Black down.
 static func home_direction(side: Piece.Side) -> Vector2i:
@@ -18,43 +18,16 @@ static func _preference(side: Piece.Side) -> Array:
 ## nearest enemy-zone square: { Board: { Vector2i: int } }. Empty when the
 ## enemy has no zone. Pieces are ignored - they block, they don't reroute.
 static func distance_field(board: Board, side: Piece.Side) -> Dictionary:
-	var enemy: Piece.Side = Piece.Side.BLACK if side == Piece.Side.WHITE else Piece.Side.WHITE
-
-	var reachable: Array = [board]
-	var seen: Dictionary = { board: true }
-	var index := 0
-	while index < reachable.size():
-		var b: Board = reachable[index]
-		index += 1
-		for square in b.portals:
-			for portal in b.portals[square]:
-				if not seen.has(portal.target_board):
-					seen[portal.target_board] = true
-					reachable.append(portal.target_board)
-
-	var field: Dictionary = {}
-	var queue: Array = []
-	for b in reachable:
-		field[b] = {}
+	var enemy: Piece.Side = Piece.opponent(side)
+	var boards := BoardGraph.reachable_boards(board)
+	var sources: Array = []
+	for b in boards:
 		for square in b.zone_owner:
 			if b.zone_owner[square] == enemy:
-				field[b][square] = 0
-				queue.append({ "board": b, "square": square })
-	if queue.is_empty():
+				sources.append({ "board": b, "square": square })
+	if sources.is_empty():
 		return {}
-
-	var head := 0
-	while head < queue.size():
-		var current: Dictionary = queue[head]
-		head += 1
-		var distance: int = field[current.board][current.square]
-		for direction in CARDINALS:
-			var next: Dictionary = Piece.step_across(current.board, current.square, direction)
-			if next.is_empty() or field[next.board].has(next.square):
-				continue
-			field[next.board][next.square] = distance + 1
-			queue.append(next)
-	return field
+	return BoardGraph.distance_field(boards, sources)
 
 ## The direction this pawn is currently heading. With no enemy zone to head
 ## for it falls back to its home direction; Vector2i.ZERO means it is already
@@ -106,3 +79,16 @@ static func moves(side: Piece.Side, board: Board, from: Vector2i) -> Array:
 			moves.append({ "board": capture.board, "square": capture.square, "capture": true })
 
 	return moves
+
+## True for a pawn standing inside the enemy zone.
+static func reached_promotion(piece: Dictionary, board: Board, square: Vector2i) -> bool:
+	if piece.type != Piece.Type.PAWN:
+		return false
+	var enemy: Piece.Side = Piece.Side.BLACK if piece.side == Piece.Side.WHITE else Piece.Side.WHITE
+	return board.zone_owner.get(square) == enemy
+
+## Turns the pawn into `type` in place. It keeps counting as a pawn against
+## its side's points, so promotion is free.
+static func promote(piece: Dictionary, type: Piece.Type) -> void:
+	piece.points = Piece.points(piece)
+	piece.type = type

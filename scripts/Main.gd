@@ -4,6 +4,10 @@ const BOARD_SCENE := preload("res://scenes/Board.tscn")
 
 @onready var boards_container: Node2D = $BoardsContainer
 @onready var panel: ControlPanel = $UI
+@onready var promotion_picker: PromotionPicker = $PromotionLayer/PromotionPicker
+
+## Pause before the AI moves so its move can be followed.
+var ai_delay := 0.6
 
 var state := GameState.new()
 
@@ -17,6 +21,8 @@ func _ready() -> void:
 	panel.zone_edit_toggled.connect(_on_zone_edit_toggled)
 	panel.place_requested.connect(_on_place)
 	panel.remove_requested.connect(_on_remove)
+	panel.start_match_requested.connect(_on_start_match)
+	promotion_picker.piece_chosen.connect(_on_promotion_chosen)
 
 	_generate_boards()
 
@@ -27,6 +33,9 @@ func _generate_boards() -> void:
 	state.attach_info.clear()
 	state.connections.clear()
 	state.clear_active()
+	state.pending_promotion = {}
+	state.current_match = MatchState.new()
+	promotion_picker.hide()
 
 	for i in panel.board_count():
 		var board: Board = BOARD_SCENE.instantiate()
@@ -52,6 +61,8 @@ func _relayout() -> void:
 func _refresh_view() -> void:
 	MoveController.refresh(state)
 	_update_points_status()
+	panel.set_match_status(MatchController.status_text(state))
+	panel.set_sandbox_enabled(not state.current_match.active)
 
 func _update_points_status() -> void:
 	panel.set_points_status(
@@ -71,8 +82,12 @@ func _on_board_size_changed(index: int, is_width: bool, value: int) -> void:
 func _on_square_selected(square: Vector2i, board: Board) -> void:
 	if state.zone_edit_mode:
 		board.set_zone(square, state.current_side)
+	elif not MatchController.accepts_click(state, board, square):
+		MoveController.clear_selection(state)
 	else:
-		MoveController.click(state, board, square)
+		var result := MoveController.click(state, board, square)
+		if not result.is_empty():
+			_after_move(result)
 
 func _on_square_right_clicked(square: Vector2i, board: Board) -> void:
 	if state.zone_edit_mode:
@@ -99,3 +114,63 @@ func _on_place(type: Piece.Type) -> void:
 func _on_remove() -> void:
 	ArmyPlacer.remove(state)
 	_refresh_view()
+
+func _on_promotion_chosen(type: Piece.Type) -> void:
+	PawnMovement.promote(state.pending_promotion.piece, type)
+	state.pending_promotion.board.queue_redraw()
+	state.pending_promotion = {}
+	_finish_turn()
+
+func _on_start_match(moves: int, target: int) -> void:
+	var error := MatchController.start(state, moves, target)
+	if error != "":
+		panel.set_match_status(error)
+		return
+	_mark_last_move({})
+	_refresh_view()
+
+## Everything that follows a completed move, for either side.
+func _after_move(result: Dictionary) -> void:
+	MatchController.record_move(state, result)
+	_mark_last_move(result)
+	if not state.pending_promotion.is_empty() and state.current_match.result == "":
+		promotion_picker.open(state.pending_promotion.piece.side)
+		_refresh_view()
+		return
+	_finish_turn()
+
+func _finish_turn() -> void:
+	MatchController.end_turn(state)
+	_refresh_view()
+	var current := state.current_match
+	if current.active and current.turn_side != current.player_side:
+		_run_ai_turn()
+
+func _run_ai_turn() -> void:
+	await get_tree().create_timer(ai_delay).timeout
+	var current := state.current_match
+	if not current.active or current.turn_side == current.player_side:
+		return
+
+	var choice := GreedyAI.choose_move(state, current.turn_side)
+	if choice.is_empty():
+		_finish_turn()
+		return
+
+	state.active_board = choice.board
+	state.active_square = choice.square
+	var result := MoveController.execute(state, choice.move)
+	if not state.pending_promotion.is_empty():
+		PawnMovement.promote(state.pending_promotion.piece, PawnMovement.PROMOTION_CHOICES[0])
+		state.pending_promotion = {}
+	_after_move(result)
+
+func _mark_last_move(result: Dictionary) -> void:
+	var squares: Dictionary = {}
+	if not result.is_empty():
+		squares[result.from_board] = [result.from_square]
+		if not squares.has(result.board):
+			squares[result.board] = []
+		squares[result.board].append(result.square)
+	for b in state.boards:
+		b.set_last_move_squares(squares.get(b, []))

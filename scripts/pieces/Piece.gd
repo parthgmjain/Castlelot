@@ -47,8 +47,16 @@ const VALUES := {
 static func symbol(type: Piece.Type, side: Piece.Side) -> String:
 	return SYMBOLS[side][type]
 
+static func opponent(side: Piece.Side) -> Piece.Side:
+	return Piece.Side.BLACK if side == Piece.Side.WHITE else Piece.Side.WHITE
+
 static func value(type: Piece.Type) -> int:
 	return VALUES[type]
+
+## What a placed piece counts against its side's points: its standard value,
+## unless it carries an override (a promoted pawn keeps counting as a pawn).
+static func points(piece: Dictionary) -> int:
+	return piece.get("points", value(piece.type))
 
 ## Steps one square from `square` on `board` in `direction`. If that lands
 ## off the board, follows a portal at `square` whose direction matches, if

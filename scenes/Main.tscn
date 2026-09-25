@@ -1,18 +1,19 @@
-[gd_scene load_steps=3 format=3 uid="uid://bqx7n8m0k3v1a"]
+[gd_scene load_steps=4 format=3 uid="uid://bqx7n8m0k3v1a"]
 
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ui/ControlPanel.gd" id="2_panel"]
+[ext_resource type="Script" path="res://scripts/ui/PromotionPicker.gd" id="3_picker"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
 
 [node name="BoardsContainer" type="Node2D" parent="."]
-position = Vector2(40, 310)
+position = Vector2(40, 350)
 
 [node name="UI" type="Control" parent="."]
 anchors_preset = 0
 offset_right = 1280.0
-offset_bottom = 310.0
+offset_bottom = 350.0
 script = ExtResource("2_panel")
 
 [node name="VBox" type="VBoxContainer" parent="UI"]
@@ -20,7 +21,7 @@ layout_mode = 0
 offset_left = 20.0
 offset_top = 10.0
 offset_right = 1260.0
-offset_bottom = 300.0
+offset_bottom = 340.0
 theme_override_constants/separation = 10
 
 [node name="CountRow" type="HBoxContainer" parent="UI/VBox"]
@@ -163,3 +164,90 @@ text = "Pawn"
 [node name="RemoveButton" type="Button" parent="UI/VBox/PieceRow"]
 layout_mode = 2
 text = "Remove"
+
+[node name="MatchRow" type="HBoxContainer" parent="UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MovesLabel" type="Label" parent="UI/VBox/MatchRow"]
+layout_mode = 2
+text = "Moves:"
+
+[node name="MovesSpinBox" type="SpinBox" parent="UI/VBox/MatchRow"]
+layout_mode = 2
+min_value = 1.0
+max_value = 99.0
+value = 12.0
+
+[node name="TargetLabel" type="Label" parent="UI/VBox/MatchRow"]
+layout_mode = 2
+text = "Target Score:"
+
+[node name="TargetSpinBox" type="SpinBox" parent="UI/VBox/MatchRow"]
+layout_mode = 2
+min_value = 1.0
+max_value = 9999.0
+value = 60.0
+
+[node name="StartMatchButton" type="Button" parent="UI/VBox/MatchRow"]
+layout_mode = 2
+text = "Start Match"
+
+[node name="MatchStatusLabel" type="Label" parent="UI/VBox/MatchRow"]
+layout_mode = 2
+text = ""
+
+[node name="PromotionLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="PromotionPicker" type="Control" parent="PromotionLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("3_picker")
+
+[node name="Dim" type="ColorRect" parent="PromotionLayer/PromotionPicker"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="Center" type="CenterContainer" parent="PromotionLayer/PromotionPicker"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="PromotionLayer/PromotionPicker/Center"]
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="PromotionLayer/PromotionPicker/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="PromotionLayer/PromotionPicker/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="PromotionLayer/PromotionPicker/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Promote pawn to:"
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="PromotionLayer/PromotionPicker/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10

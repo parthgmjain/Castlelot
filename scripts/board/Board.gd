@@ -11,6 +11,7 @@ const SELECT_COLOR := Color(0.95, 0.85, 0.2)
 const CONNECTOR_COLOR := Color(0.2, 0.6, 0.95)
 const MOVE_COLOR := Color(0.2, 0.85, 0.3)
 const CAPTURE_COLOR := Color(0.9, 0.25, 0.25)
+const LAST_MOVE_COLOR := Color(1.0, 0.9, 0.3, 0.32)
 const PIECE_FONT_SIZE := 22
 const PIECE_COLOR := Color(0.05, 0.05, 0.05)
 const ZONE_COLORS := {
@@ -21,6 +22,7 @@ const ZONE_COLORS := {
 var pieces: Dictionary = {}
 var selected_square: Vector2i = Vector2i(-1, -1)
 var connection_squares: Array = []
+var last_move_squares: Array = []
 var move_squares: Array = []
 var capture_squares: Array = []
 var zone_owner: Dictionary = {}
@@ -61,6 +63,10 @@ func local_square_center(square: Vector2i) -> Vector2:
 
 func is_in_bounds(square: Vector2i) -> bool:
 	return square.x >= 0 and square.y >= 0 and square.x < grid_width and square.y < grid_height
+
+func set_last_move_squares(squares: Array) -> void:
+	last_move_squares = squares
+	queue_redraw()
 
 func set_connection_squares(squares: Array) -> void:
 	connection_squares = squares
@@ -136,6 +142,9 @@ func _draw() -> void:
 	for square in zone_owner:
 		var pos := Vector2(square.x, square.y) * SQUARE_SIZE
 		draw_rect(Rect2(pos, Vector2(SQUARE_SIZE, SQUARE_SIZE)), ZONE_COLORS[zone_owner[square]])
+
+	for square in last_move_squares:
+		draw_rect(Rect2(Vector2(square.x, square.y) * SQUARE_SIZE, Vector2(SQUARE_SIZE, SQUARE_SIZE)), LAST_MOVE_COLOR)
 
 	if selected_square.x >= 0 and selected_square.y >= 0:
 		var pos := Vector2(selected_square.x, selected_square.y) * SQUARE_SIZE
