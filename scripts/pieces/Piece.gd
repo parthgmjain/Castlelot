@@ -1,7 +1,13 @@
 class_name Piece
 extends RefCounted
 
-enum Type { KING, QUEEN, ROOK, BISHOP, KNIGHT, PAWN }
+enum Type {
+	KING, QUEEN, ROOK, BISHOP, KNIGHT, PAWN,
+	# data-driven pieces (see PieceDefs)
+	SCOUT, SERF, MILITIA, CRAB,
+	CAMEL, ZEBRA, TWIN_RIDER, HAWK, CANNON, CHARGER, RANGER, LANCER, MIRROR, MONK,
+	FERZ_GUARD, GRASSHOPPER, GHOST, SPEARMAN, GRIFFON,
+}
 enum Side { WHITE, BLACK }
 enum Tier { COMMON, UNCOMMON, LEGENDARY }
 
@@ -54,19 +60,29 @@ const VALUES := {
 	Type.PAWN: 1,
 }
 
+## Text symbol for buttons and messages. Data-driven pieces have no chess glyph;
+## the board draws them as a labelled disc instead.
 static func symbol(type: Piece.Type, side: Piece.Side) -> String:
+	if PieceDefs.has(type):
+		return "◇" if side == Side.WHITE else "◆"
 	return SYMBOLS[side][type]
 
 static func tier(type: Piece.Type) -> Piece.Tier:
+	if PieceDefs.has(type):
+		return PieceDefs.tier(type)
 	return TIERS.get(type, Piece.Tier.COMMON)
 
 static func types_in_tier(tier_value: Piece.Tier) -> Array:
-	return TIERS.keys().filter(func(t): return TIERS[t] == tier_value)
+	var types: Array = TIERS.keys().filter(func(t): return TIERS[t] == tier_value)
+	types.append_array(PieceDefs.types().filter(func(t): return PieceDefs.tier(t) == tier_value))
+	return types
 
 static func opponent(side: Piece.Side) -> Piece.Side:
 	return Piece.Side.BLACK if side == Piece.Side.WHITE else Piece.Side.WHITE
 
 static func value(type: Piece.Type) -> int:
+	if PieceDefs.has(type):
+		return PieceDefs.value(type)
 	return VALUES[type]
 
 ## What a placed piece counts against its side's points: its standard value,
@@ -106,6 +122,8 @@ static func _step_diagonally_across(board: Board, square: Vector2i, direction: V
 ## Every move is { board: Board, square: Vector2i, capture: bool }. `board`
 ## may differ from the piece's origin board when the move crosses a portal.
 static func get_legal_moves(type: Piece.Type, side: Piece.Side, board: Board, from: Vector2i) -> Array:
+	if PieceDefs.has(type):
+		return PieceMoves.generate(type, side, board, from)
 	match type:
 		Type.KING:
 			return _step_moves(KING_OFFSETS, side, board, from)
@@ -139,7 +157,7 @@ static func _step_moves(offsets: Array, side: Piece.Side, board: Board, from: Ve
 static func _knight_moves(side: Piece.Side, board: Board, from: Vector2i) -> Array:
 	var moves: Array = []
 	for offset in KNIGHT_OFFSETS:
-		var dest: Dictionary = _trace_path(board, from, offset)
+		var dest: Dictionary = trace_path(board, from, offset)
 		if dest.is_empty():
 			continue
 		var occupant = dest.board.pieces.get(dest.square)
@@ -147,7 +165,7 @@ static func _knight_moves(side: Piece.Side, board: Board, from: Vector2i) -> Arr
 			moves.append({ "board": dest.board, "square": dest.square, "capture": occupant != null })
 	return moves
 
-static func _trace_path(board: Board, from: Vector2i, offset: Vector2i) -> Dictionary:
+static func trace_path(board: Board, from: Vector2i, offset: Vector2i) -> Dictionary:
 	var steps: Array = []
 	var step_x := Vector2i(1 if offset.x > 0 else -1, 0)
 	var step_y := Vector2i(0, 1 if offset.y > 0 else -1)

@@ -27,7 +27,8 @@ func test_pieces_have_the_tiers_you_specified() -> void:
 	for type in [KNIGHT, BISHOP, ROOK]:
 		check_eq(Piece.tier(type), Piece.Tier.UNCOMMON, Piece.Type.find_key(type))
 	check_eq(Piece.tier(QUEEN), Piece.Tier.LEGENDARY, "queen")
-	check_eq(Piece.types_in_tier(Piece.Tier.UNCOMMON).size(), 3, "three uncommon types")
+	for type in Piece.types_in_tier(Piece.Tier.UNCOMMON):
+		check_eq(Piece.tier(type), Piece.Tier.UNCOMMON, "everything listed as uncommon is uncommon: %s" % Piece.Type.find_key(type))
 	check_eq(Piece.types_in_tier(Piece.Tier.LEGENDARY), [QUEEN], "only the queen is legendary")
 
 # ---- trading up ------------------------------------------------------------------
@@ -54,13 +55,15 @@ func test_five_uncommon_pieces_trade_up_to_a_queen() -> void:
 	check_eq(result.gained, QUEEN, "the only legendary piece")
 	check(run.roster.any(func(e): return e.type == QUEEN), "the queen is in the roster")
 
-func test_a_trade_up_can_give_any_of_the_uncommon_pieces() -> void:
+func test_a_trade_up_gives_a_varied_uncommon_piece() -> void:
 	var seen := {}
 	for i in 60:
 		var run := _run()
 		var ids := _ids_of(run, PAWN, 3) + _give(run, PAWN, 2)
-		seen[Shop.trade_up(run, ids).gained] = true
-	check(seen.has(KNIGHT) and seen.has(BISHOP) and seen.has(ROOK), "all three turn up over many trades: %s" % str(seen.keys()))
+		var gained: Piece.Type = Shop.trade_up(run, ids).gained
+		check_eq(Piece.tier(gained), Piece.Tier.UNCOMMON, "always one tier up")
+		seen[gained] = true
+	check(seen.size() >= 5, "many different uncommon pieces turn up over many trades: %s" % str(seen.keys()))
 
 func test_trade_up_needs_exactly_five_pieces_of_one_tier() -> void:
 	var run := _run()

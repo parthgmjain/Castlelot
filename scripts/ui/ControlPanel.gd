@@ -65,6 +65,7 @@ const MAX_DIM := 10
 @onready var knight_button: Button = $VBox/PieceRow/KnightButton
 @onready var pawn_button: Button = $VBox/PieceRow/PawnButton
 @onready var remove_button: Button = $VBox/PieceRow/RemoveButton
+var extra_piece_picker: OptionButton
 @onready var moves_spin_box: SpinBox = $VBox/MatchRow/MovesSpinBox
 @onready var target_spin_box: SpinBox = $VBox/MatchRow/TargetSpinBox
 @onready var start_match_button: Button = $VBox/MatchRow/StartMatchButton
@@ -94,6 +95,7 @@ func _ready() -> void:
 	bishop_button.pressed.connect(_on_place_pressed.bind(Piece.Type.BISHOP))
 	knight_button.pressed.connect(_on_place_pressed.bind(Piece.Type.KNIGHT))
 	pawn_button.pressed.connect(_on_place_pressed.bind(Piece.Type.PAWN))
+	_build_extra_piece_picker()
 	remove_button.pressed.connect(func(): remove_requested.emit())
 	start_match_button.pressed.connect(func(): start_match_requested.emit(int(moves_spin_box.value), int(target_spin_box.value)))
 	start_run_button.pressed.connect(func(): start_run_requested.emit())
@@ -192,7 +194,7 @@ func set_sandbox_enabled(enabled: bool) -> void:
 		count_spin_box, refresh_button, white_zone_spin_box, black_zone_spin_box, generate_zones_button,
 		white_points_spin_box, black_points_spin_box, round_option, auto_place_white_button, auto_place_black_button,
 		side_check_button, zone_edit_button, king_button, queen_button, rook_button, bishop_button, knight_button,
-		pawn_button, remove_button, moves_spin_box, target_spin_box, start_match_button, start_run_button,
+		pawn_button, extra_piece_picker, remove_button, moves_spin_box, target_spin_box, start_match_button, start_run_button,
 	]
 	controls.append_array(_width_boxes)
 	controls.append_array(_height_boxes)
@@ -204,6 +206,24 @@ func set_sandbox_enabled(enabled: bool) -> void:
 
 func _on_auto_place_pressed(side: Piece.Side) -> void:
 	auto_place_requested.emit(side)
+
+## A drop-down of every data-driven piece, for placing them in the sandbox.
+func _build_extra_piece_picker() -> void:
+	extra_piece_picker = OptionButton.new()
+	extra_piece_picker.add_item("More pieces...")
+	for type in PieceDefs.types():
+		extra_piece_picker.add_item("%s (%s)" % [Piece.Type.find_key(type).capitalize(), Piece.TIER_NAMES[PieceDefs.tier(type)]])
+		extra_piece_picker.set_item_metadata(extra_piece_picker.item_count - 1, type)
+	extra_piece_picker.item_selected.connect(_on_extra_piece_selected)
+	remove_button.get_parent().add_child(extra_piece_picker)
+	remove_button.get_parent().move_child(extra_piece_picker, remove_button.get_index())
+
+func _on_extra_piece_selected(index: int) -> void:
+	if index <= 0:
+		return
+	var type: Piece.Type = extra_piece_picker.get_item_metadata(index)
+	extra_piece_picker.select(0)
+	place_requested.emit(type)
 
 func _on_place_pressed(type: Piece.Type) -> void:
 	place_requested.emit(type)

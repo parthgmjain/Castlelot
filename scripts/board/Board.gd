@@ -13,6 +13,7 @@ const MOVE_COLOR := Color(0.2, 0.85, 0.3)
 const CAPTURE_COLOR := Color(0.9, 0.25, 0.25)
 const LAST_MOVE_COLOR := Color(1.0, 0.9, 0.3, 0.32)
 const PIECE_FONT_SIZE := 22
+const DISC_FONT_SIZE := 14
 const PIECE_COLOR := Color(0.05, 0.05, 0.05)
 const ZONE_COLORS := {
 	Piece.Side.WHITE: Color(0.2, 0.5, 0.95, 0.28),
@@ -162,8 +163,23 @@ func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	for square in pieces:
 		var piece: Dictionary = pieces[square]
+		if PieceDefs.has(piece.type):
+			_draw_disc_piece(font, square, piece)
+			continue
 		var symbol: String = Piece.symbol(piece.type, piece.side)
 		var text_size := font.get_string_size(symbol, HORIZONTAL_ALIGNMENT_CENTER, -1, PIECE_FONT_SIZE)
 		var square_pos := Vector2(square.x, square.y) * SQUARE_SIZE
 		var text_pos := square_pos + Vector2(SQUARE_SIZE - text_size.x, SQUARE_SIZE + text_size.y * 0.3) / 2.0
 		draw_string(font, text_pos, symbol, HORIZONTAL_ALIGNMENT_CENTER, -1, PIECE_FONT_SIZE, PIECE_COLOR)
+
+## Pieces without a chess glyph: a disc in the side's colour with the piece's short label.
+func _draw_disc_piece(font: Font, square: Vector2i, piece: Dictionary) -> void:
+	var white: bool = piece.side == Piece.Side.WHITE
+	var fill := Color(0.97, 0.97, 0.97) if white else Color(0.08, 0.08, 0.08)
+	var edge := Color(0.05, 0.05, 0.05) if white else Color(0.95, 0.95, 0.95)
+	var center := local_square_center(square)
+	draw_circle(center, SQUARE_SIZE * 0.4, edge)
+	draw_circle(center, SQUARE_SIZE * 0.4 - 2.0, fill)
+	var text: String = PieceDefs.label(piece.type)
+	var size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, DISC_FONT_SIZE)
+	draw_string(font, center + Vector2(-size.x / 2.0, size.y * 0.3), text, HORIZONTAL_ALIGNMENT_CENTER, -1, DISC_FONT_SIZE, edge)

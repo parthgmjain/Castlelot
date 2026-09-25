@@ -61,12 +61,16 @@ func test_the_odds_add_up_to_one() -> void:
 
 func test_every_piece_in_a_tier_can_be_drawn() -> void:
 	var rng := _rng(11)
-	var seen := {}
-	for i in 400:
-		seen[Lottery.roll_piece(Piece.Tier.UNCOMMON, rng)] = true
-	check(seen.has(KNIGHT) and seen.has(BISHOP) and seen.has(ROOK), "all three uncommon pieces turn up: %s" % str(seen.keys()))
-	check_eq(Lottery.roll_piece(Piece.Tier.COMMON, rng), PAWN, "the common pool is the pawn")
-	check_eq(Lottery.roll_piece(Piece.Tier.LEGENDARY, rng), QUEEN, "the legendary pool is the queen")
+	for tier in [Piece.Tier.COMMON, Piece.Tier.UNCOMMON, Piece.Tier.LEGENDARY]:
+		var pool := Lottery.pool(tier)
+		var seen := {}
+		for i in pool.size() * 80:
+			seen[Lottery.roll_piece(tier, rng)] = true
+		for type in pool:
+			check(seen.has(type), "%s turns up in the %s pool" % [Piece.Type.find_key(type), Piece.TIER_NAMES[tier]])
+		check_eq(seen.size(), pool.size(), "and nothing outside the pool")
+	check(Lottery.pool(Piece.Tier.UNCOMMON).has(KNIGHT) and Lottery.pool(Piece.Tier.UNCOMMON).has(BISHOP) and Lottery.pool(Piece.Tier.UNCOMMON).has(ROOK), "the classic uncommons are in")
+	check_eq(Lottery.pool(Piece.Tier.LEGENDARY), [QUEEN], "the legendary pool is the queen")
 
 func test_tiers_with_no_pieces_or_no_weight_are_never_drawn() -> void:
 	var weights := { Piece.Tier.COMMON: 1.0, 99: 5.0, Piece.Tier.UNCOMMON: 0.0 }
@@ -82,7 +86,7 @@ func test_pools_come_from_the_tier_table_so_new_pieces_join_automatically() -> v
 		check(not Lottery.pool(tier).is_empty(), "%s isn't empty" % Piece.TIER_NAMES[tier])
 		union.append_array(Lottery.pool(tier))
 	union.sort()
-	var table_keys := Piece.TIERS.keys()
+	var table_keys := Piece.TIERS.keys() + PieceDefs.types()
 	table_keys.sort()
 	check_eq(union, table_keys, "every piece in the tier table is in exactly one pool")
 
