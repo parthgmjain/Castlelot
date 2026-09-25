@@ -61,7 +61,8 @@ func settle_if_finished() -> void:
 		payout = Payout.calculate(current, state.run.currency)
 		state.run.currency += payout.total
 		if state.run.active:
-			notes.append(_report_losses(Roster.settle(state.run, state.boards, current.deployed_roster_ids)))
+			var waiting: Array = current.revivals.map(func(r): return r.piece.get("roster_id", -1))
+			notes.append(_report_losses(Roster.settle(state.run, state.boards, current.deployed_roster_ids, waiting)))
 	var context := ""
 	var button := ""
 	if state.run.active:

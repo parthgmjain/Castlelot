@@ -62,11 +62,17 @@ static func moves(side: Piece.Side, board: Board, from: Vector2i) -> Array:
 			moves.append({ "board": one_step.board, "square": one_step.square, "capture": false })
 
 			var home_row: int = board.grid_height - 1 if side == Piece.Side.WHITE else 0
+			var two_step_added := false
 			if forward == home_direction(side) and from.y == home_row and one_step.board == board \
 				and heading(one_step.board, one_step.square, side) == forward:
 				var two_step: Vector2i = from + forward * 2
 				if board.is_in_bounds(two_step) and not board.pieces.has(two_step):
 					moves.append({ "board": board, "square": two_step, "capture": false })
+					two_step_added = true
+			if not two_step_added and _is_drummed(board, from, side) and heading(one_step.board, one_step.square, side) == forward:
+				var second: Dictionary = Piece.step_across(one_step.board, one_step.square, forward)
+				if not second.is_empty() and not second.board.pieces.has(second.square):
+					moves.append({ "board": second.board, "square": second.square, "capture": false })
 
 	var facing := forward if forward != Vector2i.ZERO else home_direction(side)
 	var sideways := Vector2i(facing.y, facing.x)
@@ -79,6 +85,13 @@ static func moves(side: Piece.Side, board: Board, from: Vector2i) -> Array:
 			moves.append({ "board": capture.board, "square": capture.square, "capture": true })
 
 	return moves
+
+## A real pawn next to a friendly Drummer may advance two squares from anywhere.
+static func _is_drummed(board: Board, from: Vector2i, side: Piece.Side) -> bool:
+	var me = board.pieces.get(from)
+	if me == null or me.type != Piece.Type.PAWN:
+		return false
+	return Piece.has_adjacent(board, from, func(p): return p.side == side and PieceDefs.has(p.type) and PieceDefs.boosts(p.type).has("pawn_double_step"))
 
 ## True for a pawn standing inside the enemy zone.
 static func reached_promotion(piece: Dictionary, board: Board, square: Vector2i) -> bool:

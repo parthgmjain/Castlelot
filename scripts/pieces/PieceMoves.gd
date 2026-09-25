@@ -15,9 +15,15 @@ static func generate(type: Piece.Type, side: Piece.Side, board: Board, from: Vec
 	for rule in PieceDefs.rules(type):
 		if rule.get("local", false) and facing.is_empty():
 			facing = frame(board, from, side)
+		if rule.has("when") and not _condition_met(rule.when, side, board, from):
+			continue
 		var vectors := _vectors(rule, facing)
 		var mode: String = rule.get("mode", "any")
 		match rule.kind:
+			"pawn":
+				moves.append_array(PawnMovement.moves(side, board, from))
+			"swap":
+				_swaps(vectors, side, board, from, moves)
 			"step":
 				for offset in vectors:
 					var dest: Dictionary = Piece.step_across(board, from, offset)
@@ -43,6 +49,28 @@ static func generate(type: Piece.Type, side: Piece.Side, board: Board, from: Vec
 			"fire":
 				_fire(vectors, rule, side, board, from, moves)
 	return _without_duplicates(moves)
+
+## Rule conditions: { adjacent_friend: [types] } holds while a friend of one of those types stands next to the piece.
+static func _condition_met(condition: Dictionary, side: Piece.Side, board: Board, from: Vector2i) -> bool:
+	if condition.has("adjacent_friend"):
+		return Piece.has_adjacent(board, from, func(p): return p.side == side and condition.adjacent_friend.has(p.type))
+	return true
+
+## The square `offset` away: neighbours by stepping (so seams work either way round), farther squares by a traced path.
+static func _reach(board: Board, from: Vector2i, offset: Vector2i) -> Dictionary:
+	if abs(offset.x) <= 1 and abs(offset.y) <= 1:
+		return Piece.step_across(board, from, offset)
+	return Piece.trace_path(board, from, offset)
+
+## Trading places with a friendly piece (other than itself).
+static func _swaps(offsets: Array, side: Piece.Side, board: Board, from: Vector2i, moves: Array) -> void:
+	for offset in offsets:
+		var dest: Dictionary = _reach(board, from, offset)
+		if dest.is_empty():
+			continue
+		var occupant = dest.board.pieces.get(dest.square)
+		if occupant != null and occupant.side == side and not (dest.board == board and dest.square == from):
+			moves.append({ "board": dest.board, "square": dest.square, "capture": false, "swap": true })
 
 ## Which way is "forward" for a piece standing here (toward the enemy zone, like a pawn's
 ## heading) and which way is to its right.

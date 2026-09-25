@@ -14,6 +14,7 @@ static func start(state: GameState, moves: int, target: int) -> String:
 	fresh.target_score = target
 	fresh.modifiers = state.current_match.modifiers
 	state.current_match = fresh
+	MoveEffects.mark_homes(state)
 	MoveController.clear_selection(state)
 	return ""
 
@@ -33,35 +34,52 @@ static func accepts_click(state: GameState, board: Board, square: Vector2i) -> b
 	return piece != null and piece.side == current.player_side
 
 ## Scores a finished move and checks for a king capture or the target score.
-## `result` is what MoveController.execute returned.
-static func record_move(state: GameState, result: Dictionary) -> void:
+## `result` is what MoveController.execute returned; a `free` move (a bonus
+## move) doesn't use up one of the player's moves.
+static func record_move(state: GameState, result: Dictionary, free: bool = false) -> void:
 	var current := state.current_match
 	if not current.active:
 		return
 
 	var mover: Piece.Side = result.piece.side
+	var other := Piece.opponent(mover)
 	current.last_mover = mover
-	if mover == current.player_side:
+	if mover == current.player_side and not free:
 		current.moves_left -= 1
-	var victims: Array = result.victims
-	if victims.is_empty():
-		current.last_event = "%s moved a %s" % [_who(current, mover), _name(result.piece)]
-		return
 
-	for victim in victims:
+	for victim in result.victims:
 		if victim.piece.type == Piece.Type.KING:
 			current.last_event = "%s captured the king" % _who(current, mover)
 			_finish(current, mover == current.player_side, "King captured")
 			return
+	for loss in result.losses:
+		if loss.piece.type == Piece.Type.KING:
+			current.last_event = "%s's king was destroyed" % _who(current, mover)
+			_finish(current, mover != current.player_side, "King destroyed")
+			return
 
 	var gained := 0
 	var names: Array = []
-	for victim in victims:
+	for victim in result.victims:
 		gained += Scoring.capture_score(current, result.piece, victim.piece, victim.board, victim.square)
 		names.append(_name(victim.piece))
 	current.scores[mover] += gained
-	current.last_event = "%s took a %s with a %s (+%d)" % [_who(current, mover), " and a ".join(names), _name(result.piece), gained]
-	if mover == current.player_side and current.scores[mover] >= current.target_score:
+	var retaliation := 0
+	for loss in result.losses:
+		retaliation += Scoring.capture_score(current, loss.by, loss.piece, loss.board, loss.square)
+	current.scores[other] += retaliation
+
+	if not names.is_empty():
+		current.last_event = "%s took a %s with a %s (+%d)" % [_who(current, mover), " and a ".join(names), _name(result.piece), gained]
+	elif not result.swapped.is_empty():
+		current.last_event = "%s swapped a %s with a %s" % [_who(current, mover), _name(result.piece), _name(result.swapped.piece)]
+	else:
+		current.last_event = "%s moved a %s" % [_who(current, mover), _name(result.piece)]
+	if retaliation > 0:
+		current.last_event += " (+%d for the other side)" % retaliation
+	for note in result.notes:
+		current.last_event += " | %s" % note
+	if current.scores[current.player_side] >= current.target_score:
 		_finish(current, true, "Target score reached")
 
 ## Ends the current side's turn (call once the move, including any promotion,
@@ -74,7 +92,9 @@ static func end_turn(state: GameState) -> void:
 	if state.debug_mode:
 		current.turn_side = current.last_mover      # anyone may move; the turn goes to the other side
 
+	current.bonus = {}
 	_tick_rest(state, current.turn_side)
+	MoveEffects.tick_revivals(state, current.turn_side)
 	if current.turn_side == current.player_side and current.moves_left <= 0:
 		_finish(current, false, "Out of moves")
 		return
@@ -108,6 +128,8 @@ static func status_text(state: GameState) -> String:
 		var text := "%s | Moves left: %d | %s | %s" % [turn, current.moves_left, score, current.last_event]
 		if state.current_moves.any(func(m): return m.get("special", false)):
 			text += " | Right-click an orange ring to attack without moving"
+		if not current.bonus.is_empty():
+			text += " | BONUS MOVE: %s (or skip it)" % current.bonus.label
 		return text
 	if current.result != "":
 		return "%s: %s | %s | %s" % [current.result.to_upper(), current.result_reason, score, current.last_event]

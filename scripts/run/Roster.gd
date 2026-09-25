@@ -82,8 +82,10 @@ static func auto_deploy(run: RunState, boards: Array, ignore_budget: bool = fals
 
 ## After a match: any piece that was deployed but is no longer on a board was
 ## captured, so it leaves the roster for good. Returns those entries.
-static func settle(run: RunState, boards: Array, deployed_ids: Array) -> Array:
+static func settle(run: RunState, boards: Array, deployed_ids: Array, waiting_ids: Array = []) -> Array:
 	var alive := on_field(boards)
+	for id in waiting_ids:
+		alive[id] = true                      # a piece waiting to come back (a Phoenix) is not lost
 	var lost: Array = []
 	for id in deployed_ids:
 		if not alive.has(id):

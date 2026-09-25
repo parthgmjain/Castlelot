@@ -27,6 +27,7 @@ var connection_squares: Array = []
 var last_move_squares: Array = []
 var move_squares: Array = []
 var capture_squares: Array = []
+var swap_squares: Array = []        # friendly pieces the selected piece can trade places with
 var special_squares: Array = []     # attacks that don't move the piece (right-click)
 var zone_owner: Dictionary = {}
 
@@ -78,16 +79,18 @@ func set_connection_squares(squares: Array) -> void:
 func set_portals(new_portals: Dictionary) -> void:
 	portals = new_portals
 
-func set_move_markers(moves: Array, captures: Array, specials: Array = []) -> void:
+func set_move_markers(moves: Array, captures: Array, specials: Array = [], swaps: Array = []) -> void:
 	move_squares = moves
 	capture_squares = captures
 	special_squares = specials
+	swap_squares = swaps
 	queue_redraw()
 
 func clear_move_markers() -> void:
 	move_squares = []
 	capture_squares = []
 	special_squares = []
+	swap_squares = []
 	queue_redraw()
 
 func clear_selection() -> void:
@@ -179,6 +182,9 @@ func _draw() -> void:
 
 	for square in special_squares:
 		draw_arc(local_square_center(square), SQUARE_SIZE * 0.3, 0, TAU, 24, SPECIAL_COLOR, 3.0)
+
+	for square in swap_squares:
+		draw_arc(local_square_center(square), SQUARE_SIZE * 0.44, 0, TAU, 24, MOVE_COLOR, 3.0)
 
 ## Pieces without a chess glyph: a disc in the side's colour with the piece's short label.
 func _draw_disc_piece(font: Font, square: Vector2i, piece: Dictionary) -> void:

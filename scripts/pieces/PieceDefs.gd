@@ -7,11 +7,13 @@ extends RefCounted
 ## A rule is a Dictionary:
 ##   kind   "step" (one hop per vector), "leap" (path-traced jump, like a knight),
 ##          "slide", "cannon", "grasshopper", "twin_leap", "step_slide",
+##          "pawn" (moves and captures like a pawn), "swap" (trade places with a friend),
 ##          "shot" (capture exactly `distance` squares away without moving),
 ##          "fire" (capture every enemy within `range` in one line without moving, then rest)
 ##   to / dirs   the vectors (offsets for step/leap, directions for the others)
 ##   mode   "any" (default), "move" (empty squares only) or "capture" (enemies only)
 ##   local  true: vectors are (sideways, forward) relative to the piece's heading
+##   when   only while true: { adjacent_friend: [types] } (a friend of that type next to it)
 ##   slide options: min, max (0 = unlimited), through (pass over pieces), bounce,
 ##                  double_capture (after taking a piece, may run on and take a second)
 ##   shot options: distance, clear_line (nothing may stand in between)
@@ -47,6 +49,15 @@ static func is_reward_only(type: Piece.Type) -> bool:
 static func protection(type: Piece.Type) -> Array:
 	return _defs()[type].protection
 
+## Things that happen when this piece captures (`on_capture`) or is captured
+## (`on_captured`): a list of { kind, ... } handled by MoveEffects.
+static func effects(type: Piece.Type, key: String) -> Array:
+	return _defs()[type].get(key, [])
+
+## Movement boosts this piece gives friendly pieces next to it (see PawnMovement).
+static func boosts(type: Piece.Type) -> Array:
+	return _defs()[type].get("boost", [])
+
 ## Rules that shield friendly pieces standing next to this one.
 static func aura(type: Piece.Type) -> Array:
 	return _defs()[type].aura
@@ -79,6 +90,11 @@ static func _symmetric(a: int, b: int) -> Array:
 static func _def(tier_value: Piece.Tier, value_points: int, text: String, rule_list: Array, reward: bool = false) -> Dictionary:
 	return { "tier": tier_value, "value": value_points, "label": text, "rules": rule_list, "reward": reward, "protection": [], "aura": [] }
 
+## The same definition with extra keys (`on_capture`, `on_captured`, `boost`).
+static func _with(definition: Dictionary, extra: Dictionary) -> Dictionary:
+	definition.merge(extra, true)
+	return definition
+
 ## The same definition, with capture protection for the piece itself and/or an aura for its neighbours.
 static func _guarded(definition: Dictionary, own: Array, neighbours: Array = []) -> Dictionary:
 	definition["protection"] = own
@@ -92,6 +108,11 @@ static func _build() -> Dictionary:
 	var forward := [Vector2i(0, 1)]
 	var beside := [Vector2i(1, 0), Vector2i(-1, 0)]
 	var front_diagonals := [Vector2i(1, 1), Vector2i(-1, 1)]
+	var within_two: Array = []
+	for x in range(-2, 3):
+		for y in range(-2, 3):
+			if x != 0 or y != 0:
+				within_two.append(Vector2i(x, y))
 	var hawk_jumps: Array = []
 	for distance in [2, 3]:
 		hawk_jumps.append_array(_symmetric(distance, 0))
@@ -119,6 +140,18 @@ static func _build() -> Dictionary:
 			{ "kind": "step", "to": forward, "mode": "move", "local": true },
 			{ "kind": "step", "to": front_diagonals, "mode": "capture", "local": true },
 		]), [{ "kind": "front_adjacent" }]),
+		Piece.Type.PILGRIM: _def(common, 2, "Pi", [
+			{ "kind": "step", "to": [Vector2i(0, 1), Vector2i(0, -1)], "mode": "move", "local": true },
+			{ "kind": "swap", "to": ALL_DIRECTIONS },
+		]),
+		Piece.Type.TORCHBEARER: _with(_def(common, 2, "Tb", [{ "kind": "pawn" }]),
+			{ "on_captured": [{ "kind": "destroy_attacker" }] }),
+		Piece.Type.DRUMMER: _with(_def(common, 1, "Dm", [{ "kind": "step", "to": forward, "mode": "move", "local": true }]),
+			{ "boost": ["pawn_double_step"] }),
+		Piece.Type.SQUIRE: _def(common, 2, "Sq", [
+			{ "kind": "pawn" },
+			{ "kind": "leap", "to": Piece.KNIGHT_OFFSETS, "when": { "adjacent_friend": [Piece.Type.KNIGHT] } },
+		]),
 		Piece.Type.ARCHER: _def(common, 2, "Ar", [
 			{ "kind": "step", "to": forward, "mode": "move", "local": true },
 			{ "kind": "shot", "dirs": forward, "distance": 2, "clear_line": true, "local": true },
@@ -157,11 +190,29 @@ static func _build() -> Dictionary:
 			[{ "kind": "attacker_types", "types": [Piece.Type.PAWN, Piece.Type.KNIGHT] }]),
 		Piece.Type.BARD: _guarded(_def(uncommon, 2, "Ba", [{ "kind": "step", "to": ALL_DIRECTIONS, "mode": "move" }]),
 			[], [{ "kind": "attacker_types", "types": [Piece.Type.PAWN] }]),
+		Piece.Type.NINJA: _with(_def(uncommon, 4, "Ni", [{ "kind": "leap", "to": Piece.KNIGHT_OFFSETS }]),
+			{ "on_capture": [{ "kind": "bonus_step" }] }),
+		Piece.Type.ALCHEMIST: _def(uncommon, 4, "Al", [
+			{ "kind": "step", "to": ALL_DIRECTIONS },
+			{ "kind": "swap", "to": within_two },
+		]),
 		Piece.Type.CATAPULT: _def(uncommon, 3, "Ct", [{ "kind": "shot", "dirs": ORTHOGONAL, "distance": 3 }]),
 		# ---- legendary tier (boss rewards)
 		Piece.Type.TITAN: _def(legendary, 10, "Ti", [{ "kind": "slide", "dirs": ORTHOGONAL, "double_capture": true }], true),
 		Piece.Type.WRAITH: _guarded(_def(legendary, 10, "Wr", [{ "kind": "slide", "dirs": ALL_DIRECTIONS, "through": true }], true),
 			[{ "kind": "only_attackers", "types": [Piece.Type.PAWN], "tiers": [Piece.Tier.LEGENDARY] }]),
+		Piece.Type.LICH: _with(_def(legendary, 10, "Li", [
+			{ "kind": "step", "to": ALL_DIRECTIONS },
+			{ "kind": "leap", "to": _symmetric(2, 0) + _symmetric(2, 2) },
+		], true), { "on_capture": [{ "kind": "raise_pawn" }] }),
+		Piece.Type.WARLORD: _with(_def(legendary, 10, "Wa", [
+			{ "kind": "slide", "dirs": ORTHOGONAL },
+			{ "kind": "leap", "to": Piece.KNIGHT_OFFSETS },
+		], true), { "on_capture": [{ "kind": "bonus_pawn" }] }),
+		Piece.Type.PHOENIX: _with(_def(legendary, 10, "Ph", [{ "kind": "slide", "dirs": ALL_DIRECTIONS }], true),
+			{ "on_captured": [{ "kind": "rebirth", "turns": 3 }] }),
+		Piece.Type.HYDRA: _with(_def(legendary, 10, "Hy", [{ "kind": "slide", "dirs": ALL_DIRECTIONS, "max": 2 }], true),
+			{ "on_captured": [{ "kind": "split", "alone": 4, "crowded": 2 }] }),
 		Piece.Type.DRAGON: _def(legendary, 11, "Dr", [
 			{ "kind": "slide", "dirs": ORTHOGONAL },
 			{ "kind": "fire", "dirs": ORTHOGONAL, "range": 3, "rest": 2 },

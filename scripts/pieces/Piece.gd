@@ -9,6 +9,7 @@ enum Type {
 	FERZ_GUARD, GRASSHOPPER, GHOST, SPEARMAN, GRIFFON,
 	ARCHER, CATAPULT, TITAN, DRAGON,
 	SHIELDBEARER, TORTOISE, GOLEM, BARD, WRAITH,
+	PILGRIM, ALCHEMIST, TORCHBEARER, NINJA, SQUIRE, DRUMMER, LICH, WARLORD, PHOENIX, HYDRA,
 }
 enum Side { WHITE, BLACK }
 enum Tier { COMMON, UNCOMMON, LEGENDARY }
@@ -96,6 +97,17 @@ static func value(type: Piece.Type) -> int:
 static func points(piece: Dictionary) -> int:
 	return piece.get("points", value(piece.type))
 
+## Whether any of the 8 squares around `square` (across seams too) holds a piece `test` accepts.
+static func has_adjacent(board: Board, square: Vector2i, test: Callable) -> bool:
+	for offset in KING_OFFSETS:
+		var next: Dictionary = step_across(board, square, offset)
+		if next.is_empty():
+			continue
+		var piece = next.board.pieces.get(next.square)
+		if piece != null and test.call(piece):
+			return true
+	return false
+
 ## Steps one square from `square` on `board` in `direction`. If that lands
 ## off the board, follows a portal at `square` whose direction matches, if
 ## one exists (a piece can only pass through a board edge at a connecting
@@ -136,7 +148,7 @@ static func _generate_moves(type: Piece.Type, side: Piece.Side, board: Board, fr
 		return PieceMoves.generate(type, side, board, from)
 	match type:
 		Type.KING:
-			return _step_moves(KING_OFFSETS, side, board, from)
+			return step_moves(KING_OFFSETS, side, board, from)
 		Type.KNIGHT:
 			return _knight_moves(side, board, from)
 		Type.ROOK:
@@ -149,7 +161,7 @@ static func _generate_moves(type: Piece.Type, side: Piece.Side, board: Board, fr
 			return PawnMovement.moves(side, board, from)
 	return []
 
-static func _step_moves(offsets: Array, side: Piece.Side, board: Board, from: Vector2i) -> Array:
+static func step_moves(offsets: Array, side: Piece.Side, board: Board, from: Vector2i) -> Array:
 	var moves: Array = []
 	for offset in offsets:
 		var dest: Dictionary = step_across(board, from, offset)

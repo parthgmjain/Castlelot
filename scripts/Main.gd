@@ -59,6 +59,7 @@ func _connect_panel() -> void:
 	panel.bench_piece_selected.connect(deployment_flow.bench_selected)
 	panel.auto_deploy_requested.connect(deployment_flow.auto_deploy)
 	panel.ready_requested.connect(run_flow.ready_to_fight)
+	panel.skip_bonus_requested.connect(turn_flow.skip_bonus)
 	panel.debug_toggled.connect(debug_flow.toggled)
 	panel.debug_win_requested.connect(debug_flow.force_result.bind(true))
 	panel.debug_lose_requested.connect(debug_flow.force_result.bind(false))
@@ -112,6 +113,7 @@ func _refresh_view() -> void:
 	run_flow.settle_if_finished()
 	panel.set_wallet(state.run.currency)
 	panel.set_run_status(state.run.title())
+	panel.set_bonus_visible(not state.current_match.bonus.is_empty() and (state.debug_mode or state.current_match.turn_side == state.current_match.player_side))
 	deployment_flow.refresh_ui()
 
 func _update_points_status() -> void:

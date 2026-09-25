@@ -12,16 +12,16 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - [x] Serf: 1 diagonally forward (no capture); captures straight forward.
 - [x] Militia: 1 orthogonally in any direction incl. backward (no capture); captures diagonally forward.
 - [x] Crab: 1 sideways only (no capture); captures 1 diagonally in any direction.
-- [ ] Torchbearer: moves like a pawn. When captured, the capturing piece is destroyed too.
-- [ ] Drummer: 1 forward, can't capture. Friendly pawns next to it can move 2 forward.
-- [ ] Pilgrim: 1 forward or backward, or swaps places with an adjacent friendly piece.
-- [ ] Squire: moves like a pawn. Starting a turn next to a friendly knight, it can make a knight jump instead.
+- [x] Torchbearer: moves like a pawn. When captured, the capturing piece is destroyed too.
+- [x] Drummer: 1 forward, can't capture. Friendly pawns next to it can move 2 forward.
+- [x] Pilgrim: 1 forward or backward, or swaps places with an adjacent friendly piece.
+- [x] Squire: moves like a pawn. Starting a turn next to a friendly knight, it can make a knight jump instead.
 
 ## Uncommon tier (rook/bishop/knight level)
 - [x] Camel: 3-1 leaper.
 - [x] Zebra: 3-2 leaper.
 - [x] Twin Rider: one or two knight jumps in the same direction (the square between the jumps must be empty).
-- [ ] Ninja: knight move; after a capture it may move 1 more square.
+- [x] Ninja: knight move; after a capture it may move 1 more square.
 - [x] Hawk: leaps exactly 2 or 3 squares in any straight or diagonal direction.
 - [x] Cannon: rook move; captures by jumping over exactly one piece.
 - [x] Charger: rook move of at least 2 squares.
@@ -34,7 +34,7 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - [x] Ferz Guard: 1 square diagonally or leaps 2 squares diagonally.
 - [x] Grasshopper: along any queen line, must hop over one piece and land directly behind it.
 - [x] Golem: 1 square orthogonally; can't be captured by pawns or knights.
-- [ ] Alchemist: king move, or swaps places with any friendly piece within 2 squares.
+- [x] Alchemist: king move, or swaps places with any friendly piece within 2 squares.
 - [x] Ghost: up to 2 squares in any direction, passing through pieces.
 - [x] Spearman: 1 square any direction; captures up to 2 squares straight ahead.
 - [x] Bard: king move, can't capture. Adjacent friendly pieces can't be captured by pawns.
@@ -42,13 +42,13 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 
 ## Legendary tier (queen level, one per knight boss)
 - [ ] Paladin: bishop + knight. Adjacent friendly pieces can't be captured. When the king is attacked it can teleport next to the king.
-- [ ] Warlord: rook + knight. Every capture gives a bonus move with one pawn.
+- [x] Warlord: rook + knight. Every capture gives a bonus move with one pawn.
 - [ ] Empress: queen + knight.
 - [x] Dragon: rook move, or breathes fire capturing every enemy up to 3 squares along one line, then rests a turn.
-- [ ] Phoenix: queen move. The first time it is captured it returns to its starting square 3 turns later.
-- [ ] Hydra: up to 2 squares any direction. When captured it splits into 4 knights (none adjacent) or 2 (any adjacent), never more than the empty squares beside it.
+- [x] Phoenix: queen move. The first time it is captured it returns to its starting square 3 turns later.
+- [x] Hydra: up to 2 squares any direction. When captured it splits into 4 knights (none adjacent) or 2 (any adjacent), never more than the empty squares beside it.
 - [x] Wraith: queen move, phases through pieces. Can only be captured by pawns or other legendaries.
-- [ ] Lich: king move or 2-square leap. Every piece it captures returns as your pawn on your back rank.
+- [x] Lich: king move or 2-square leap. Every piece it captures returns as your pawn on your back rank.
 - [ ] Chronomancer: bishop move. Once per game it can undo the opponent's last move.
 - [x] Titan: rook move that can capture up to 2 pieces in its path in one move.
 - [ ] Oracle: up to 3 squares any direction. Every second turn it takes two moves in a row.
@@ -69,5 +69,14 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - Golem: "pawns or knights" means only the real Pawn and Knight types.
 - Bard: its aura shields the friendly pieces on the 8 squares around it (including across seams) from pawns only; the Bard itself is not covered.
 - Wraith: "legendaries" includes the queen; pawns can still take it.
+- Swaps: "adjacent" is the 8 squares around the piece (across seams too); the Alchemist's "within 2" is any square up to 2 away in each direction, whatever stands between. Swapping a pawn into the enemy zone promotes it.
+- Torchbearer: the capturer is destroyed whichever way it captured (an Archer's arrow too). The Torchbearer's side scores the destroyed piece, and if it was a king that side wins.
+- Ninja: the extra step is one square in any direction, may capture, is free (costs no move), optional (Skip Bonus Move) and never chains into another bonus.
+- Warlord: the bonus is a free, optional move of any one real pawn (never chains). A bonus nobody can use isn't offered.
+- Lich: a captured piece returns as a pawn on the empty square of your own zone farthest from the enemy zone (with no zones, on the far end of the home row); it is a temporary pawn, not a roster piece.
+- Phoenix: "3 turns later" is 3 of its owner's own turns. It returns to where it stood when the match began, waiting if that square is taken. It only ever returns once, and a Phoenix waiting to return isn't lost from your roster.
+- Hydra: "next to it" is judged after the capturing piece has moved, counting any side; knights fill the free neighbouring squares in order right, left, down, up, then the diagonals.
+- Drummer: boosts real pawns only (not Scouts etc.), from any square, when a friendly Drummer is on one of the 8 squares around it.
+- Squire: the knight jumps are available only while a friendly Knight (the real piece) stands next to it.
 - Paladin is left for the teleport batch, since it needs both its aura and the king teleport.
 - Titan and Dragon are boss rewards: not in the lottery, and rewards are not wired to the knights yet.

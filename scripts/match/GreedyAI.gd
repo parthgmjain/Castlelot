@@ -9,6 +9,13 @@ const APPROACH_WEIGHT := 2.0
 ## the opponent could take back next turn, and when nothing is worth taking
 ## close in on the enemy. Returns { board, square, move } or {} with no moves.
 static func choose_move(state: GameState, side: Piece.Side) -> Dictionary:
+	return _best_move(state, side, -INF)
+
+## The same for a bonus move, which is optional: {} unless it is worth making.
+static func choose_bonus_move(state: GameState, side: Piece.Side) -> Dictionary:
+	return _best_move(state, side, 0.0)
+
+static func _best_move(state: GameState, side: Piece.Side, minimum: float) -> Dictionary:
 	var enemy := Piece.opponent(side)
 	var enemy_squares: Array = []
 	for board in state.boards:
@@ -18,13 +25,13 @@ static func choose_move(state: GameState, side: Piece.Side) -> Dictionary:
 	var distance := BoardGraph.distance_field(state.boards, enemy_squares)
 
 	var best: Dictionary = {}
-	var best_value := -INF
+	var best_value := minimum
 	for board in state.boards:
 		for square in board.pieces.keys():
 			var piece: Dictionary = board.pieces[square]
 			if piece.side != side:
 				continue
-			for move in Piece.get_legal_moves(piece.type, side, board, square):
+			for move in MoveEffects.moves_for(state, piece, board, square):
 				var value := _evaluate(state, side, board, square, piece, move, distance) + randf()
 				if value > best_value:
 					best_value = value
@@ -34,24 +41,36 @@ static func choose_move(state: GameState, side: Piece.Side) -> Dictionary:
 static func _evaluate(state: GameState, side: Piece.Side, from_board: Board, from_square: Vector2i, piece: Dictionary, move: Dictionary, distance: Dictionary) -> float:
 	var victims := MoveController.victims_of(move)
 	var gain := 0.0
+	var dies := false                       # a Torchbearer takes its attacker with it
 	for victim in victims:
 		if victim.piece.type == Piece.Type.KING:
 			return KING_WORTH * 10.0
 		gain += _worth(victim.piece)
+		if PieceDefs.has(victim.piece.type) and PieceDefs.effects(victim.piece.type, "on_captured").any(func(e): return e.kind == "destroy_attacker"):
+			dies = true
+	if dies:
+		gain -= _worth(piece)
 
-	# Try the move, see the best reply, then put everything back.
+	# Try the move, see the best reply, then put everything back exactly as it was.
 	var stays: bool = move.get("stay", false)
+	var touched: Array = [{ "board": from_board, "square": from_square }, { "board": move.board, "square": move.square }]
+	touched.append_array(victims)
+	var saved: Array = touched.map(func(t): return { "board": t.board, "square": t.square, "piece": t.board.pieces.get(t.square) })
+	var friend = move.board.pieces.get(move.square) if move.get("swap", false) else null
 	for victim in victims:
 		victim.board.pieces.erase(victim.square)
-	if not stays:
+	if dies or not stays:
 		from_board.pieces.erase(from_square)
+	if not stays and not dies:
 		move.board.pieces[move.square] = piece
+		if friend != null:
+			from_board.pieces[from_square] = friend
 	var risk := _best_capture(state, Piece.opponent(side))
-	if not stays:
-		move.board.pieces.erase(move.square)
-		from_board.pieces[from_square] = piece
-	for victim in victims:
-		victim.board.pieces[victim.square] = victim.piece
+	for entry in saved:
+		if entry.piece == null:
+			entry.board.pieces.erase(entry.square)
+		else:
+			entry.board.pieces[entry.square] = entry.piece
 
 	var value := gain - risk * RISK_WEIGHT
 	if victims.is_empty():

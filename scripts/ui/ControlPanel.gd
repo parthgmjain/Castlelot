@@ -22,6 +22,7 @@ signal debug_pass_requested
 signal debug_goto_requested(round_number: int, match_number: int)
 signal debug_gold_changed(amount: int)
 signal debug_moves_changed(amount: int)
+signal skip_bonus_requested
 
 const MIN_DIM := 2
 const MAX_DIM := 10
@@ -66,10 +67,11 @@ const MAX_DIM := 10
 @onready var pawn_button: Button = $VBox/PieceRow/PawnButton
 @onready var remove_button: Button = $VBox/PieceRow/RemoveButton
 var extra_piece_picker: OptionButton
+var skip_bonus_button: Button
 @onready var moves_spin_box: SpinBox = $VBox/MatchRow/MovesSpinBox
 @onready var target_spin_box: SpinBox = $VBox/MatchRow/TargetSpinBox
 @onready var start_match_button: Button = $VBox/MatchRow/StartMatchButton
-@onready var match_status_label: Label = $VBox/MatchRow/MatchStatusLabel
+@onready var match_status_label: Label = $VBox/MatchStatusLabel
 @onready var wallet_label: Label = $VBox/MatchRow/WalletLabel
 
 var _width_boxes: Array = []
@@ -96,6 +98,7 @@ func _ready() -> void:
 	knight_button.pressed.connect(_on_place_pressed.bind(Piece.Type.KNIGHT))
 	pawn_button.pressed.connect(_on_place_pressed.bind(Piece.Type.PAWN))
 	_build_extra_piece_picker()
+	_build_skip_bonus_button()
 	remove_button.pressed.connect(func(): remove_requested.emit())
 	start_match_button.pressed.connect(func(): start_match_requested.emit(int(moves_spin_box.value), int(target_spin_box.value)))
 	start_run_button.pressed.connect(func(): start_run_requested.emit())
@@ -217,6 +220,19 @@ func _build_extra_piece_picker() -> void:
 	extra_piece_picker.item_selected.connect(_on_extra_piece_selected)
 	remove_button.get_parent().add_child(extra_piece_picker)
 	remove_button.get_parent().move_child(extra_piece_picker, remove_button.get_index())
+
+## Shown only while a bonus move is on offer, so it can be declined.
+func _build_skip_bonus_button() -> void:
+	skip_bonus_button = Button.new()
+	skip_bonus_button.text = "Skip Bonus Move"
+	skip_bonus_button.hide()
+	skip_bonus_button.pressed.connect(func(): skip_bonus_requested.emit())
+	var row := start_match_button.get_parent()
+	row.add_child(skip_bonus_button)
+	row.move_child(skip_bonus_button, wallet_label.get_index())
+
+func set_bonus_visible(shown: bool) -> void:
+	skip_bonus_button.visible = shown
 
 func _on_extra_piece_selected(index: int) -> void:
 	if index <= 0:

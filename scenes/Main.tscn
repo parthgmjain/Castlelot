@@ -301,9 +301,11 @@ text = "Start Match"
 layout_mode = 2
 text = "Gold: 0"
 
-[node name="MatchStatusLabel" type="Label" parent="UI/VBox/MatchRow"]
+[node name="MatchStatusLabel" type="Label" parent="UI/VBox"]
+custom_minimum_size = Vector2(900, 0)
 layout_mode = 2
 text = ""
+autowrap_mode = 3
 
 [node name="PromotionLayer" type="CanvasLayer" parent="."]
 layer = 10

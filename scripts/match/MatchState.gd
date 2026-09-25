@@ -21,6 +21,13 @@ var last_event: String = ""
 ## Roster ids that were on the board when the match began, to work out which were lost.
 var deployed_roster_ids: Array = []
 
+## A bonus move being offered to the side to move ({} when none): { kind, side, label, ... }.
+## While it is pending the turn doesn't pass; taking it is free and optional. See MoveEffects.
+var bonus: Dictionary = {}
+
+## Pieces waiting to return to the board: [{ piece, board, square, turns, side }].
+var revivals: Array = []
+
 ## Set once the result has been paid out / shown, so it only happens once.
 var settled: bool = false
 
