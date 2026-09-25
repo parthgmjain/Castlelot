@@ -126,7 +126,7 @@ func test_the_ai_promotes_to_a_queen_without_opening_the_picker() -> void:
 	check(not main.promotion_picker.visible and state.pending_promotion.is_empty(), "no picker for the AI")
 	check_eq(ai_match.turn_side, WHITE, "turn returns to you")
 
-func test_your_promotion_mid_match_waits_for_the_picker_before_the_turn_ends() -> void:
+func test_your_promotion_mid_match_waits_for_the_picker_before_the_turn_passes() -> void:
 	var main = await load_main()
 	await new_world(main)
 	var state: GameState = main.state
@@ -156,7 +156,9 @@ func test_your_promotion_mid_match_waits_for_the_picker_before_the_turn_ends() -
 	check(not state.current_moves.is_empty(), "the pawn has its step")
 	var destination: Dictionary = state.current_moves[0]
 	main._on_square_selected(destination.square, destination.board)
-	check(main.promotion_picker.visible and current.moves_left == 5 and current.turn_side == WHITE, "the turn is not over yet")
+	check(main.promotion_picker.visible and current.turn_side == WHITE, "the turn is not over yet")
+	check_eq(current.moves_left, 4, "but the move is already spent")
 	main.promotion_picker._buttons[KNIGHT].pressed.emit()
 	check_eq(destination.board.pieces[destination.square].type, KNIGHT, "promoted to the chosen piece")
-	check_eq(current.moves_left, 4, "now the move is spent")
+	check_eq(current.moves_left, 4, "still spent once")
+	check_eq(current.turn_side, BLACK, "and now the turn passes")

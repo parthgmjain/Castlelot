@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://bqx7n8m0k3v1a"]
+[gd_scene load_steps=5 format=3 uid="uid://bqx7n8m0k3v1a"]
 
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ui/ControlPanel.gd" id="2_panel"]
 [ext_resource type="Script" path="res://scripts/ui/PromotionPicker.gd" id="3_picker"]
+[ext_resource type="Script" path="res://scripts/ui/ResultScreen.gd" id="4_result"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -193,6 +194,10 @@ value = 60.0
 layout_mode = 2
 text = "Start Match"
 
+[node name="WalletLabel" type="Label" parent="UI/VBox/MatchRow"]
+layout_mode = 2
+text = "Gold: 0"
+
 [node name="MatchStatusLabel" type="Label" parent="UI/VBox/MatchRow"]
 layout_mode = 2
 text = ""
@@ -251,3 +256,74 @@ horizontal_alignment = 1
 [node name="Buttons" type="HBoxContainer" parent="PromotionLayer/PromotionPicker/Center/Panel/Margin/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
+
+[node name="ResultLayer" type="CanvasLayer" parent="."]
+layer = 11
+
+[node name="ResultScreen" type="Control" parent="ResultLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_result")
+
+[node name="Dim" type="ColorRect" parent="ResultLayer/ResultScreen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="ResultLayer/ResultScreen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="ResultLayer/ResultScreen/Center"]
+custom_minimum_size = Vector2(440, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="ResultLayer/ResultScreen/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 26
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 26
+
+[node name="VBox" type="VBoxContainer" parent="ResultLayer/ResultScreen/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="ResultLayer/ResultScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "VICTORY"
+horizontal_alignment = 1
+
+[node name="Reason" type="Label" parent="ResultLayer/ResultScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Details" type="Label" parent="ResultLayer/ResultScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Wallet" type="Label" parent="ResultLayer/ResultScreen/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="Continue" type="Button" parent="ResultLayer/ResultScreen/Center/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Continue"

@@ -40,6 +40,8 @@ static func record_move(state: GameState, result: Dictionary) -> void:
 		return
 
 	var mover: Piece.Side = result.piece.side
+	if mover == current.player_side:
+		current.moves_left -= 1
 	var victim = result.victim
 	if victim == null:
 		current.last_event = "%s moved a %s" % [_who(current, mover), _name(result.piece)]
@@ -57,17 +59,15 @@ static func record_move(state: GameState, result: Dictionary) -> void:
 		_finish(current, true, "Target score reached")
 
 ## Ends the current side's turn (call once the move, including any promotion,
-## is fully resolved). Spends one of the player's moves on their turn.
+## is fully resolved). The player loses if that was their last move.
 static func end_turn(state: GameState) -> void:
 	var current := state.current_match
 	if not current.active:
 		return
 
-	if current.turn_side == current.player_side:
-		current.moves_left -= 1
-		if current.moves_left <= 0:
-			_finish(current, false, "Out of moves")
-			return
+	if current.turn_side == current.player_side and current.moves_left <= 0:
+		_finish(current, false, "Out of moves")
+		return
 
 	current.turn_side = Piece.opponent(current.turn_side)
 	if current.turn_side == current.player_side and not has_legal_move(state, current.player_side):

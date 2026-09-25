@@ -13,6 +13,7 @@ var active_square: Vector2i = Vector2i(-1, -1)
 var current_moves: Array = []
 
 var current_match := MatchState.new()
+var run := RunState.new()
 
 ## { piece, board, square } of a pawn that reached the enemy zone and is
 ## waiting for the player to pick what it becomes; empty when none is.

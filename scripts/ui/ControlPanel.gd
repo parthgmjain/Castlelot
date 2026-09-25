@@ -41,6 +41,7 @@ const MAX_DIM := 10
 @onready var target_spin_box: SpinBox = $VBox/MatchRow/TargetSpinBox
 @onready var start_match_button: Button = $VBox/MatchRow/StartMatchButton
 @onready var match_status_label: Label = $VBox/MatchRow/MatchStatusLabel
+@onready var wallet_label: Label = $VBox/MatchRow/WalletLabel
 
 var _width_boxes: Array = []
 var _height_boxes: Array = []
@@ -96,6 +97,9 @@ func set_auto_place_status(text: String) -> void:
 
 func set_match_status(text: String) -> void:
 	match_status_label.text = text
+
+func set_wallet(currency: int) -> void:
+	wallet_label.text = "Gold: %d" % currency
 
 ## Locks (or unlocks) every sandbox setup control, so a match in progress
 ## can't have its boards, zones or armies changed underneath it.

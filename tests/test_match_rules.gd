@@ -66,6 +66,12 @@ func test_capturing_the_king_wins_instantly() -> void:
 	_play(state, Vector2i(3, 0), Vector2i(7, 0))
 	check(not state.current_match.active and state.current_match.result == "win" and state.current_match.result_reason == "King captured", "instant win")
 
+func test_a_winning_move_counts_as_a_spent_move() -> void:
+	var state := make_state(make_board(), [[Vector2i(0, 7), KING, WHITE], [Vector2i(7, 0), KING, BLACK], [Vector2i(3, 0), ROOK, WHITE]])
+	MatchController.start(state, 10, 999)
+	_play(state, Vector2i(3, 0), Vector2i(7, 0))
+	check_eq(state.current_match.moves_left, 9, "one of ten moves was used to win")
+
 func test_reaching_the_target_score_wins_at_once() -> void:
 	var state := make_state(make_board(), [[Vector2i(0, 7), KING, WHITE], [Vector2i(7, 0), KING, BLACK], [Vector2i(2, 2), KNIGHT, WHITE], [Vector2i(4, 3), ROOK, BLACK]])
 	MatchController.start(state, 5, 50)

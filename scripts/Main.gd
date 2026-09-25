@@ -5,6 +5,7 @@ const BOARD_SCENE := preload("res://scenes/Board.tscn")
 @onready var boards_container: Node2D = $BoardsContainer
 @onready var panel: ControlPanel = $UI
 @onready var promotion_picker: PromotionPicker = $PromotionLayer/PromotionPicker
+@onready var result_screen: ResultScreen = $ResultLayer/ResultScreen
 
 ## Pause before the AI moves so its move can be followed.
 var ai_delay := 0.6
@@ -23,6 +24,7 @@ func _ready() -> void:
 	panel.remove_requested.connect(_on_remove)
 	panel.start_match_requested.connect(_on_start_match)
 	promotion_picker.piece_chosen.connect(_on_promotion_chosen)
+	result_screen.continue_pressed.connect(_on_result_continue)
 
 	_generate_boards()
 
@@ -36,6 +38,7 @@ func _generate_boards() -> void:
 	state.pending_promotion = {}
 	state.current_match = MatchState.new()
 	promotion_picker.hide()
+	result_screen.hide()
 
 	for i in panel.board_count():
 		var board: Board = BOARD_SCENE.instantiate()
@@ -63,6 +66,26 @@ func _refresh_view() -> void:
 	_update_points_status()
 	panel.set_match_status(MatchController.status_text(state))
 	panel.set_sandbox_enabled(not state.current_match.active)
+	_settle_match_if_finished()
+	panel.set_wallet(state.run.currency)
+
+## Pays out a won match (once) and shows the result screen for either outcome.
+func _settle_match_if_finished() -> void:
+	var current := state.current_match
+	if current.result == "" or current.settled:
+		return
+	current.settled = true
+	var payout := {}
+	if current.result == "win":
+		payout = Payout.calculate(current, state.run.currency)
+		state.run.currency += payout.total
+	result_screen.show_result(current, payout, state.run.currency)
+
+## A win carries on with the run; a loss ends it, so start a fresh one.
+func _on_result_continue() -> void:
+	if state.current_match.result == "loss":
+		state.run = RunState.new()
+	_refresh_view()
 
 func _update_points_status() -> void:
 	panel.set_points_status(
@@ -133,6 +156,8 @@ func _on_start_match(moves: int, target: int) -> void:
 func _after_move(result: Dictionary) -> void:
 	MatchController.record_move(state, result)
 	_mark_last_move(result)
+	if state.current_match.result != "":
+		state.pending_promotion = {}
 	if not state.pending_promotion.is_empty() and state.current_match.result == "":
 		promotion_picker.open(state.pending_promotion.piece.side)
 		_refresh_view()

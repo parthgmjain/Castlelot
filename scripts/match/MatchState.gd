@@ -15,5 +15,8 @@ var result: String = ""
 var result_reason: String = ""
 var last_event: String = ""
 
+## Set once the result has been paid out / shown, so it only happens once.
+var settled: bool = false
+
 ## ScoreModifier instances (planet cards, jokers, abilities) applied to every capture.
 var modifiers: Array = []
