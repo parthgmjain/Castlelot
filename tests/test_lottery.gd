@@ -82,13 +82,13 @@ func test_tiers_with_no_pieces_or_no_weight_are_never_drawn() -> void:
 func test_pools_come_from_the_tier_table_so_new_pieces_join_automatically() -> void:
 	var union := []
 	for tier in [Piece.Tier.COMMON, Piece.Tier.UNCOMMON, Piece.Tier.LEGENDARY]:
-		check_eq(Lottery.pool(tier), Piece.types_in_tier(tier), "pool for %s" % Piece.TIER_NAMES[tier])
+		check_eq(Lottery.pool(tier), Piece.types_in_tier(tier).filter(func(t): return not Piece.is_reward_only(t)), "pool for %s is the tier minus boss rewards" % Piece.TIER_NAMES[tier])
 		check(not Lottery.pool(tier).is_empty(), "%s isn't empty" % Piece.TIER_NAMES[tier])
 		union.append_array(Lottery.pool(tier))
 	union.sort()
-	var table_keys := Piece.TIERS.keys() + PieceDefs.types()
+	var table_keys := (Piece.TIERS.keys() + PieceDefs.types()).filter(func(t): return not Piece.is_reward_only(t))
 	table_keys.sort()
-	check_eq(union, table_keys, "every piece in the tier table is in exactly one pool")
+	check_eq(union, table_keys, "every buyable piece is in exactly one pool")
 
 func test_trade_ups_draw_from_the_same_pools() -> void:
 	var run := _run()

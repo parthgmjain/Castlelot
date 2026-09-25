@@ -43,19 +43,24 @@ static func record_move(state: GameState, result: Dictionary) -> void:
 	current.last_mover = mover
 	if mover == current.player_side:
 		current.moves_left -= 1
-	var victim = result.victim
-	if victim == null:
+	var victims: Array = result.victims
+	if victims.is_empty():
 		current.last_event = "%s moved a %s" % [_who(current, mover), _name(result.piece)]
 		return
 
-	if victim.type == Piece.Type.KING:
-		current.last_event = "%s captured the king" % _who(current, mover)
-		_finish(current, mover == current.player_side, "King captured")
-		return
+	for victim in victims:
+		if victim.piece.type == Piece.Type.KING:
+			current.last_event = "%s captured the king" % _who(current, mover)
+			_finish(current, mover == current.player_side, "King captured")
+			return
 
-	var gained := Scoring.capture_score(current, result.piece, victim, result.board, result.square)
+	var gained := 0
+	var names: Array = []
+	for victim in victims:
+		gained += Scoring.capture_score(current, result.piece, victim.piece, victim.board, victim.square)
+		names.append(_name(victim.piece))
 	current.scores[mover] += gained
-	current.last_event = "%s took a %s with a %s (+%d)" % [_who(current, mover), _name(victim), _name(result.piece), gained]
+	current.last_event = "%s took a %s with a %s (+%d)" % [_who(current, mover), " and a ".join(names), _name(result.piece), gained]
 	if mover == current.player_side and current.scores[mover] >= current.target_score:
 		_finish(current, true, "Target score reached")
 
@@ -69,6 +74,7 @@ static func end_turn(state: GameState) -> void:
 	if state.debug_mode:
 		current.turn_side = current.last_mover      # anyone may move; the turn goes to the other side
 
+	_tick_rest(state, current.turn_side)
 	if current.turn_side == current.player_side and current.moves_left <= 0:
 		_finish(current, false, "Out of moves")
 		return
@@ -76,6 +82,13 @@ static func end_turn(state: GameState) -> void:
 	current.turn_side = Piece.opponent(current.turn_side)
 	if current.turn_side == current.player_side and not has_legal_move(state, current.player_side):
 		_finish(current, false, "No legal moves")
+
+## A side's pieces recover one step from resting at the end of each of its own turns.
+static func _tick_rest(state: GameState, side: Piece.Side) -> void:
+	for board in state.boards:
+		for piece in board.pieces.values():
+			if piece.side == side and piece.get("rest", 0) > 0:
+				piece["rest"] -= 1
 
 static func has_legal_move(state: GameState, side: Piece.Side) -> bool:
 	for board in state.boards:
@@ -92,7 +105,10 @@ static func status_text(state: GameState) -> String:
 		var turn := "Your turn" if current.turn_side == current.player_side else "AI thinking..."
 		if state.debug_mode:
 			turn = "%s to move (debug)" % ("White" if current.turn_side == Piece.Side.WHITE else "Black")
-		return "%s | Moves left: %d | %s | %s" % [turn, current.moves_left, score, current.last_event]
+		var text := "%s | Moves left: %d | %s | %s" % [turn, current.moves_left, score, current.last_event]
+		if state.current_moves.any(func(m): return m.get("special", false)):
+			text += " | Right-click an orange ring to attack without moving"
+		return text
 	if current.result != "":
 		return "%s: %s | %s | %s" % [current.result.to_upper(), current.result_reason, score, current.last_event]
 	return ""

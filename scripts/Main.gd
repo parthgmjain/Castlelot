@@ -138,12 +138,18 @@ func _on_square_selected(square: Vector2i, board: Board) -> void:
 		MoveController.clear_selection(state)
 	else:
 		var result := MoveController.click(state, board, square)
-		if not result.is_empty():
+		if result.is_empty():
+			_refresh_view()          # a new selection: its moves, and any hint about them
+		else:
 			turn_flow.after_move(result)
 
 func _on_square_right_clicked(square: Vector2i, board: Board) -> void:
 	if state.zone_edit_mode:
 		board.clear_zone(square)
+	elif MatchController.accepts_click(state, board, square):
+		var result := MoveController.click(state, board, square, true)     # attack without moving
+		if not result.is_empty():
+			turn_flow.after_move(result)
 
 func _on_zone_edit_toggled(enabled: bool) -> void:
 	state.zone_edit_mode = enabled

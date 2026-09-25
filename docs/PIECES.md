@@ -8,7 +8,7 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 ## Pawn tier (common)
 - [x] Scout: 1 forward or 1 sideways (no capture); captures diagonally forward.
 - [ ] Shieldbearer: pawn move/capture, but can't be captured by a piece directly in front of it.
-- [ ] Archer: 1 forward. Instead of moving it can capture a piece exactly 2 squares straight ahead and stay put.
+- [x] Archer: 1 forward. Instead of moving it can capture a piece exactly 2 squares straight ahead and stay put.
 - [x] Serf: 1 diagonally forward (no capture); captures straight forward.
 - [x] Militia: 1 orthogonally in any direction incl. backward (no capture); captures diagonally forward.
 - [x] Crab: 1 sideways only (no capture); captures 1 diagonally in any direction.
@@ -27,7 +27,7 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - [x] Charger: rook move of at least 2 squares.
 - [x] Ranger: up to 3 squares orthogonally.
 - [x] Lancer: any distance forward, only 1 square backward or sideways.
-- [ ] Catapult: never moves. Captures any piece exactly 3 squares away orthogonally, over blockers.
+- [x] Catapult: never moves. Captures any piece exactly 3 squares away orthogonally, over blockers.
 - [ ] Tortoise: up to 2 squares orthogonally; can only be captured from behind or the sides.
 - [x] Mirror: bishop move that can bounce off a board edge once per move.
 - [x] Monk: up to 3 squares diagonally, or 1 square orthogonally without capturing.
@@ -44,13 +44,13 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - [ ] Paladin: bishop + knight. Adjacent friendly pieces can't be captured. When the king is attacked it can teleport next to the king.
 - [ ] Warlord: rook + knight. Every capture gives a bonus move with one pawn.
 - [ ] Empress: queen + knight.
-- [ ] Dragon: rook move, or breathes fire capturing every enemy up to 3 squares along one line, then rests a turn.
+- [x] Dragon: rook move, or breathes fire capturing every enemy up to 3 squares along one line, then rests a turn.
 - [ ] Phoenix: queen move. The first time it is captured it returns to its starting square 3 turns later.
 - [ ] Hydra: up to 2 squares any direction. When captured it splits into 4 knights (none adjacent) or 2 (any adjacent), never more than the empty squares beside it.
 - [ ] Wraith: queen move, phases through pieces. Can only be captured by pawns or other legendaries.
 - [ ] Lich: king move or 2-square leap. Every piece it captures returns as your pawn on your back rank.
 - [ ] Chronomancer: bishop move. Once per game it can undo the opponent's last move.
-- [ ] Titan: rook move that can capture up to 2 pieces in its path in one move.
+- [x] Titan: rook move that can capture up to 2 pieces in its path in one move.
 - [ ] Oracle: up to 3 squares any direction. Every second turn it takes two moves in a row.
 - [ ] Storm Witch: queen move, or teleports next to an enemy piece (no capture that turn).
 
@@ -59,3 +59,8 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - "Check" does not exist in this game; Paladin's clause will mean "the king is attacked".
 - Legendary boss pieces are reward-only: not in the lottery or trade-up pool. The queen stays a lottery legendary.
 - The AI's random armies keep using the six chess pieces for now.
+- "Attack without moving" (Archer, Catapult, Dragon) is made with a right-click on the orange ring; a left click does the ordinary move, and on a square that only has an attack it fires too.
+- Archer's arrow needs a clear line (anything between blocks it, and it can't hit the adjacent square). Catapult lobs over blockers.
+- Titan: after taking a piece it may run on over empty squares and take a second enemy, landing there. A friend behind the first piece blocks it.
+- Dragon: fire is orthogonal, burns every enemy within 3 squares in one line and passes over friends unharmed. It rests through its side's next turn (not in the sandbox, where there are no turns).
+- Titan and Dragon are boss rewards: not in the lottery, and rewards are not wired to the knights yet.

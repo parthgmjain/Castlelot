@@ -11,6 +11,7 @@ const SELECT_COLOR := Color(0.95, 0.85, 0.2)
 const CONNECTOR_COLOR := Color(0.2, 0.6, 0.95)
 const MOVE_COLOR := Color(0.2, 0.85, 0.3)
 const CAPTURE_COLOR := Color(0.9, 0.25, 0.25)
+const SPECIAL_COLOR := Color(1.0, 0.6, 0.1)
 const LAST_MOVE_COLOR := Color(1.0, 0.9, 0.3, 0.32)
 const PIECE_FONT_SIZE := 22
 const DISC_FONT_SIZE := 14
@@ -26,6 +27,7 @@ var connection_squares: Array = []
 var last_move_squares: Array = []
 var move_squares: Array = []
 var capture_squares: Array = []
+var special_squares: Array = []     # attacks that don't move the piece (right-click)
 var zone_owner: Dictionary = {}
 
 # Populated by Main: Vector2i -> Array[{ direction: Vector2i, target_board: Board, target_square: Vector2i }]
@@ -76,14 +78,16 @@ func set_connection_squares(squares: Array) -> void:
 func set_portals(new_portals: Dictionary) -> void:
 	portals = new_portals
 
-func set_move_markers(moves: Array, captures: Array) -> void:
+func set_move_markers(moves: Array, captures: Array, specials: Array = []) -> void:
 	move_squares = moves
 	capture_squares = captures
+	special_squares = specials
 	queue_redraw()
 
 func clear_move_markers() -> void:
 	move_squares = []
 	capture_squares = []
+	special_squares = []
 	queue_redraw()
 
 func clear_selection() -> void:
@@ -157,9 +161,6 @@ func _draw() -> void:
 	for square in move_squares:
 		draw_circle(local_square_center(square), SQUARE_SIZE * 0.12, MOVE_COLOR)
 
-	for square in capture_squares:
-		draw_arc(local_square_center(square), SQUARE_SIZE * 0.35, 0, TAU, 24, CAPTURE_COLOR, 3.0)
-
 	var font := ThemeDB.fallback_font
 	for square in pieces:
 		var piece: Dictionary = pieces[square]
@@ -171,6 +172,13 @@ func _draw() -> void:
 		var square_pos := Vector2(square.x, square.y) * SQUARE_SIZE
 		var text_pos := square_pos + Vector2(SQUARE_SIZE - text_size.x, SQUARE_SIZE + text_size.y * 0.3) / 2.0
 		draw_string(font, text_pos, symbol, HORIZONTAL_ALIGNMENT_CENTER, -1, PIECE_FONT_SIZE, PIECE_COLOR)
+
+	# Attack markers go over the pieces they mark, so a disc piece can't hide its ring.
+	for square in capture_squares:
+		draw_arc(local_square_center(square), SQUARE_SIZE * 0.44, 0, TAU, 24, CAPTURE_COLOR, 3.0)
+
+	for square in special_squares:
+		draw_arc(local_square_center(square), SQUARE_SIZE * 0.3, 0, TAU, 24, SPECIAL_COLOR, 3.0)
 
 ## Pieces without a chess glyph: a disc in the side's colour with the piece's short label.
 func _draw_disc_piece(font: Font, square: Vector2i, piece: Dictionary) -> void:

@@ -47,9 +47,9 @@ static func roll_tier(weights: Dictionary, rng: RandomNumberGenerator = null) ->
 			return tier
 	return last
 
-## Every piece that can be drawn from `tier`.
+## Every piece that can be drawn from `tier` (boss rewards are not for sale).
 static func pool(tier: Piece.Tier) -> Array:
-	return Piece.types_in_tier(tier)
+	return Piece.types_in_tier(tier).filter(func(t): return not Piece.is_reward_only(t))
 
 static func roll_piece(tier: Piece.Tier, rng: RandomNumberGenerator = null) -> Piece.Type:
 	rng = rng if rng != null else RandomNumberGenerator.new()

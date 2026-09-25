@@ -32,22 +32,29 @@ static func choose_move(state: GameState, side: Piece.Side) -> Dictionary:
 	return best
 
 static func _evaluate(state: GameState, side: Piece.Side, from_board: Board, from_square: Vector2i, piece: Dictionary, move: Dictionary, distance: Dictionary) -> float:
-	var victim = move.board.pieces.get(move.square)
-	if victim != null and victim.type == Piece.Type.KING:
-		return KING_WORTH * 10.0
-	var gain := _worth(victim) if victim != null else 0.0
+	var victims := MoveController.victims_of(move)
+	var gain := 0.0
+	for victim in victims:
+		if victim.piece.type == Piece.Type.KING:
+			return KING_WORTH * 10.0
+		gain += _worth(victim.piece)
 
 	# Try the move, see the best reply, then put everything back.
-	from_board.pieces.erase(from_square)
-	move.board.pieces[move.square] = piece
+	var stays: bool = move.get("stay", false)
+	for victim in victims:
+		victim.board.pieces.erase(victim.square)
+	if not stays:
+		from_board.pieces.erase(from_square)
+		move.board.pieces[move.square] = piece
 	var risk := _best_capture(state, Piece.opponent(side))
-	move.board.pieces.erase(move.square)
-	if victim != null:
-		move.board.pieces[move.square] = victim
-	from_board.pieces[from_square] = piece
+	if not stays:
+		move.board.pieces.erase(move.square)
+		from_board.pieces[from_square] = piece
+	for victim in victims:
+		victim.board.pieces[victim.square] = victim.piece
 
 	var value := gain - risk * RISK_WEIGHT
-	if victim == null:
+	if victims.is_empty():
 		var before: int = distance[from_board].get(from_square, 99)
 		var after: int = distance[move.board].get(move.square, 99)
 		value += (before - after) * APPROACH_WEIGHT
@@ -62,9 +69,10 @@ static func _best_capture(state: GameState, side: Piece.Side) -> float:
 			if piece.side != side:
 				continue
 			for move in Piece.get_legal_moves(piece.type, side, board, square):
-				var victim = move.board.pieces.get(move.square)
-				if victim != null:
-					best = max(best, _worth(victim))
+				var worth := 0.0
+				for victim in MoveController.victims_of(move):
+					worth += _worth(victim.piece)
+				best = max(best, worth)
 	return best
 
 static func _worth(piece: Dictionary) -> float:

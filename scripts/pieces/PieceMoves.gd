@@ -6,6 +6,9 @@ extends RefCounted
 static func generate(type: Piece.Type, side: Piece.Side, board: Board, from: Vector2i) -> Array:
 	var moves: Array = []
 	var frame: Dictionary = {}
+	var self_piece = board.pieces.get(from)
+	if self_piece != null and self_piece.get("rest", 0) > 0:
+		return moves           # still recovering (a Dragon after breathing fire)
 	for rule in PieceDefs.rules(type):
 		if rule.get("local", false) and frame.is_empty():
 			frame = _frame(board, from, side)
@@ -32,6 +35,10 @@ static func generate(type: Piece.Type, side: Piece.Side, board: Board, from: Vec
 				_grasshopper(vectors, side, board, from, moves)
 			"step_slide":
 				_step_slide(vectors, rule, side, board, from, moves)
+			"shot":
+				_shots(vectors, rule, side, board, from, moves)
+			"fire":
+				_fire(vectors, rule, side, board, from, moves)
 	return _without_duplicates(moves)
 
 ## Which way is "forward" (toward the enemy zone, like a pawn's heading) and
@@ -99,12 +106,76 @@ static func _slide(dirs: Array, options: Dictionary, side: Piece.Side, board: Bo
 			var was_empty := true
 			if steps >= lowest:
 				was_empty = _emit(moves, dest, side, mode)
+				if not was_empty and options.get("double_capture", false) and dest.board.pieces[dest.square].side != side:
+					_second_capture(heading, dest, side, moves)
 			else:
 				was_empty = not dest.board.pieces.has(dest.square)
 			if not was_empty and not through:
 				break
 			current_board = dest.board
 			current_square = dest.square
+
+## After taking the piece on `first`, runs on over empty squares and takes the
+## next piece too if it is an enemy. The move lands there; `hits` is the first victim.
+static func _second_capture(direction: Vector2i, first: Dictionary, side: Piece.Side, moves: Array) -> void:
+	var current_board: Board = first.board
+	var current_square: Vector2i = first.square
+	while true:
+		var dest: Dictionary = Piece.step_across(current_board, current_square, direction)
+		if dest.is_empty():
+			return
+		var occupant = dest.board.pieces.get(dest.square)
+		if occupant != null:
+			if occupant.side != side:
+				moves.append({ "board": dest.board, "square": dest.square, "capture": true, "hits": [{ "board": first.board, "square": first.square }] })
+			return
+		current_board = dest.board
+		current_square = dest.square
+
+## Captures the enemy exactly `distance` steps away without moving. With
+## clear_line nothing may stand in between; otherwise it fires over anything.
+static func _shots(dirs: Array, options: Dictionary, side: Piece.Side, board: Board, from: Vector2i, moves: Array) -> void:
+	var distance: int = options.distance
+	for direction in dirs:
+		var current_board: Board = board
+		var current_square: Vector2i = from
+		var reached := true
+		for step in range(1, distance + 1):
+			var dest: Dictionary = Piece.step_across(current_board, current_square, direction)
+			if dest.is_empty() or (step < distance and options.get("clear_line", false) and dest.board.pieces.has(dest.square)):
+				reached = false
+				break
+			current_board = dest.board
+			current_square = dest.square
+		var victim = current_board.pieces.get(current_square) if reached else null
+		if victim != null and victim.side != side:
+			moves.append(_stay_move(current_board, current_square, [{ "board": current_board, "square": current_square }]))
+
+## Burns every enemy within `range` steps of one line (friends are passed over
+## unharmed). Each burnt square is a target for the same move; the piece then rests.
+static func _fire(dirs: Array, options: Dictionary, side: Piece.Side, board: Board, from: Vector2i, moves: Array) -> void:
+	for direction in dirs:
+		var current_board: Board = board
+		var current_square: Vector2i = from
+		var hits: Array = []
+		for step in options.range:
+			var dest: Dictionary = Piece.step_across(current_board, current_square, direction)
+			if dest.is_empty():
+				break
+			var occupant = dest.board.pieces.get(dest.square)
+			if occupant != null and occupant.side != side:
+				hits.append({ "board": dest.board, "square": dest.square })
+			current_board = dest.board
+			current_square = dest.square
+		for hit in hits:
+			var move := _stay_move(hit.board, hit.square, hits)
+			move["rest"] = options.get("rest", 0)
+			moves.append(move)
+
+## A move that destroys `hits` while the piece stays where it is. `square` is the
+## square you click; special moves are shown with an orange ring and are made with a right-click.
+static func _stay_move(board: Board, square: Vector2i, hits: Array) -> Dictionary:
+	return { "board": board, "square": square, "capture": true, "stay": true, "special": true, "hits": hits }
 
 ## Reflects a diagonal off whichever edge it hit: flip x, else flip y.
 static func _rebound(board: Board, square: Vector2i, direction: Vector2i) -> Dictionary:
@@ -169,7 +240,7 @@ static func _without_duplicates(moves: Array) -> Array:
 	var seen: Dictionary = {}
 	var out: Array = []
 	for move in moves:
-		var key := [move.board.get_instance_id(), move.square]
+		var key := [move.board.get_instance_id(), move.square, move.get("special", false)]
 		if not seen.has(key):
 			seen[key] = true
 			out.append(move)

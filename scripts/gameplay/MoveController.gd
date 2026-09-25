@@ -4,10 +4,14 @@ extends RefCounted
 ## A click while not editing zones: either completes a pending move onto a
 ## highlighted square, or selects the clicked square (and shows its piece's moves).
 ## Returns the finished move (see execute) or {} when it only selected.
-static func click(state: GameState, board: Board, square: Vector2i) -> Dictionary:
-	for move in state.current_moves:
-		if move.board == board and move.square == square:
-			return execute(state, move)
+## `special` (a right-click) makes the "attack without moving" version of a
+## move; it never selects, and does nothing where there is no special move.
+static func click(state: GameState, board: Board, square: Vector2i, special: bool = false) -> Dictionary:
+	var chosen := _move_at(state.current_moves, board, square, special)
+	if not chosen.is_empty():
+		return execute(state, chosen)
+	if special:
+		return {}
 
 	for b in state.boards:
 		if b != board:
@@ -34,34 +38,78 @@ static func refresh(state: GameState) -> void:
 	var grouped: Dictionary = {}
 	for move in state.current_moves:
 		if not grouped.has(move.board):
-			grouped[move.board] = { "moves": [], "captures": [] }
-		if move.capture:
+			grouped[move.board] = { "moves": [], "captures": [], "specials": [] }
+		if move.get("special", false):
+			grouped[move.board].specials.append(move.square)
+		elif move.capture:
 			grouped[move.board].captures.append(move.square)
 		else:
 			grouped[move.board].moves.append(move.square)
 
 	for b in grouped:
-		b.set_move_markers(grouped[b].moves, grouped[b].captures)
+		b.set_move_markers(grouped[b].moves, grouped[b].captures, grouped[b].specials)
 
-## Moves the selected piece to `move.square` on `move.board` and deselects.
-## Returns { piece, victim (or null), board, square, from_board, from_square }.
+## The move a click on `square` means: a normal move first (or the special one
+## when `special` is asked for, or when it's the only one there).
+static func _move_at(moves: Array, board: Board, square: Vector2i, special: bool) -> Dictionary:
+	var fallback := {}
+	for move in moves:
+		if move.board != board or move.square != square:
+			continue
+		if move.get("special", false) == special:
+			return move
+		if fallback.is_empty() and not special:
+			fallback = move
+	return fallback
+
+## Everything a move destroys: [{ piece, board, square }]. The piece on the
+## destination (if any) comes first, then any extra `hits`. A "stay" move only
+## destroys its hits.
+static func victims_of(move: Dictionary) -> Array:
+	var targets: Array = move.get("hits", [])
+	if not move.get("stay", false):
+		targets = [{ "board": move.board, "square": move.square }] + targets
+	var found: Array = []
+	for target in targets:
+		var piece = target.board.pieces.get(target.square)
+		if piece != null:
+			found.append({ "piece": piece, "board": target.board, "square": target.square })
+	return found
+
+## Carries out the selected piece's move and deselects. Returns
+## { piece, victim (the first victim or null), victims, board, square, from_board,
+## from_square } where board/square is where the piece ended up.
 static func execute(state: GameState, move: Dictionary) -> Dictionary:
 	var from_board: Board = state.active_board
 	var from_square: Vector2i = state.active_square
 	var piece: Dictionary = from_board.pieces[from_square]
-	var victim = move.board.pieces.get(move.square)
-	from_board.pieces.erase(from_square)
-	move.board.pieces[move.square] = piece
-	if PawnMovement.reached_promotion(piece, move.board, move.square):
-		state.pending_promotion = { "piece": piece, "board": move.board, "square": move.square }
+	var victims := victims_of(move)
+	for victim in victims:
+		victim.board.pieces.erase(victim.square)
+	var end_board: Board = from_board
+	var end_square: Vector2i = from_square
+	if not move.get("stay", false):
+		from_board.pieces.erase(from_square)
+		move.board.pieces[move.square] = piece
+		end_board = move.board
+		end_square = move.square
+		if PawnMovement.reached_promotion(piece, move.board, move.square):
+			state.pending_promotion = { "piece": piece, "board": move.board, "square": move.square }
+	if move.get("rest", 0) > 0 and state.current_match.active:
+		piece["rest"] = move.rest
 	from_board.queue_redraw()
-	move.board.queue_redraw()
+	end_board.queue_redraw()
+	for victim in victims:
+		victim.board.queue_redraw()
 
 	for b in state.boards:
 		b.clear_selection()
 		b.clear_move_markers()
 	state.clear_active()
-	return { "piece": piece, "victim": victim, "board": move.board, "square": move.square, "from_board": from_board, "from_square": from_square }
+	return {
+		"piece": piece, "victim": victims[0].piece if not victims.is_empty() else null, "victims": victims,
+		"board": end_board, "square": end_square, "from_board": from_board, "from_square": from_square,
+	}
 
 static func clear_selection(state: GameState) -> void:
 	state.clear_active()
@@ -77,5 +125,10 @@ static func mark_last_move(state: GameState, result: Dictionary) -> void:
 		if not squares.has(result.board):
 			squares[result.board] = []
 		squares[result.board].append(result.square)
+		if result.board == result.from_board and result.square == result.from_square:
+			for victim in result.victims:              # it didn't move: show what it hit
+				if not squares.has(victim.board):
+					squares[victim.board] = []
+				squares[victim.board].append(victim.square)
 	for b in state.boards:
 		b.set_last_move_squares(squares.get(b, []))

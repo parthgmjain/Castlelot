@@ -7,6 +7,7 @@ enum Type {
 	SCOUT, SERF, MILITIA, CRAB,
 	CAMEL, ZEBRA, TWIN_RIDER, HAWK, CANNON, CHARGER, RANGER, LANCER, MIRROR, MONK,
 	FERZ_GUARD, GRASSHOPPER, GHOST, SPEARMAN, GRIFFON,
+	ARCHER, CATAPULT, TITAN, DRAGON,
 }
 enum Side { WHITE, BLACK }
 enum Tier { COMMON, UNCOMMON, LEGENDARY }
@@ -76,6 +77,10 @@ static func types_in_tier(tier_value: Piece.Tier) -> Array:
 	var types: Array = TIERS.keys().filter(func(t): return TIERS[t] == tier_value)
 	types.append_array(PieceDefs.types().filter(func(t): return PieceDefs.tier(t) == tier_value))
 	return types
+
+## Boss rewards: earned by beating a knight, never drawn from the lottery or a trade-up.
+static func is_reward_only(type: Piece.Type) -> bool:
+	return PieceDefs.has(type) and PieceDefs.is_reward_only(type)
 
 static func opponent(side: Piece.Side) -> Piece.Side:
 	return Piece.Side.BLACK if side == Piece.Side.WHITE else Piece.Side.WHITE

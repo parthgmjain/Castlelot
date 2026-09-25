@@ -29,7 +29,9 @@ func test_pieces_have_the_tiers_you_specified() -> void:
 	check_eq(Piece.tier(QUEEN), Piece.Tier.LEGENDARY, "queen")
 	for type in Piece.types_in_tier(Piece.Tier.UNCOMMON):
 		check_eq(Piece.tier(type), Piece.Tier.UNCOMMON, "everything listed as uncommon is uncommon: %s" % Piece.Type.find_key(type))
-	check_eq(Piece.types_in_tier(Piece.Tier.LEGENDARY), [QUEEN], "only the queen is legendary")
+	check_eq(Lottery.pool(Piece.Tier.LEGENDARY), [QUEEN], "only the queen can be pulled or traded up to")
+	for type in Piece.types_in_tier(Piece.Tier.LEGENDARY):
+		check(type == QUEEN or Piece.is_reward_only(type), "every other legendary is a boss reward: %s" % Piece.Type.find_key(type))
 
 # ---- trading up ------------------------------------------------------------------
 

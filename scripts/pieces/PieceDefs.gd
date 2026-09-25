@@ -6,11 +6,15 @@ extends RefCounted
 ##
 ## A rule is a Dictionary:
 ##   kind   "step" (one hop per vector), "leap" (path-traced jump, like a knight),
-##          "slide", "cannon", "grasshopper", "twin_leap", "step_slide"
+##          "slide", "cannon", "grasshopper", "twin_leap", "step_slide",
+##          "shot" (capture exactly `distance` squares away without moving),
+##          "fire" (capture every enemy within `range` in one line without moving, then rest)
 ##   to / dirs   the vectors (offsets for step/leap, directions for the others)
 ##   mode   "any" (default), "move" (empty squares only) or "capture" (enemies only)
 ##   local  true: vectors are (sideways, forward) relative to the piece's heading
-##   slide options: min, max (0 = unlimited), through (pass over pieces), bounce
+##   slide options: min, max (0 = unlimited), through (pass over pieces), bounce,
+##                  double_capture (after taking a piece, may run on and take a second)
+##   shot options: distance, clear_line (nothing may stand in between)
 ##   step_slide: then_max (how far the straight part goes)
 
 static var _cache: Dictionary = {}
@@ -31,6 +35,10 @@ static func value(type: Piece.Type) -> int:
 ## Short text drawn on the piece's disc on the board.
 static func label(type: Piece.Type) -> String:
 	return _defs()[type].label
+
+## Reward-only pieces come from beating a knight, not from the shop.
+static func is_reward_only(type: Piece.Type) -> bool:
+	return _defs()[type].reward
 
 static func rules(type: Piece.Type) -> Array:
 	return _defs()[type].rules
@@ -57,12 +65,13 @@ static func _symmetric(a: int, b: int) -> Array:
 					out.append(v)
 	return out
 
-static func _def(tier_value: Piece.Tier, value_points: int, text: String, rule_list: Array) -> Dictionary:
-	return { "tier": tier_value, "value": value_points, "label": text, "rules": rule_list }
+static func _def(tier_value: Piece.Tier, value_points: int, text: String, rule_list: Array, reward: bool = false) -> Dictionary:
+	return { "tier": tier_value, "value": value_points, "label": text, "rules": rule_list, "reward": reward }
 
 static func _build() -> Dictionary:
 	var common := Piece.Tier.COMMON
 	var uncommon := Piece.Tier.UNCOMMON
+	var legendary := Piece.Tier.LEGENDARY
 	var forward := [Vector2i(0, 1)]
 	var beside := [Vector2i(1, 0), Vector2i(-1, 0)]
 	var front_diagonals := [Vector2i(1, 1), Vector2i(-1, 1)]
@@ -88,6 +97,10 @@ static func _build() -> Dictionary:
 		Piece.Type.CRAB: _def(common, 1, "Cr", [
 			{ "kind": "step", "to": beside, "mode": "move", "local": true },
 			{ "kind": "step", "to": DIAGONAL, "mode": "capture" },
+		]),
+		Piece.Type.ARCHER: _def(common, 2, "Ar", [
+			{ "kind": "step", "to": forward, "mode": "move", "local": true },
+			{ "kind": "shot", "dirs": forward, "distance": 2, "clear_line": true, "local": true },
 		]),
 		# ---- uncommon tier
 		Piece.Type.CAMEL: _def(uncommon, 3, "Ca", [{ "kind": "leap", "to": _symmetric(3, 1) }]),
@@ -117,4 +130,11 @@ static func _build() -> Dictionary:
 			{ "kind": "slide", "dirs": forward, "max": 2, "mode": "capture", "local": true },
 		]),
 		Piece.Type.GRIFFON: _def(uncommon, 4, "Gf", [{ "kind": "step_slide", "dirs": DIAGONAL, "then_max": 3 }]),
+		Piece.Type.CATAPULT: _def(uncommon, 3, "Ct", [{ "kind": "shot", "dirs": ORTHOGONAL, "distance": 3 }]),
+		# ---- legendary tier (boss rewards)
+		Piece.Type.TITAN: _def(legendary, 10, "Ti", [{ "kind": "slide", "dirs": ORTHOGONAL, "double_capture": true }], true),
+		Piece.Type.DRAGON: _def(legendary, 11, "Dr", [
+			{ "kind": "slide", "dirs": ORTHOGONAL },
+			{ "kind": "fire", "dirs": ORTHOGONAL, "range": 3, "rest": 2 },
+		], true),
 	}
