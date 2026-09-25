@@ -1,0 +1,95 @@
+class_name RunFlow
+extends Node
+## Match and run lifecycle: starting runs and matches, paying out results, and
+## moving on to the shop or the next match.
+
+signal view_changed
+
+var state: GameState
+var panel: ControlPanel
+var result_screen: ResultScreen
+var shop_screen: ShopScreen
+
+## Rebuilds the boards from scratch (owned by Main, which owns the board nodes).
+var generate_boards: Callable
+
+func start_run() -> void:
+	state.run = RunState.new()
+	state.run.begin()
+	begin_match()
+
+## Builds the run's current match from RunConfig and starts deployment.
+func begin_match() -> void:
+	var setup := RunConfig.match_setup(state.run)
+	panel.apply_setup(setup)
+	generate_boards.call()
+	ZoneController.generate(state.boards, setup.white_zone, setup.black_zone)
+	ArmyPlacer.auto_place(state.boards, Piece.Side.BLACK, setup.ai_budget, setup.round_type)
+	state.deployment.begin(setup)
+	MoveController.mark_last_move(state, {})
+	view_changed.emit()
+
+## Start Match during deployment: whatever is on the field goes into the match.
+func ready_to_fight() -> void:
+	if not state.deployment.active:
+		return
+	var setup := state.deployment.setup
+	state.deployment.finish()
+	MatchController.start(state, setup.moves, setup.target)
+	state.current_match.deployed_roster_ids = Roster.field_ids(state.boards)
+	MoveController.mark_last_move(state, {})
+	view_changed.emit()
+
+## Sandbox Start Match (outside a run).
+func start_match(moves: int, target: int) -> void:
+	var error := MatchController.start(state, moves, target)
+	if error != "":
+		panel.set_match_status(error)
+		return
+	MoveController.mark_last_move(state, {})
+	view_changed.emit()
+
+## Pays out a won match (once) and shows the result screen for either outcome.
+func settle_if_finished() -> void:
+	var current := state.current_match
+	if current.result == "" or current.settled:
+		return
+	current.settled = true
+	var payout := {}
+	var notes: Array = []
+	if current.result == "win":
+		payout = Payout.calculate(current, state.run.currency)
+		state.run.currency += payout.total
+		if state.run.active:
+			notes.append(_report_losses(Roster.settle(state.run, state.boards, current.deployed_roster_ids)))
+	var context := ""
+	var button := ""
+	if state.run.active:
+		context = state.run.title()
+		if current.result == "loss":
+			button = "Restart Run"
+		else:
+			button = "Finish Run" if state.run.is_final_round() else "Next Match"
+	result_screen.show_result(current, payout, state.run.currency, context, button, notes)
+
+## In a run: a win moves on to the next match (or finishes the run after
+## Arthur) and a loss starts a new run. Outside a run a loss just wipes the gold.
+func result_continued() -> void:
+	var lost := state.current_match.result == "loss"
+	if state.run.active:
+		if lost:
+			start_run()
+		elif state.run.advance():
+			shop_screen.open(state.run, state.run.title())
+		else:
+			view_changed.emit()
+		return
+	if lost:
+		state.run = RunState.new()
+	view_changed.emit()
+
+func _report_losses(lost: Array) -> String:
+	if lost.is_empty():
+		return "No pieces lost."
+	var names := lost.map(func(entry): return Piece.Type.find_key(entry.type).capitalize())
+	return "Lost: %s" % ", ".join(names)

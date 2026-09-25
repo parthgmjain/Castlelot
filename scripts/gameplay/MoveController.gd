@@ -68,3 +68,14 @@ static func clear_selection(state: GameState) -> void:
 	for b in state.boards:
 		b.clear_selection()
 	refresh(state)
+
+## Highlights the squares of the latest move (pass {} to clear the highlight).
+static func mark_last_move(state: GameState, result: Dictionary) -> void:
+	var squares: Dictionary = {}
+	if not result.is_empty():
+		squares[result.from_board] = [result.from_square]
+		if not squares.has(result.board):
+			squares[result.board] = []
+		squares[result.board].append(result.square)
+	for b in state.boards:
+		b.set_last_move_squares(squares.get(b, []))
