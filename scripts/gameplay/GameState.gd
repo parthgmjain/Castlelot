@@ -14,6 +14,7 @@ var current_moves: Array = []
 
 var current_match := MatchState.new()
 var run := RunState.new()
+var deployment := DeploymentState.new()
 
 ## { piece, board, square } of a pawn that reached the enemy zone and is
 ## waiting for the player to pick what it becomes; empty when none is.

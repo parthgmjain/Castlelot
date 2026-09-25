@@ -15,6 +15,9 @@ var result: String = ""
 var result_reason: String = ""
 var last_event: String = ""
 
+## Roster ids that were on the board when the match began, to work out which were lost.
+var deployed_roster_ids: Array = []
+
 ## Set once the result has been paid out / shown, so it only happens once.
 var settled: bool = false
 

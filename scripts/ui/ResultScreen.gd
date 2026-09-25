@@ -16,9 +16,10 @@ func _ready() -> void:
 	continue_button.pressed.connect(_on_continue_pressed)
 
 ## `payout` is Payout.calculate's result for a win and {} for a loss. `context`
-## says where in the run this was; `button_text` overrides the default label.
+## says where in the run this was, `button_text` overrides the default label
+## and `extra_lines` are appended to the details (e.g. pieces lost).
 ## Its full-screen backdrop swallows clicks until the button is pressed.
-func show_result(current: MatchState, payout: Dictionary, wallet: int, context: String = "", button_text: String = "") -> void:
+func show_result(current: MatchState, payout: Dictionary, wallet: int, context: String = "", button_text: String = "", extra_lines: Array = []) -> void:
 	var won := current.result == "win"
 	title_label.text = "VICTORY" if won else "DEFEAT"
 	title_label.add_theme_color_override("font_color", Color(0.55, 0.9, 0.55) if won else Color(0.95, 0.45, 0.45))
@@ -36,6 +37,7 @@ func show_result(current: MatchState, payout: Dictionary, wallet: int, context: 
 	else:
 		lines.append("Your run is over.")
 		wallet_label.text = "Gold lost: %d" % wallet
+	lines.append_array(extra_lines)
 	details_label.text = "\n".join(lines)
 
 	continue_button.text = button_text if button_text != "" else ("Continue" if won else "Restart Run")

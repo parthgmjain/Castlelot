@@ -37,6 +37,31 @@ text = "Start Run"
 layout_mode = 2
 text = "No run in progress"
 
+[node name="DeployRow" type="HBoxContainer" parent="UI/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DeployLabel" type="Label" parent="UI/VBox/DeployRow"]
+layout_mode = 2
+text = "Bench:"
+
+[node name="BenchBox" type="HBoxContainer" parent="UI/VBox/DeployRow"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="AutoDeployButton" type="Button" parent="UI/VBox/DeployRow"]
+layout_mode = 2
+text = "Auto Deploy"
+
+[node name="ReadyButton" type="Button" parent="UI/VBox/DeployRow"]
+layout_mode = 2
+text = "Start Match"
+
+[node name="DeployStatusLabel" type="Label" parent="UI/VBox/DeployRow"]
+layout_mode = 2
+text = ""
+
 [node name="CountRow" type="HBoxContainer" parent="UI/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 12

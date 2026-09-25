@@ -24,6 +24,9 @@ func _ready() -> void:
 	panel.remove_requested.connect(_on_remove)
 	panel.start_match_requested.connect(_on_start_match)
 	panel.start_run_requested.connect(_start_run)
+	panel.bench_piece_selected.connect(_on_bench_selected)
+	panel.auto_deploy_requested.connect(_on_auto_deploy)
+	panel.ready_requested.connect(_on_ready)
 	promotion_picker.piece_chosen.connect(_on_promotion_chosen)
 	result_screen.continue_pressed.connect(_on_result_continue)
 
@@ -38,6 +41,7 @@ func _generate_boards() -> void:
 	state.clear_active()
 	state.pending_promotion = {}
 	state.current_match = MatchState.new()
+	state.deployment = DeploymentState.new()
 	promotion_picker.hide()
 	result_screen.hide()
 
@@ -70,6 +74,7 @@ func _refresh_view() -> void:
 	_settle_match_if_finished()
 	panel.set_wallet(state.run.currency)
 	panel.set_run_status(state.run.title())
+	_refresh_deployment_ui()
 
 ## Pays out a won match (once) and shows the result screen for either outcome.
 func _settle_match_if_finished() -> void:
@@ -78,9 +83,12 @@ func _settle_match_if_finished() -> void:
 		return
 	current.settled = true
 	var payout := {}
+	var notes: Array = []
 	if current.result == "win":
 		payout = Payout.calculate(current, state.run.currency)
 		state.run.currency += payout.total
+		if state.run.active:
+			notes.append(_report_losses(Roster.settle(state.run, state.boards, current.deployed_roster_ids)))
 	var context := ""
 	var button := ""
 	if state.run.active:
@@ -89,7 +97,7 @@ func _settle_match_if_finished() -> void:
 			button = "Restart Run"
 		else:
 			button = "Finish Run" if state.run.is_final_round() else "Next Match"
-	result_screen.show_result(current, payout, state.run.currency, context, button)
+	result_screen.show_result(current, payout, state.run.currency, context, button, notes)
 
 ## In a run: a win moves on to the next match (or finishes the run after
 ## Arthur) and a loss starts a new run. Outside a run a loss just wipes the gold.
@@ -119,10 +127,63 @@ func _begin_run_match() -> void:
 	_generate_boards()
 	ZoneController.generate(state.boards, setup.white_zone, setup.black_zone)
 	ArmyPlacer.auto_place(state.boards, Piece.Side.BLACK, setup.ai_budget, setup.round_type)
-	ArmyPlacer.auto_place(state.boards, Piece.Side.WHITE, setup.player_budget, "normal")
-	MatchController.start(state, setup.moves, setup.target)
+	state.deployment.begin(setup)
 	_mark_last_move({})
 	_refresh_view()
+
+## Start Match during deployment: whatever is on the field goes into the match.
+func _on_ready() -> void:
+	if not state.deployment.active:
+		return
+	var setup := state.deployment.setup
+	state.deployment.finish()
+	MatchController.start(state, setup.moves, setup.target)
+	state.current_match.deployed_roster_ids = Roster.field_ids(state.boards)
+	_mark_last_move({})
+	_refresh_view()
+
+func _on_bench_selected(id: int) -> void:
+	state.deployment.armed_id = -1 if state.deployment.armed_id == id else id
+	_refresh_view()
+
+func _on_auto_deploy() -> void:
+	Roster.auto_deploy(state.run, state.boards)
+	state.deployment.armed_id = -1
+	_refresh_view()
+
+## A click during deployment: place the armed bench piece on a free zone square,
+## or pick a deployed piece back up.
+func _deploy_click(square: Vector2i, board: Board) -> void:
+	var piece = board.pieces.get(square)
+	if piece != null:
+		Roster.withdraw(board, square)
+	elif state.deployment.armed_id != -1 and Roster.deploy(state.run, state.boards, state.deployment.armed_id, board, square):
+		state.deployment.armed_id = -1
+	MoveController.clear_selection(state)
+	_refresh_view()
+
+func _refresh_deployment_ui() -> void:
+	var deployment := state.deployment
+	panel.set_deployment_visible(deployment.active)
+	if not deployment.active:
+		return
+	var bench := Roster.bench(state.run, state.boards)
+	var free := Roster.free_squares(state.boards, Piece.Side.WHITE)
+	panel.set_bench(bench, deployment.armed_id)
+	panel.set_deploy_status("%d on the bench | %d free zone squares" % [bench.size(), free.size()])
+	var markers := {}
+	for slot in free:
+		if not markers.has(slot.board):
+			markers[slot.board] = []
+		markers[slot.board].append(slot.square)
+	for board in state.boards:
+		board.set_move_markers(markers.get(board, []), [])
+
+func _report_losses(lost: Array) -> String:
+	if lost.is_empty():
+		return "No pieces lost."
+	var names := lost.map(func(entry): return Piece.Type.find_key(entry.type).capitalize())
+	return "Lost: %s" % ", ".join(names)
 
 func _update_points_status() -> void:
 	panel.set_points_status(
@@ -142,6 +203,8 @@ func _on_board_size_changed(index: int, is_width: bool, value: int) -> void:
 func _on_square_selected(square: Vector2i, board: Board) -> void:
 	if state.zone_edit_mode:
 		board.set_zone(square, state.current_side)
+	elif state.deployment.active:
+		_deploy_click(square, board)
 	elif not MatchController.accepts_click(state, board, square):
 		MoveController.clear_selection(state)
 	else:

@@ -12,10 +12,18 @@ signal place_requested(type: Piece.Type)
 signal remove_requested
 signal start_match_requested(moves: int, target: int)
 signal start_run_requested
+signal bench_piece_selected(id: int)
+signal auto_deploy_requested
+signal ready_requested
 
 const MIN_DIM := 2
 const MAX_DIM := 10
 
+@onready var deploy_row: HBoxContainer = $VBox/DeployRow
+@onready var bench_box: HBoxContainer = $VBox/DeployRow/BenchBox
+@onready var auto_deploy_button: Button = $VBox/DeployRow/AutoDeployButton
+@onready var ready_button: Button = $VBox/DeployRow/ReadyButton
+@onready var deploy_status_label: Label = $VBox/DeployRow/DeployStatusLabel
 @onready var start_run_button: Button = $VBox/RunRow/StartRunButton
 @onready var run_status_label: Label = $VBox/RunRow/RunStatusLabel
 @onready var count_spin_box: SpinBox = $VBox/CountRow/CountSpinBox
@@ -72,6 +80,8 @@ func _ready() -> void:
 	remove_button.pressed.connect(func(): remove_requested.emit())
 	start_match_button.pressed.connect(func(): start_match_requested.emit(int(moves_spin_box.value), int(target_spin_box.value)))
 	start_run_button.pressed.connect(func(): start_run_requested.emit())
+	auto_deploy_button.pressed.connect(func(): auto_deploy_requested.emit())
+	ready_button.pressed.connect(func(): ready_requested.emit())
 
 	_rebuild_size_controls(board_count())
 
@@ -102,6 +112,28 @@ func set_auto_place_status(text: String) -> void:
 func set_match_status(text: String) -> void:
 	match_status_label.text = text
 
+func set_deployment_visible(shown: bool) -> void:
+	deploy_row.visible = shown
+
+func set_deploy_status(text: String) -> void:
+	deploy_status_label.text = text
+
+## One toggle button per benched roster piece; the armed one is pressed in.
+func set_bench(entries: Array, armed_id: int) -> void:
+	for child in bench_box.get_children():
+		bench_box.remove_child(child)
+		child.queue_free()
+	for entry in entries:
+		var button := Button.new()
+		button.toggle_mode = true
+		button.button_pressed = entry.id == armed_id
+		button.text = "%s %s" % [Piece.symbol(entry.type, Piece.Side.WHITE), Piece.Type.find_key(entry.type).capitalize()]
+		button.pressed.connect(_on_bench_pressed.bind(entry.id))
+		bench_box.add_child(button)
+
+func _on_bench_pressed(id: int) -> void:
+	bench_piece_selected.emit(id)
+
 func set_run_status(text: String) -> void:
 	run_status_label.text = text
 
@@ -111,7 +143,6 @@ func apply_setup(setup: Dictionary) -> void:
 	_rebuild_size_controls(setup.board_sizes.size(), setup.board_sizes)
 	white_zone_spin_box.value = setup.white_zone
 	black_zone_spin_box.value = setup.black_zone
-	white_points_spin_box.value = setup.player_budget
 	black_points_spin_box.value = setup.ai_budget
 	moves_spin_box.value = setup.moves
 	target_spin_box.value = setup.target

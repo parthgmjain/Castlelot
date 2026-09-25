@@ -10,10 +10,15 @@ const KNIGHTS := [
 	"Bedivere", "Gareth", "Tristan", "Lamorak", "Palamedes", "Yvain",
 ]
 
+# The pieces (besides the king, who is always fielded) a run starts with.
+const STARTING_ROSTER := [
+	Piece.Type.ROOK, Piece.Type.KNIGHT, Piece.Type.BISHOP,
+	Piece.Type.PAWN, Piece.Type.PAWN, Piece.Type.PAWN,
+]
+
 # ---- placeholder scaling: every value below is meant to be tuned ---------
 # A value grows by "PER_MATCH" for every match played so far in the run.
 const MOVES := 15
-const PLAYER_BUDGET := 20             # stands in for a real roster until that exists
 const PLAYER_ZONE_TILES := 10
 
 const AI_BUDGET_BASE := 8.0
@@ -53,7 +58,6 @@ static func match_setup(run: RunState) -> Dictionary:
 		"board_sizes": board_sizes,
 		"white_zone": PLAYER_ZONE_TILES,
 		"black_zone": int(AI_ZONE_TILES_BASE + AI_ZONE_TILES_PER_MATCH * index),
-		"player_budget": PLAYER_BUDGET,
 		"ai_budget": int(round(ai_budget)),
 		"moves": MOVES,
 		"target": int(round(target)),

@@ -1,9 +1,19 @@
 extends "res://tests/TestCase.gd"
-## A whole run through the real UI: Start Run, matches setting themselves up,
-## bosses, winning on, losing back to the start, and finishing after Arthur.
+## A whole run through the real UI: Start Run, deploying, matches setting
+## themselves up, bosses, winning on, losing back to the start, and finishing
+## after Arthur.
 
 func _start(main: Node) -> void:
 	main.panel.start_run_button.pressed.emit()
+
+# Deploys everything you can and starts the match, through the real buttons.
+func _ready_up(main: Node) -> void:
+	main.panel.auto_deploy_button.pressed.emit()
+	main.panel.ready_button.pressed.emit()
+
+func _begin(main: Node) -> void:
+	_start(main)
+	_ready_up(main)
 
 # Ends the current match with the given result without playing it out.
 func _force_result(main: Node, result: String) -> void:
@@ -17,43 +27,55 @@ func _force_result(main: Node, result: String) -> void:
 func _continue(main: Node) -> void:
 	main.result_screen.continue_button.pressed.emit()
 
+# Win, press Next Match, and get the following match going.
 func _win_and_continue(main: Node) -> void:
 	_force_result(main, "win")
 	_continue(main)
+	_ready_up(main)
 
-func test_starting_a_run_builds_and_starts_the_first_match() -> void:
+func test_starting_a_run_builds_the_world_then_waits_for_you_to_deploy() -> void:
 	var main = await load_main()
 	_start(main)
 	var state: GameState = main.state
 	check(state.run.active, "run active")
 	check_eq(state.run.title(), "Round 1/12 - Match 1/3", "title")
 	check_eq(main.panel.run_status_label.text, "Round 1/12 - Match 1/3", "shown on screen")
-	var current := state.current_match
-	check(current.active and current.turn_side == WHITE, "match running, your turn")
-	check_eq(current.moves_left, RunConfig.MOVES, "moves from the config")
-	check_eq(current.target_score, int(RunConfig.TARGET_BASE), "target from the config")
+	check(state.deployment.active and not state.current_match.active, "deploying, not yet fighting")
 	check_eq(state.boards.size(), RunConfig.BOARDS_BASE, "board count from the config")
 	check(boards_connected(state.boards), "boards connected")
 	check(king_alive(state.boards, WHITE) and king_alive(state.boards, BLACK), "both kings")
 	check_eq(count_zone(state.boards, WHITE), RunConfig.PLAYER_ZONE_TILES, "your zone")
 	check_eq(count_zone(state.boards, BLACK), int(RunConfig.AI_ZONE_TILES_BASE), "the AI's zone")
-	check(ArmyPlacer.points_used(state.boards, WHITE) <= RunConfig.PLAYER_BUDGET, "your army within budget")
 	check(ArmyPlacer.points_used(state.boards, BLACK) <= int(RunConfig.AI_BUDGET_BASE), "the AI army within budget")
-	check(pieces_of(state.boards, WHITE, false).size() > 0 and pieces_of(state.boards, BLACK, false).size() > 0, "both sides have armies")
+	check(pieces_of(state.boards, BLACK, false).size() > 0, "the AI's army is already in place")
+	check(pieces_of(state.boards, WHITE, false).is_empty(), "yours is still on the bench")
+
+func test_pressing_start_match_begins_the_fight() -> void:
+	var main = await load_main()
+	_begin(main)
+	var state: GameState = main.state
+	var current := state.current_match
+	check(current.active and current.turn_side == WHITE and not state.deployment.active, "match running, your turn")
+	check_eq(current.moves_left, RunConfig.MOVES, "moves from the config")
+	check_eq(current.target_score, int(RunConfig.TARGET_BASE), "target from the config")
+	check_eq(pieces_of(state.boards, WHITE, false).size(), RunConfig.STARTING_ROSTER.size(), "your whole roster is on the board")
+	check(not main.panel.deploy_row.visible, "the deploy row is gone")
 
 func test_setup_controls_stay_locked_for_the_whole_run() -> void:
 	var main = await load_main()
 	_start(main)
 	var panel: ControlPanel = main.panel
-	check(panel.refresh_button.disabled and panel.start_run_button.disabled and panel.start_match_button.disabled and panel.generate_zones_button.disabled, "locked mid-match")
+	check(panel.refresh_button.disabled and panel.start_run_button.disabled and panel.start_match_button.disabled and panel.generate_zones_button.disabled, "locked while deploying")
+	_ready_up(main)
+	check(panel.refresh_button.disabled and panel.start_run_button.disabled, "locked mid-match")
 	_force_result(main, "win")
 	check(panel.refresh_button.disabled and panel.start_run_button.disabled, "still locked while the result is showing")
 	_continue(main)
-	check(panel.refresh_button.disabled and panel.start_run_button.disabled, "and locked in the next match")
+	check(panel.refresh_button.disabled and panel.start_run_button.disabled, "and locked when the next match is being set up")
 
-func test_winning_carries_on_to_the_next_match_automatically() -> void:
+func test_winning_carries_on_to_the_next_matchs_deployment() -> void:
 	var main = await load_main()
-	_start(main)
+	_begin(main)
 	_force_result(main, "win")
 	var screen: ResultScreen = main.result_screen
 	check(screen.visible, "result screen")
@@ -64,12 +86,12 @@ func test_winning_carries_on_to_the_next_match_automatically() -> void:
 	_continue(main)
 	check(not screen.visible, "closed")
 	check_eq(main.state.run.title(), "Round 1/12 - Match 2/3", "moved to match 2")
-	check(main.state.current_match.active and main.state.current_match.result == "", "a fresh match is running")
+	check(main.state.deployment.active and not main.state.current_match.active, "deploying for it")
 	check_eq(main.state.run.currency, gold, "gold carried over")
 
 func test_the_third_match_is_a_boss_with_a_boss_army() -> void:
 	var main = await load_main()
-	_start(main)
+	_begin(main)
 	_win_and_continue(main)
 	_win_and_continue(main)
 	var run: RunState = main.state.run
@@ -84,7 +106,7 @@ func test_the_third_match_is_a_boss_with_a_boss_army() -> void:
 
 func test_three_wins_start_the_next_round() -> void:
 	var main = await load_main()
-	_start(main)
+	_begin(main)
 	for i in 3:
 		_win_and_continue(main)
 	check_eq(main.state.run.title(), "Round 2/12 - Match 1/3", "round two")
@@ -92,26 +114,27 @@ func test_three_wins_start_the_next_round() -> void:
 
 func test_a_full_run_is_thirty_seven_matches_then_arthur_then_done() -> void:
 	var main = await load_main()
-	_start(main)
+	_begin(main)
 	var matches := 1
-	var last_boss_names := []
+	var boss_names := []
 	while true:
 		var state: GameState = main.state
 		check(state.current_match.active, "match %d is running" % matches)
 		check(king_alive(state.boards, WHITE) and king_alive(state.boards, BLACK) and boards_connected(state.boards), "match %d is a valid world" % matches)
 		if state.run.is_boss():
-			last_boss_names.append(state.run.boss_name())
+			boss_names.append(state.run.boss_name())
 		_force_result(main, "win")
 		if state.run.is_final_round():
 			check_eq(main.result_screen.continue_button.text, "Finish Run", "the last button")
 			break
 		_continue(main)
+		_ready_up(main)
 		matches += 1
 	check_eq(matches, 37, "36 ordinary matches plus Arthur")
-	check_eq(last_boss_names.size(), 13, "12 knights and Arthur")
-	check_eq(last_boss_names[12], "Arthur", "Arthur last")
+	check_eq(boss_names.size(), 13, "12 knights and Arthur")
+	check_eq(boss_names[12], "Arthur", "Arthur last")
 	var unique := {}
-	for n in last_boss_names.slice(0, 12):
+	for n in boss_names.slice(0, 12):
 		unique[n] = true
 	check_eq(unique.size(), 12, "every knight faced exactly once")
 	_continue(main)
@@ -121,7 +144,7 @@ func test_a_full_run_is_thirty_seven_matches_then_arthur_then_done() -> void:
 
 func test_losing_restarts_the_run_from_the_beginning() -> void:
 	var main = await load_main()
-	_start(main)
+	_begin(main)
 	_win_and_continue(main)
 	_win_and_continue(main)
 	var gold_before: int = main.state.run.currency
@@ -132,11 +155,11 @@ func test_losing_restarts_the_run_from_the_beginning() -> void:
 	_continue(main)
 	check_eq(main.state.run.title(), "Round 1/12 - Match 1/3", "back to the start")
 	check_eq(main.state.run.currency, 0, "gold wiped")
-	check(main.state.current_match.active, "a new first match is running")
+	check(main.state.deployment.active, "a new first match is being set up")
 
 func test_gold_and_interest_build_up_across_a_runs_matches() -> void:
 	var main = await load_main()
-	_start(main)
+	_begin(main)
 	_win_and_continue(main)
 	var after_one: int = main.state.run.currency
 	_force_result(main, "win")
@@ -146,7 +169,7 @@ func test_gold_and_interest_build_up_across_a_runs_matches() -> void:
 
 func test_a_finished_run_can_be_started_again() -> void:
 	var main = await load_main()
-	_start(main)
+	_begin(main)
 	main.state.run.round_number = RunConfig.ROUNDS + 1
 	main.state.run.match_number = 1
 	_force_result(main, "win")
@@ -156,6 +179,7 @@ func test_a_finished_run_can_be_started_again() -> void:
 	check(main.state.run.active and not main.state.run.complete, "a new run")
 	check_eq(main.state.run.title(), "Round 1/12 - Match 1/3", "from the start")
 	check_eq(main.state.run.currency, 0, "with an empty wallet")
+	check_eq(main.state.run.roster.size(), RunConfig.STARTING_ROSTER.size(), "and a full roster")
 
 func test_sandbox_matches_still_work_outside_a_run() -> void:
 	var main = await load_main()
@@ -171,7 +195,7 @@ func test_sandbox_matches_still_work_outside_a_run() -> void:
 
 func test_a_run_match_can_actually_be_played_against_the_ai() -> void:
 	var main = await load_main()
-	_start(main)
+	_begin(main)
 	var state: GameState = main.state
 	var current := state.current_match
 	var rounds := 0

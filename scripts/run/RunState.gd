@@ -11,6 +11,11 @@ var round_number: int = 1
 var match_number: int = 1
 var boss_order: Array = []     # this run's knights, one per round
 
+## Every piece you own except the king: [{ id, type }]. Pieces are removed for
+## good when they are captured in a match you go on to win.
+var roster: Array = []
+var _next_roster_id: int = 1
+
 func begin() -> void:
 	active = true
 	complete = false
@@ -18,6 +23,28 @@ func begin() -> void:
 	match_number = 1
 	boss_order = RunConfig.KNIGHTS.duplicate()
 	boss_order.shuffle()
+	roster.clear()
+	_next_roster_id = 1
+	for type in RunConfig.STARTING_ROSTER:
+		add_to_roster(type)
+
+func add_to_roster(type: Piece.Type) -> int:
+	var id := _next_roster_id
+	_next_roster_id += 1
+	roster.append({ "id": id, "type": type })
+	return id
+
+func roster_entry(id: int) -> Dictionary:
+	for entry in roster:
+		if entry.id == id:
+			return entry
+	return {}
+
+func remove_from_roster(id: int) -> void:
+	for i in roster.size():
+		if roster[i].id == id:
+			roster.remove_at(i)
+			return
 
 ## Arthur's round, after the last ordinary one.
 func is_final_round() -> bool:
