@@ -41,18 +41,18 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - [x] Griffon: 1 square diagonally, then up to 3 squares straight outward.
 
 ## Legendary tier (queen level, one per knight boss)
-- [ ] Paladin: bishop + knight. Adjacent friendly pieces can't be captured. When the king is attacked it can teleport next to the king.
+- [x] Paladin: bishop + knight. Adjacent friendly pieces can't be captured. When the king is attacked it can teleport next to the king.
 - [x] Warlord: rook + knight. Every capture gives a bonus move with one pawn.
-- [ ] Empress: queen + knight.
+- [x] Empress: queen + knight.
 - [x] Dragon: rook move, or breathes fire capturing every enemy up to 3 squares along one line, then rests a turn.
 - [x] Phoenix: queen move. The first time it is captured it returns to its starting square 3 turns later.
 - [x] Hydra: up to 2 squares any direction. When captured it splits into 4 knights (none adjacent) or 2 (any adjacent), never more than the empty squares beside it.
 - [x] Wraith: queen move, phases through pieces. Can only be captured by pawns or other legendaries.
 - [x] Lich: king move or 2-square leap. Every piece it captures returns as your pawn on your back rank.
-- [ ] Chronomancer: bishop move. Once per game it can undo the opponent's last move.
+- [x] Chronomancer: bishop move. Once per game it can undo the opponent's last move.
 - [x] Titan: rook move that can capture up to 2 pieces in its path in one move.
-- [ ] Oracle: up to 3 squares any direction. Every second turn it takes two moves in a row.
-- [ ] Storm Witch: queen move, or teleports next to an enemy piece (no capture that turn).
+- [x] Oracle: up to 3 squares any direction. Every second turn it takes two moves in a row.
+- [x] Storm Witch: queen move, or teleports next to an enemy piece (no capture that turn).
 
 ## Assumptions made while building (change freely)
 - Only the real pawn promotes; pawn-tier pieces that "move like a pawn" do not.
@@ -78,5 +78,8 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 - Hydra: "next to it" is judged after the capturing piece has moved, counting any side; knights fill the free neighbouring squares in order right, left, down, up, then the diagonals.
 - Drummer: boosts real pawns only (not Scouts etc.), from any square, when a friendly Drummer is on one of the 8 squares around it.
 - Squire: the knight jumps are available only while a friendly Knight (the real piece) stands next to it.
-- Paladin is left for the teleport batch, since it needs both its aura and the king teleport.
+- Paladin: "in check" means an enemy piece could capture (or burn) the king with its next move, and the teleport is available only then, to any empty square next to the king. Its aura protects the 8 squares around it from every attacker, but not the Paladin itself.
+- Storm Witch: the teleport reaches any empty square next to any enemy piece, on any connected board. A teleport is a whole move, so it can't capture that turn.
+- Oracle: "every second turn" counts the owner's completed turns: on turns 2, 4, 6, ... if the Oracle is the piece that moves, it may move once more (free, optional, never chains). Moving any other piece on those turns earns nothing.
+- Chronomancer: "once per game" is once per match, per Chronomancer. The rewind is free and doesn't end your turn (you then move normally). It undoes the opponent's most recent move, including anything it set off, and is offered (right-click the orange ring on the square that piece moved to) only right after the opponent has moved. The AI never rewinds.
 - Titan and Dragon are boss rewards: not in the lottery, and rewards are not wired to the knights yet.

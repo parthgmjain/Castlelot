@@ -5,6 +5,8 @@ extends RefCounted
 ##
 ## on_captured (the victim's effects):  destroy_attacker, rebirth { turns }, split { alone, crowded }
 ## on_capture  (the capturer's effects): raise_pawn, bonus_step, bonus_pawn
+## on_move     (any move it makes):      double_turn { every }
+## actions     (instead of moving):      undo
 
 ## Applies the effects of a move that was just carried out. `result` is the
 ## MoveController result; this adds `losses` (the mover's pieces it destroyed:
@@ -35,8 +37,15 @@ static func apply(state: GameState, result: Dictionary) -> void:
 				_raise_pawn(state, attacker, result)
 
 ## The bonus move a finished move earns, or {} (a bonus move never earns another).
-static func bonus_after(result: Dictionary, was_bonus: bool) -> Dictionary:
-	if was_bonus or result.victims.is_empty() or not result.losses.is_empty():
+static func bonus_after(state: GameState, result: Dictionary, was_bonus: bool) -> Dictionary:
+	if was_bonus or not result.losses.is_empty():
+		return {}
+	var mover: Piece.Side = result.piece.side
+	for effect in _effects(result.piece, "on_move"):
+		if effect.kind == "double_turn" and (state.current_match.turns_taken[mover] + 1) % effect.every == 0:
+			return { "kind": "repeat", "side": mover, "board": result.board, "square": result.square,
+				"label": "it's the %s's double turn, so it may move again" % _name(result.piece) }
+	if result.victims.is_empty():
 		return {}
 	for effect in _effects(result.piece, "on_capture"):
 		match effect.kind:
@@ -60,10 +69,13 @@ static func bonus_playable(state: GameState) -> bool:
 static func moves_for(state: GameState, piece: Dictionary, board: Board, square: Vector2i) -> Array:
 	var bonus: Dictionary = state.current_match.bonus
 	if bonus.is_empty():
-		return Piece.get_legal_moves(piece.type, piece.side, board, square)
+		return Piece.get_legal_moves(piece.type, piece.side, board, square) + action_moves(state, piece)
 	if piece.side != bonus.side:
 		return []
 	match bonus.kind:
+		"repeat":
+			if board == bonus.board and square == bonus.square:
+				return Piece.get_legal_moves(piece.type, piece.side, board, square)
 		"step":
 			if board != bonus.board or square != bonus.square:
 				return []
@@ -73,6 +85,47 @@ static func moves_for(state: GameState, piece: Dictionary, board: Board, square:
 			if piece.type == Piece.Type.PAWN:
 				return Piece.get_legal_moves(piece.type, piece.side, board, square)
 	return []
+
+## Actions a piece can take instead of moving. The Chronomancer's rewind is offered on the
+## square where the opponent's last move ended; make it with a right-click (it is free, and
+## you then move as usual). Once per match per Chronomancer, and only right after the opponent moved.
+static func action_moves(state: GameState, piece: Dictionary) -> Array:
+	var current := state.current_match
+	if not PieceDefs.has(piece.type) or not current.active:
+		return []
+	for action in PieceDefs.effects(piece.type, "actions"):
+		if action.kind == "undo" and not piece.get("undo_used", false) and not current.history.is_empty():
+			var last: Dictionary = current.history.back()
+			if last.side != piece.side and last.has("end") and is_instance_valid(last.end.board):
+				return [{ "board": last.end.board, "square": last.end.square, "capture": false, "stay": true, "special": true, "undo": true }]
+	return []
+
+## What the boards, scores and waiting revivals look like right now, before `side` moves.
+static func take_snapshot(state: GameState, side: Piece.Side) -> Dictionary:
+	var current := state.current_match
+	var boards: Array = []
+	for board in state.boards:
+		boards.append({ "board": board, "pieces": board.pieces.duplicate(true) })
+	return { "side": side, "boards": boards, "scores": current.scores.duplicate(),
+		"revivals": current.revivals.map(func(r): return r.duplicate()), "last_event": current.last_event }
+
+## Puts everything back the way the newest snapshot recorded it, and marks the Chronomancer at
+## `square` as spent. Returns a note for the event line.
+static func rewind(state: GameState, board: Board, square: Vector2i) -> String:
+	var current := state.current_match
+	var snapshot: Dictionary = current.history.pop_back()
+	for saved in snapshot.boards:
+		saved.board.pieces = saved.pieces.duplicate(true)
+		saved.board.queue_redraw()
+	current.scores = snapshot.scores.duplicate()
+	current.revivals = snapshot.revivals.map(func(r): return r.duplicate())
+	current.bonus = {}
+	state.pending_promotion = {}
+	var chronomancer = board.pieces.get(square)
+	if chronomancer != null:
+		chronomancer["undo_used"] = true
+	current.last_event = "%s turned back time: the last move never happened" % ("You" if snapshot.side != current.player_side else "The AI")
+	return current.last_event
 
 ## Notes a piece's `home` when a match starts, so a Phoenix knows where to return.
 static func mark_homes(state: GameState) -> void:

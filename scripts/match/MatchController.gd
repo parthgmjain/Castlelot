@@ -93,6 +93,7 @@ static func end_turn(state: GameState) -> void:
 		current.turn_side = current.last_mover      # anyone may move; the turn goes to the other side
 
 	current.bonus = {}
+	current.turns_taken[current.turn_side] += 1
 	_tick_rest(state, current.turn_side)
 	MoveEffects.tick_revivals(state, current.turn_side)
 	if current.turn_side == current.player_side and current.moves_left <= 0:
@@ -127,7 +128,7 @@ static func status_text(state: GameState) -> String:
 			turn = "%s to move (debug)" % ("White" if current.turn_side == Piece.Side.WHITE else "Black")
 		var text := "%s | Moves left: %d | %s | %s" % [turn, current.moves_left, score, current.last_event]
 		if state.current_moves.any(func(m): return m.get("special", false)):
-			text += " | Right-click an orange ring to attack without moving"
+			text += " | Right-click an orange ring to use a special attack or ability"
 		if not current.bonus.is_empty():
 			text += " | BONUS MOVE: %s (or skip it)" % current.bonus.label
 		return text

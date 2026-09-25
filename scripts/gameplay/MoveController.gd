@@ -78,6 +78,19 @@ static func victims_of(move: Dictionary) -> Array:
 			found.append({ "piece": piece, "board": target.board, "square": target.square })
 	return found
 
+## How many past moves are kept for a Chronomancer to rewind.
+const HISTORY_LIMIT := 6
+
+## The Chronomancer's rewind: it doesn't move and costs nothing (see MoveEffects.rewind).
+static func _rewind(state: GameState, board: Board, square: Vector2i) -> Dictionary:
+	var note := MoveEffects.rewind(state, board, square)
+	for b in state.boards:
+		b.clear_selection()
+		b.clear_move_markers()
+	state.clear_active()
+	return { "piece": board.pieces[square], "victim": null, "victims": [], "board": board, "square": square,
+		"from_board": board, "from_square": square, "swapped": {}, "losses": [], "notes": [note], "undo": true }
+
 ## Carries out the selected piece's move and deselects. Returns
 ## { piece, victim (the first victim or null), victims, board, square, from_board,
 ## from_square, swapped, losses, notes } where board/square is where the piece
@@ -86,7 +99,10 @@ static func victims_of(move: Dictionary) -> Array:
 static func execute(state: GameState, move: Dictionary) -> Dictionary:
 	var from_board: Board = state.active_board
 	var from_square: Vector2i = state.active_square
+	if move.get("undo", false):
+		return _rewind(state, from_board, from_square)
 	var piece: Dictionary = from_board.pieces[from_square]
+	var snapshot := MoveEffects.take_snapshot(state, piece.side) if state.current_match.active else {}
 	var victims := victims_of(move)
 	for victim in victims:
 		victim.board.pieces.erase(victim.square)
@@ -115,6 +131,11 @@ static func execute(state: GameState, move: Dictionary) -> Dictionary:
 		"swapped": swapped, "losses": [], "notes": [],
 	}
 	MoveEffects.apply(state, result)
+	if not snapshot.is_empty():
+		snapshot["end"] = { "board": end_board, "square": end_square }
+		state.current_match.history.append(snapshot)
+		if state.current_match.history.size() > HISTORY_LIMIT:
+			state.current_match.history.pop_front()
 	for b in state.boards:
 		b.queue_redraw()
 		b.clear_selection()

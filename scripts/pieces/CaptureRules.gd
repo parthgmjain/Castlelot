@@ -7,6 +7,7 @@ extends RefCounted
 ## Rule kinds (see PieceDefs):
 ##   front_adjacent  the attacker stands on the square directly in front of the victim
 ##   from_front      the attacker stands anywhere in front of the victim (its heading)
+##   any_attacker    nobody may capture
 ##   attacker_types  attackers of these types (`types`) may not capture
 ##   only_attackers  only attackers of these types (`types`) or tiers (`tiers`) may capture
 
@@ -60,6 +61,8 @@ static func _forbids(rule: Dictionary, attacker: Dictionary, victim: Dictionary)
 			var forward: Vector2i = PieceMoves.frame(victim.board, victim.square, victim.piece.side).forward
 			var offset := world_square(attacker.board, attacker.square) - world_square(victim.board, victim.square)
 			return offset.x * forward.x + offset.y * forward.y > 0
+		"any_attacker":
+			return true
 		"attacker_types":
 			return rule.types.has(attacker.type)
 		"only_attackers":

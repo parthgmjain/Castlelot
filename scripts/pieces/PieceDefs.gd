@@ -8,6 +8,8 @@ extends RefCounted
 ##   kind   "step" (one hop per vector), "leap" (path-traced jump, like a knight),
 ##          "slide", "cannon", "grasshopper", "twin_leap", "step_slide",
 ##          "pawn" (moves and captures like a pawn), "swap" (trade places with a friend),
+##          "teleport" (to any empty square next to an enemy), "king_teleport" (to any empty
+##          square next to your own king, but only while an enemy could capture it),
 ##          "shot" (capture exactly `distance` squares away without moving),
 ##          "fire" (capture every enemy within `range` in one line without moving, then rest)
 ##   to / dirs   the vectors (offsets for step/leap, directions for the others)
@@ -49,8 +51,9 @@ static func is_reward_only(type: Piece.Type) -> bool:
 static func protection(type: Piece.Type) -> Array:
 	return _defs()[type].protection
 
-## Things that happen when this piece captures (`on_capture`) or is captured
-## (`on_captured`): a list of { kind, ... } handled by MoveEffects.
+## Things that happen when this piece captures (`on_capture`), is captured
+## (`on_captured`) or moves (`on_move`), and special `actions` it can take instead
+## of moving: a list of { kind, ... } handled by MoveEffects.
 static func effects(type: Piece.Type, key: String) -> Array:
 	return _defs()[type].get(key, [])
 
@@ -213,6 +216,23 @@ static func _build() -> Dictionary:
 			{ "on_captured": [{ "kind": "rebirth", "turns": 3 }] }),
 		Piece.Type.HYDRA: _with(_def(legendary, 10, "Hy", [{ "kind": "slide", "dirs": ALL_DIRECTIONS, "max": 2 }], true),
 			{ "on_captured": [{ "kind": "split", "alone": 4, "crowded": 2 }] }),
+		Piece.Type.EMPRESS: _def(legendary, 12, "Em", [
+			{ "kind": "slide", "dirs": ALL_DIRECTIONS },
+			{ "kind": "leap", "to": Piece.KNIGHT_OFFSETS },
+		], true),
+		Piece.Type.PALADIN: _guarded(_def(legendary, 11, "Pa", [
+			{ "kind": "slide", "dirs": DIAGONAL },
+			{ "kind": "leap", "to": Piece.KNIGHT_OFFSETS },
+			{ "kind": "king_teleport" },
+		], true), [], [{ "kind": "any_attacker" }]),
+		Piece.Type.STORM_WITCH: _def(legendary, 11, "Sw", [
+			{ "kind": "slide", "dirs": ALL_DIRECTIONS },
+			{ "kind": "teleport" },
+		], true),
+		Piece.Type.ORACLE: _with(_def(legendary, 10, "Or", [{ "kind": "slide", "dirs": ALL_DIRECTIONS, "max": 3 }], true),
+			{ "on_move": [{ "kind": "double_turn", "every": 2 }] }),
+		Piece.Type.CHRONOMANCER: _with(_def(legendary, 10, "Cm", [{ "kind": "slide", "dirs": DIAGONAL }], true),
+			{ "actions": [{ "kind": "undo" }] }),
 		Piece.Type.DRAGON: _def(legendary, 11, "Dr", [
 			{ "kind": "slide", "dirs": ORTHOGONAL },
 			{ "kind": "fire", "dirs": ORTHOGONAL, "range": 3, "rest": 2 },

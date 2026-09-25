@@ -32,6 +32,8 @@ static func _best_move(state: GameState, side: Piece.Side, minimum: float) -> Di
 			if piece.side != side:
 				continue
 			for move in MoveEffects.moves_for(state, piece, board, square):
+				if move.get("undo", false):
+					continue                   # the AI doesn't rewind time
 				var value := _evaluate(state, side, board, square, piece, move, distance) + randf()
 				if value > best_value:
 					best_value = value
@@ -81,6 +83,8 @@ static func _evaluate(state: GameState, side: Piece.Side, from_board: Board, fro
 
 ## The most valuable capture `side` could make right now.
 static func _best_capture(state: GameState, side: Piece.Side) -> float:
+	var previous := PieceMoves.threat_check
+	PieceMoves.threat_check = true               # only captures matter here, so skip teleports
 	var best := 0.0
 	for board in state.boards:
 		for square in board.pieces:
@@ -92,6 +96,7 @@ static func _best_capture(state: GameState, side: Piece.Side) -> float:
 				for victim in MoveController.victims_of(move):
 					worth += _worth(victim.piece)
 				best = max(best, worth)
+	PieceMoves.threat_check = previous
 	return best
 
 static func _worth(piece: Dictionary) -> float:

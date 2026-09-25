@@ -25,6 +25,13 @@ var deployed_roster_ids: Array = []
 ## While it is pending the turn doesn't pass; taking it is free and optional. See MoveEffects.
 var bonus: Dictionary = {}
 
+## Snapshots of the boards taken before each move, newest last (see MoveEffects): what a
+## Chronomancer rewinds to. Each also records who moved and where the moved piece ended up.
+var history: Array = []
+
+## How many turns each side has completed (an Oracle moves twice on every second one).
+var turns_taken: Dictionary = { Piece.Side.WHITE: 0, Piece.Side.BLACK: 0 }
+
 ## Pieces waiting to return to the board: [{ piece, board, square, turns, side }].
 var revivals: Array = []
 

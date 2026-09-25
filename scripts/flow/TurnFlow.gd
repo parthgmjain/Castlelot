@@ -13,10 +13,14 @@ var ai_delay := 0.6
 ## Everything that follows a completed move, for either side.
 func after_move(result: Dictionary) -> void:
 	var current := state.current_match
+	if result.get("undo", false):              # a rewind: no move was made, and it is still your turn
+		MoveController.mark_last_move(state, {})
+		view_changed.emit()
+		return
 	var was_bonus := not current.bonus.is_empty()
 	MatchController.record_move(state, result, was_bonus)
 	MoveController.mark_last_move(state, result)
-	current.bonus = MoveEffects.bonus_after(result, was_bonus) if current.active else {}
+	current.bonus = MoveEffects.bonus_after(state, result, was_bonus) if current.active else {}
 	if not current.bonus.is_empty() and not MoveEffects.bonus_playable(state):
 		current.bonus = {}                    # nothing could use it, so don't offer it
 	if current.result != "":

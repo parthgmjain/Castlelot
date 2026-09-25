@@ -3,6 +3,11 @@ extends RefCounted
 ## Turns a PieceDefs rule list into legal moves, following portals across
 ## boards like every other piece. Moves are { board, square, capture }.
 
+## True while working out what could capture a king (see GreedyAI too): teleports never
+## capture, so they are skipped, which also stops a Paladin's "is my king attacked?"
+## from asking the enemy Paladin the same question forever.
+static var threat_check := false
+
 ## Safety net for endless slides (e.g. a piece passing through everything).
 const MAX_SLIDE := 200
 
@@ -24,6 +29,12 @@ static func generate(type: Piece.Type, side: Piece.Side, board: Board, from: Vec
 				moves.append_array(PawnMovement.moves(side, board, from))
 			"swap":
 				_swaps(vectors, side, board, from, moves)
+			"teleport":
+				if not threat_check:
+					_teleport_beside_enemies(side, board, moves)
+			"king_teleport":
+				if not threat_check:
+					_teleport_to_king(side, board, moves)
 			"step":
 				for offset in vectors:
 					var dest: Dictionary = Piece.step_across(board, from, offset)
@@ -61,6 +72,62 @@ static func _reach(board: Board, from: Vector2i, offset: Vector2i) -> Dictionary
 	if abs(offset.x) <= 1 and abs(offset.y) <= 1:
 		return Piece.step_across(board, from, offset)
 	return Piece.trace_path(board, from, offset)
+
+## Every empty square next to an enemy piece, on any board you can reach.
+static func _teleport_beside_enemies(side: Piece.Side, board: Board, moves: Array) -> void:
+	var seen := {}
+	for b in BoardGraph.reachable_boards(board):
+		for square in b.pieces:
+			if b.pieces[square].side != side:
+				for offset in Piece.KING_OFFSETS:
+					_add_teleport(b, square, offset, seen, moves)
+
+## Every empty square next to your own king, but only while an enemy could capture it.
+static func _teleport_to_king(side: Piece.Side, board: Board, moves: Array) -> void:
+	var king := _find_king(board, side)
+	if king.is_empty() or not _is_attacked(king, side):
+		return
+	var seen := {}
+	for offset in Piece.KING_OFFSETS:
+		_add_teleport(king.board, king.square, offset, seen, moves)
+
+static func _add_teleport(board: Board, square: Vector2i, offset: Vector2i, seen: Dictionary, moves: Array) -> void:
+	var next: Dictionary = Piece.step_across(board, square, offset)
+	if next.is_empty() or next.board.pieces.has(next.square):
+		return
+	var key := [next.board.get_instance_id(), next.square]
+	if not seen.has(key):
+		seen[key] = true
+		moves.append({ "board": next.board, "square": next.square, "capture": false, "teleport": true })
+
+static func _find_king(board: Board, side: Piece.Side) -> Dictionary:
+	for b in BoardGraph.reachable_boards(board):
+		for square in b.pieces:
+			var piece: Dictionary = b.pieces[square]
+			if piece.type == Piece.Type.KING and piece.side == side:
+				return { "board": b, "square": square }
+	return {}
+
+## Whether any enemy piece could capture the king (or burn it) with its next move.
+static func _is_attacked(king: Dictionary, side: Piece.Side) -> bool:
+	var previous := threat_check
+	threat_check = true
+	var attacked := false
+	for b in BoardGraph.reachable_boards(king.board):
+		for square in b.pieces:
+			var piece: Dictionary = b.pieces[square]
+			if piece.side == side:
+				continue
+			for move in Piece.get_legal_moves(piece.type, piece.side, b, square):
+				if MoveController.victims_of(move).any(func(v): return v.piece.type == Piece.Type.KING and v.piece.side == side):
+					attacked = true
+					break
+			if attacked:
+				break
+		if attacked:
+			break
+	threat_check = previous
+	return attacked
 
 ## Trading places with a friendly piece (other than itself).
 static func _swaps(offsets: Array, side: Piece.Side, board: Board, from: Vector2i, moves: Array) -> void:
