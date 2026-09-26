@@ -145,6 +145,33 @@ func test_upgrading_zone_size() -> void:
 	check_eq(run.currency, 100 - price, "gold spent")
 	check_eq(Shop.zone_upgrade_price(run), price + RunConfig.ZONE_UPGRADE_PRICE_STEP, "the next costs more")
 
+func test_upgrading_moves() -> void:
+	var run := _run(100)
+	check_eq(run.bonus_moves, 0, "no bonus yet")
+	var price := Shop.moves_upgrade_price(run)
+	check_eq(price, RunConfig.MOVES_UPGRADE_PRICE_BASE, "first price")
+	check(Shop.buy_moves(run), "bought")
+	check_eq(run.bonus_moves, RunConfig.MOVES_UPGRADE_AMOUNT, "more moves banked")
+	check_eq(run.currency, 100 - price, "gold spent")
+	check_eq(Shop.moves_upgrade_price(run), price + RunConfig.MOVES_UPGRADE_PRICE_STEP, "the next costs more")
+
+func test_the_bonus_moves_carry_into_every_matchs_setup() -> void:
+	var run := _run(100)
+	var before: int = RunConfig.match_setup(run).moves
+	Shop.buy_moves(run)
+	check_eq(RunConfig.match_setup(run).moves, before + RunConfig.MOVES_UPGRADE_AMOUNT, "the next match gets the bonus")
+	Shop.buy_moves(run)
+	check_eq(RunConfig.match_setup(run).moves, before + RunConfig.MOVES_UPGRADE_AMOUNT * 2, "and stacks with a second purchase")
+
+func test_moves_upgrade_needs_gold_and_respects_its_cap() -> void:
+	var poor := _run(1)
+	check(not Shop.buy_moves(poor), "no gold, no upgrade")
+	check_eq(poor.currency, 1, "nothing spent")
+	var rich := _run(100000)
+	rich.bonus_moves = RunConfig.MAX_BONUS_MOVES
+	check(not Shop.buy_moves(rich), "capped")
+	check_eq(rich.currency, 100000, "and costs nothing")
+
 func test_upgrades_need_gold_and_respect_their_caps() -> void:
 	var poor := _run(1)
 	check(not Shop.buy_points(poor) and not Shop.buy_zone(poor), "no gold, no upgrades")
@@ -160,9 +187,12 @@ func test_a_new_run_resets_purchases_and_prices() -> void:
 	Lottery.start_pull(run)
 	Shop.buy_points(run)
 	Shop.buy_zone(run)
+	Shop.buy_moves(run)
 	run.begin()
 	check_eq(Lottery.price(run), RunConfig.PULL_PRICE_BASE, "pull price reset")
 	check_eq(Shop.points_upgrade_price(run), RunConfig.POINTS_UPGRADE_PRICE_BASE, "points price reset")
 	check_eq(Shop.zone_upgrade_price(run), RunConfig.ZONE_UPGRADE_PRICE_BASE, "zone price reset")
+	check_eq(Shop.moves_upgrade_price(run), RunConfig.MOVES_UPGRADE_PRICE_BASE, "moves price reset")
 	check_eq(run.allocated_points, RunConfig.PLAYER_POINTS_START, "points reset")
 	check_eq(run.zone_tiles, RunConfig.PLAYER_ZONE_TILES, "zone reset")
+	check_eq(run.bonus_moves, 0, "bonus moves reset")

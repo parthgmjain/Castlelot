@@ -74,10 +74,22 @@ const POINTS_UPGRADE_PRICE_STEP := 5
 const ZONE_UPGRADE_AMOUNT := 1
 const ZONE_UPGRADE_PRICE_BASE := 8
 const ZONE_UPGRADE_PRICE_STEP := 4
+const MAX_BONUS_MOVES := 30
+const MOVES_UPGRADE_AMOUNT := 2
+const MOVES_UPGRADE_PRICE_BASE := 8
+const MOVES_UPGRADE_PRICE_STEP := 4
 
 # ---- placeholder scaling: every value below is meant to be tuned ---------
 # A value grows by "PER_MATCH" for every match played so far in the run.
-const MOVES := 15
+# Basic balance pass (2026-09-25): TARGET_BASE/PER_MATCH used to grow far faster than the AI's
+# material (round 1 asked for ~50% of the enemy's total value in captures; by round 12 it was
+# ~98%, an unwinnable wall). They're now set so the target stays a roughly constant share
+# (~35%) of the AI's total value (AI_budget x Scoring.CHIPS_PER_VALUE) across the whole run:
+# target(index) ~= 0.35 x AI_budget(index) x CHIPS_PER_VALUE. MOVES was nudged up a little too,
+# since even at the old target a lot of a 15-move match was spent just closing the distance
+# across boards before any capturing could start. Simulated with tests/run.sh-style greedy play
+# on both sides before and after - still meant to be tuned further by hand.
+const MOVES := 18
 const PLAYER_ZONE_TILES := 10
 
 const AI_BUDGET_BASE := 8.0
@@ -85,8 +97,8 @@ const AI_BUDGET_PER_MATCH := 0.5
 const AI_ZONE_TILES_BASE := 8.0
 const AI_ZONE_TILES_PER_MATCH := 0.25
 
-const TARGET_BASE := 40.0
-const TARGET_PER_MATCH := 6.0
+const TARGET_BASE := 28.0
+const TARGET_PER_MATCH := 2.0
 
 const BOARDS_BASE := 2
 const BOARDS_MAX := 4
@@ -118,7 +130,7 @@ static func match_setup(run: RunState) -> Dictionary:
 		"white_zone": run.zone_tiles,
 		"black_zone": int(AI_ZONE_TILES_BASE + AI_ZONE_TILES_PER_MATCH * index),
 		"ai_budget": int(round(ai_budget)),
-		"moves": MOVES,
+		"moves": MOVES + run.bonus_moves,
 		"target": int(round(target)),
 		"round_type": "boss" if boss else "normal",
 		"boss_name": run.boss_name(),

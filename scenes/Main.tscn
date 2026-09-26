@@ -540,6 +540,10 @@ text = "Allocated points"
 layout_mode = 2
 text = "Zone size"
 
+[node name="MovesUpgradeButton" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox/UpgradeActions"]
+layout_mode = 2
+text = "Moves"
+
 [node name="CardsHeader" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
 layout_mode = 2
 text = "PROPHECIES  -  one-time cards you carry up to 3 (the rarer, the stronger)"

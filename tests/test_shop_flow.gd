@@ -65,6 +65,7 @@ func test_the_shop_opens_after_a_win_and_shows_everything() -> void:
 	check(not shop.choice_box.visible, "no choice waiting")
 	check(shop.points_upgrade_button.text.begins_with("Allocated points 14 -> 16"), shop.points_upgrade_button.text)
 	check(shop.zone_upgrade_button.text.begins_with("Zone size 10 -> 11"), shop.zone_upgrade_button.text)
+	check(shop.moves_upgrade_button.text.begins_with("Moves +0 -> +%d" % RunConfig.MOVES_UPGRADE_AMOUNT), shop.moves_upgrade_button.text)
 	check_eq(shop.cards_row.get_child(0).get_child(1).get_child_count(), RunConfig.PROPHECY_OFFERS, "prophecies are for sale")
 	check_eq(shop.leave_button.text, "Next Match", "leave button")
 
@@ -138,7 +139,7 @@ func test_a_second_pull_is_ignored_while_cards_are_showing() -> void:
 func test_you_cannot_buy_what_you_cannot_afford() -> void:
 	var main = await load_main()
 	var shop := _to_shop(main, 0)
-	check(shop.pull_button.disabled and shop.points_upgrade_button.disabled and shop.zone_upgrade_button.disabled, "everything is greyed out with no gold")
+	check(shop.pull_button.disabled and shop.points_upgrade_button.disabled and shop.zone_upgrade_button.disabled and shop.moves_upgrade_button.disabled, "everything is greyed out with no gold")
 	shop.pull_button.pressed.emit()
 	check_eq(main.state.run.roster.size(), 6, "nothing drawn")
 	check(not shop.choice_box.visible, "no cards")
@@ -276,18 +277,26 @@ func test_declining_a_legendary_keeps_what_you_have() -> void:
 
 func test_upgrades_raise_what_you_can_field_next_match() -> void:
 	var main = await load_main()
-	var shop := _to_shop(main, 100)
+	var shop := _to_shop(main, 200)
+	var moves_before: int = main.state.current_match.moves_left
 	shop.points_upgrade_button.pressed.emit()
 	shop.zone_upgrade_button.pressed.emit()
+	shop.moves_upgrade_button.pressed.emit()
 	var run: RunState = main.state.run
 	check_eq(run.allocated_points, RunConfig.PLAYER_POINTS_START + RunConfig.POINTS_UPGRADE_AMOUNT, "more points")
 	check_eq(run.zone_tiles, RunConfig.PLAYER_ZONE_TILES + RunConfig.ZONE_UPGRADE_AMOUNT, "a bigger zone")
-	check_eq(run.currency, 100 - RunConfig.POINTS_UPGRADE_PRICE_BASE - RunConfig.ZONE_UPGRADE_PRICE_BASE, "gold spent")
+	check_eq(run.bonus_moves, RunConfig.MOVES_UPGRADE_AMOUNT, "more moves banked")
+	check_eq(run.currency, 200 - RunConfig.POINTS_UPGRADE_PRICE_BASE - RunConfig.ZONE_UPGRADE_PRICE_BASE - RunConfig.MOVES_UPGRADE_PRICE_BASE, "gold spent")
 	check(shop.points_upgrade_button.text.contains("-> %d" % (run.allocated_points + RunConfig.POINTS_UPGRADE_AMOUNT)), "the button shows the next step: %s" % shop.points_upgrade_button.text)
+	check(shop.moves_upgrade_button.text.contains("+%d -> +%d" % [run.bonus_moves, run.bonus_moves + RunConfig.MOVES_UPGRADE_AMOUNT]), "and so does the moves button: %s" % shop.moves_upgrade_button.text)
 	shop.leave_button.pressed.emit()
 	check(main.state.deployment.active and not shop.visible, "deploying the next match")
 	check_eq(count_zone(main.state.boards, WHITE), run.zone_tiles, "the new zone size is in effect")
 	check(main.panel.deploy_status_label.text.ends_with("Points 0/%d" % run.allocated_points), main.panel.deploy_status_label.text)
+	main.panel.auto_deploy_button.pressed.emit()
+	main.panel.ready_button.pressed.emit()
+	check_eq(main.state.current_match.moves_left, RunConfig.MOVES + run.bonus_moves, "the new match starts with the bonus moves")
+	check(main.state.current_match.moves_left > moves_before, "more than the previous match had")
 
 func test_a_bigger_roster_than_your_points_allow_leaves_pieces_on_the_bench() -> void:
 	var main = await load_main()
@@ -357,6 +366,7 @@ func test_a_new_run_resets_the_shops_prices_and_limits() -> void:
 	_resolve(shop)
 	shop.points_upgrade_button.pressed.emit()
 	shop.zone_upgrade_button.pressed.emit()
+	shop.moves_upgrade_button.pressed.emit()
 	shop.leave_button.pressed.emit()
 	main.panel.ready_button.pressed.emit()
 	var current: MatchState = main.state.current_match

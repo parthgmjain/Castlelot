@@ -93,3 +93,18 @@ static func buy_zone(run: RunState) -> bool:
 	run.zone_upgrades_bought += 1
 	run.zone_tiles = mini(run.zone_tiles + RunConfig.ZONE_UPGRADE_AMOUNT, RunConfig.MAX_ZONE_TILES)
 	return true
+
+static func moves_upgrade_price(run: RunState) -> int:
+	return _haggled(run, RunConfig.MOVES_UPGRADE_PRICE_BASE + run.moves_upgrades_bought * RunConfig.MOVES_UPGRADE_PRICE_STEP)
+
+static func can_buy_moves(run: RunState) -> bool:
+	return run.currency >= moves_upgrade_price(run) and run.bonus_moves < RunConfig.MAX_BONUS_MOVES
+
+## Adds RunConfig.MOVES_UPGRADE_AMOUNT moves to every match for the rest of the run.
+static func buy_moves(run: RunState) -> bool:
+	if not can_buy_moves(run):
+		return false
+	run.currency -= moves_upgrade_price(run)
+	run.moves_upgrades_bought += 1
+	run.bonus_moves = mini(run.bonus_moves + RunConfig.MOVES_UPGRADE_AMOUNT, RunConfig.MAX_BONUS_MOVES)
+	return true

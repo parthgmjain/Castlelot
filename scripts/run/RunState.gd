@@ -19,6 +19,10 @@ var zone_tiles: int = RunConfig.PLAYER_ZONE_TILES
 var pulls_made: int = 0
 var points_upgrades_bought: int = 0
 var zone_upgrades_bought: int = 0
+var moves_upgrades_bought: int = 0
+
+## Added to RunConfig.MOVES for every match for the rest of the run (a shop upgrade).
+var bonus_moves: int = 0
 
 ## Every piece you own except the king: [{ id, type }]. Pieces are removed for
 ## good when they are captured in a match you go on to win.
@@ -58,6 +62,8 @@ func begin() -> void:
 	pulls_made = 0
 	points_upgrades_bought = 0
 	zone_upgrades_bought = 0
+	moves_upgrades_bought = 0
+	bonus_moves = 0
 	roster.clear()
 	_next_roster_id = 1
 	unlocked_legendaries = []

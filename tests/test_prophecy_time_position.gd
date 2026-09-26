@@ -440,7 +440,7 @@ func test_switching_to_a_different_card_mid_choice_abandons_the_first_cleanly() 
 	check(g.main.prophecy_strip.is_choosing(), "mid swap")
 	main_play(g, 1)                                          # play Quickening instead, abandoning the swap
 	check(not g.main.prophecy_strip.is_choosing(), "quickening needs no choice")
-	check_eq(g.match.moves_left, 15 + Prophecies.QUICKENING_MOVES, "quickening worked")
+	check_eq(g.match.moves_left, RunConfig.MOVES + Prophecies.QUICKENING_MOVES, "quickening worked")
 	check_eq(g.state.run.hand.map(func(h): return h.id), ["swap_fates"], "the abandoned swap card is still in hand, unused")
 	main_play(g, 0)                                          # starting swap_fates again should be a clean restart
 	check(_strip_choice_buttons(g.main).size() == 2, "back to stage one, offering both pieces")

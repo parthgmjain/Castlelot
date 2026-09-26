@@ -22,6 +22,7 @@ const TIER_COLORS := {
 @onready var trade_up_button: Button = $Center/Panel/Margin/VBox/PieceActions/TradeUpButton
 @onready var points_upgrade_button: Button = $Center/Panel/Margin/VBox/UpgradeActions/PointsUpgradeButton
 @onready var zone_upgrade_button: Button = $Center/Panel/Margin/VBox/UpgradeActions/ZoneUpgradeButton
+@onready var moves_upgrade_button: Button = $Center/Panel/Margin/VBox/UpgradeActions/MovesUpgradeButton
 @onready var cards_row: HBoxContainer = $Center/Panel/Margin/VBox/CardsRow
 @onready var leave_button: Button = $Center/Panel/Margin/VBox/Leave
 
@@ -46,6 +47,7 @@ func _ready() -> void:
 	trade_up_button.pressed.connect(_on_trade_up)
 	points_upgrade_button.pressed.connect(_on_buy_points)
 	zone_upgrade_button.pressed.connect(_on_buy_zone)
+	moves_upgrade_button.pressed.connect(_on_buy_moves)
 	leave_button.pressed.connect(_on_leave)
 	_build_choice_box()
 
@@ -122,6 +124,9 @@ func refresh() -> void:
 	zone_upgrade_button.text = "Zone size %d -> %d - %d gold" % [
 		_run.zone_tiles, mini(_run.zone_tiles + RunConfig.ZONE_UPGRADE_AMOUNT, RunConfig.MAX_ZONE_TILES), Shop.zone_upgrade_price(_run)]
 	zone_upgrade_button.disabled = busy or not Shop.can_buy_zone(_run)
+	moves_upgrade_button.text = "Moves +%d -> +%d - %d gold" % [
+		_run.bonus_moves, mini(_run.bonus_moves + RunConfig.MOVES_UPGRADE_AMOUNT, RunConfig.MAX_BONUS_MOVES), Shop.moves_upgrade_price(_run)]
+	moves_upgrade_button.disabled = busy or not Shop.can_buy_moves(_run)
 	leave_button.disabled = busy
 
 func _rebuild_roster() -> void:
@@ -430,6 +435,11 @@ func _on_buy_points() -> void:
 
 func _on_buy_zone() -> void:
 	_say("Zone size increased." if Shop.buy_zone(_run) else "Can't buy that.")
+	changed.emit()
+	refresh()
+
+func _on_buy_moves() -> void:
+	_say("More moves every match now." if Shop.buy_moves(_run) else "Can't buy that.")
 	changed.emit()
 	refresh()
 
