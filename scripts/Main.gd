@@ -29,7 +29,12 @@ func _ready() -> void:
 	shop_screen.closed.connect(run_flow.begin_match)
 	shop_screen.changed.connect(_refresh_view)
 	start_menu.start_pressed.connect(menu_flow.start_pressed)
+	start_menu.quit_pressed.connect(menu_flow.quit_pressed)
+	menu_flow.quit_requested.connect(_quit)
 	_generate_boards()
+
+func _quit() -> void:
+	get_tree().quit()
 
 func _setup_flows() -> void:
 	run_flow.state = state
