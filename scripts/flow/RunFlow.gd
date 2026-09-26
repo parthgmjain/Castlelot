@@ -31,7 +31,16 @@ func begin_match() -> void:
 	generate_boards.call()
 	ZoneController.generate(state.boards, setup.white_zone, setup.black_zone)
 	var boss_army: Array = [setup.boss_piece] if setup.boss_piece >= 0 else []
+	if state.run.is_final_round():
+		var legendaries := RunConfig.BOSSES.duplicate()
+		legendaries.shuffle()
+		boss_army = legendaries.slice(0, RunConfig.ARTHUR_LEGENDARY_COUNT)
 	ArmyPlacer.auto_place(state.boards, Piece.Side.BLACK, setup.ai_budget, setup.round_type, boss_army, state.run.round_number)
+	if state.run.is_final_round():
+		for board in state.boards:
+			for piece in board.pieces.values():
+				if piece.side == Piece.Side.BLACK:
+					piece["score_multiplier"] = RunConfig.ARTHUR_SCORE_MULTIPLIER
 	state.deployment.begin(setup)
 	MoveController.mark_last_move(state, {})
 	view_changed.emit()

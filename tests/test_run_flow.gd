@@ -52,7 +52,7 @@ func test_starting_a_run_builds_the_world_then_waits_for_you_to_deploy() -> void
 	check_eq(state.run.title(), "Round 1/12 - Match 1/3", "title")
 	check_eq(main.panel.run_status_label.text, "Round 1/12 - Match 1/3", "shown on screen")
 	check(state.deployment.active and not state.current_match.active, "deploying, not yet fighting")
-	check_eq(state.boards.size(), RunConfig.BOARDS_BASE, "board count from the config")
+	check_eq(state.boards.size(), RunConfig.BOARD_COUNT_MIN, "board count from the config")
 	check(boards_connected(state.boards), "boards connected")
 	check(king_alive(state.boards, WHITE) and king_alive(state.boards, BLACK), "both kings")
 	check_eq(count_zone(state.boards, WHITE), RunConfig.PLAYER_ZONE_TILES, "your zone")

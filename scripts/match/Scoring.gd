@@ -5,12 +5,13 @@ extends RefCounted
 const CHIPS_PER_VALUE := 10
 
 ## What capturing `victim` with `attacker` scores: (chips + modifier bonuses)
-## x multiplier. A victim counts as whatever it currently is, so a promoted
-## queen is worth a queen.
+## x multiplier. A victim counts as whatever it currently is, so a promoted queen is worth a
+## queen. `score_multiplier` on the victim's own dict (Arthur's pieces are worth half) is the
+## starting multiplier; prophecies and other modifiers still stack on top of it as usual.
 static func capture_score(current_match: MatchState, attacker: Dictionary, victim: Dictionary, board: Board, square: Vector2i) -> int:
 	var context := {
 		"chips": float(Piece.value(victim.type) * CHIPS_PER_VALUE),
-		"mult": 1.0,
+		"mult": victim.get("score_multiplier", 1.0),
 		"attacker": attacker,
 		"victim": victim,
 		"board": board,
