@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://bqx7n8m0k3v1a"]
+[gd_scene load_steps=7 format=3 uid="uid://bqx7n8m0k3v1a"]
 
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ui/ControlPanel.gd" id="2_panel"]
 [ext_resource type="Script" path="res://scripts/ui/PromotionPicker.gd" id="3_picker"]
 [ext_resource type="Script" path="res://scripts/ui/ResultScreen.gd" id="4_result"]
 [ext_resource type="Script" path="res://scripts/ui/ShopScreen.gd" id="5_shop"]
+[ext_resource type="Script" path="res://scripts/ui/StartMenu.gd" id="6_menu"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -556,3 +557,75 @@ theme_override_constants/separation = 10
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "Next Match"
+
+[node name="MenuLayer" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="StartMenu" type="Control" parent="MenuLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("6_menu")
+
+[node name="Dim" type="ColorRect" parent="MenuLayer/StartMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.08, 0.08, 0.1, 1)
+
+[node name="Center" type="CenterContainer" parent="MenuLayer/StartMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="MenuLayer/StartMenu/Center"]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="MenuLayer/StartMenu/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 30
+
+[node name="VBox" type="VBoxContainer" parent="MenuLayer/StartMenu/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="MenuLayer/StartMenu/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "CASTLELOT"
+horizontal_alignment = 1
+
+[node name="StartButton" type="Button" parent="MenuLayer/StartMenu/Center/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Start"
+
+[node name="QuitButton" type="Button" parent="MenuLayer/StartMenu/Center/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Quit"
+
+[node name="SettingsButton" type="Button" parent="MenuLayer/StartMenu/Center/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Settings"
+
+[node name="CollectionsButton" type="Button" parent="MenuLayer/StartMenu/Center/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Collections"

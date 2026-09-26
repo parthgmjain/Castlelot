@@ -84,9 +84,10 @@ func make_rig(rows: Array, size: int = 5) -> Array:
 	b.set_portals(to_a)
 	return [a, b]
 
-## The real Main scene, with the AI's pause removed. `await` it.
-## Boards start at a fixed 8x8 so tests can use fixed squares; pass
-## random_sizes = true (or change the board count) to get random ones.
+## The real Main scene, with the AI's pause removed, already past the Start
+## Menu (see test_start_menu.gd for the menu itself). `await` it. Boards start
+## at a fixed 8x8 so tests can use fixed squares; pass random_sizes = true
+## (or change the board count) to get random ones.
 func load_main(random_sizes: bool = false) -> Node:
 	var main = MainScene.instantiate()
 	tree.root.add_child(main)
@@ -94,6 +95,7 @@ func load_main(random_sizes: bool = false) -> Node:
 	main.shop_screen.reveal_delay = 0.0
 	track(main)
 	await pump(2)
+	main.start_menu.start_button.pressed.emit()
 	if not random_sizes:
 		var panel: ControlPanel = main.panel
 		for box in panel._width_boxes + panel._height_boxes:

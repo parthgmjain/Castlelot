@@ -136,7 +136,7 @@ Whatever zone size you've bought with the shop upgrade, the amount actually usab
 ## Arthur, the final boss (2026-09-25)
 Round 13 is Arthur alone, and he's built to be the hardest fight in the run:
 - He always fields exactly 4 distinct random legendaries (from the 12 boss pieces - never the queen), reserved on top of his army the same way any boss's own piece is, re-rolled fresh each time he's fought.
-- His effective army budget is doubled (`RunConfig.ARTHUR_BUDGET_MULTIPLIER`) on top of the usual boss multiplier, so his bought army is roughly twice the size of the round before.
+- His effective army budget is doubled via `RunConfig.BOSS_HALF_COST_MULTIPLIER` (shared with every other boss - see "Regular bosses got harder too" below; Arthur no longer has a separate budget multiplier of his own) on top of the usual boss multiplier, so his bought army is roughly twice the size of the round before.
 - Every one of his pieces - the 4 legendaries and the bought army alike - is flagged `score_multiplier = 0.5` (`RunConfig.ARTHUR_SCORE_MULTIPLIER`): capturing any of them only scores half the usual value. Prophecies and other modifiers still stack on top of that (Omen of Plunder's x2 on an Arthur piece nets out to an ordinary capture).
 - Net effect: the total score theoretically available from his army works out about the same as an ordinary boss's (double the pieces, half the score each), so the extra difficulty comes from a bigger, more defensively coordinated army with four powerful legendaries mixed in, not a higher score wall.
 - The AI still evaluates its own pieces at their full ordinary value when deciding what to defend or attack (`GreedyAI` is untouched) - only what YOU score for a capture is discounted.

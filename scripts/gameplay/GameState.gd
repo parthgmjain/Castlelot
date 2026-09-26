@@ -1,6 +1,11 @@
 class_name GameState
 extends RefCounted
 
+## Which top-level screen is showing. Only START_MENU and GAME are wired so
+## far (Settings/Collections buttons exist but do nothing yet).
+enum Screen { START_MENU, GAME, SETTINGS, COLLECTIONS }
+var screen: Screen = Screen.START_MENU
+
 var boards: Array = []
 var attach_info: Array = []
 var connections: Array = []

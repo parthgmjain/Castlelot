@@ -9,6 +9,7 @@ const BOARD_SCENE := preload("res://scenes/Board.tscn")
 @onready var promotion_picker: PromotionPicker = $PromotionLayer/PromotionPicker
 @onready var result_screen: ResultScreen = $ResultLayer/ResultScreen
 @onready var shop_screen: ShopScreen = $ShopLayer/ShopScreen
+@onready var start_menu: StartMenu = $MenuLayer/StartMenu
 
 var state := GameState.new()
 
@@ -17,6 +18,7 @@ var turn_flow := TurnFlow.new()
 var deployment_flow := DeploymentFlow.new()
 var debug_flow := DebugFlow.new()
 var prophecy_flow := ProphecyFlow.new()
+var menu_flow := MenuFlow.new()
 var prophecy_strip := ProphecyStrip.new()
 
 func _ready() -> void:
@@ -26,6 +28,7 @@ func _ready() -> void:
 	result_screen.continue_pressed.connect(run_flow.result_continued)
 	shop_screen.closed.connect(run_flow.begin_match)
 	shop_screen.changed.connect(_refresh_view)
+	start_menu.start_pressed.connect(menu_flow.start_pressed)
 	_generate_boards()
 
 func _setup_flows() -> void:
@@ -43,12 +46,13 @@ func _setup_flows() -> void:
 	debug_flow.run_flow = run_flow
 	debug_flow.turn_flow = turn_flow
 	prophecy_flow.state = state
+	menu_flow.state = state
 	var hand_layer := CanvasLayer.new()             # under the shop and result screens
 	hand_layer.layer = 5
 	add_child(hand_layer)
 	hand_layer.add_child(prophecy_strip)
 	prophecy_flow.connect_strip(prophecy_strip)
-	for flow in [run_flow, turn_flow, deployment_flow, debug_flow, prophecy_flow]:
+	for flow in [run_flow, turn_flow, deployment_flow, debug_flow, prophecy_flow, menu_flow]:
 		flow.view_changed.connect(_refresh_view)
 		add_child(flow)
 
@@ -113,6 +117,10 @@ func _relayout() -> void:
 	_refresh_view()
 
 func _refresh_view() -> void:
+	var at_menu := state.screen == GameState.Screen.START_MENU
+	start_menu.visible = at_menu
+	panel.visible = not at_menu
+	boards_container.visible = not at_menu
 	MoveController.refresh(state)
 	_update_points_status()
 	panel.set_match_status(MatchController.status_text(state))
