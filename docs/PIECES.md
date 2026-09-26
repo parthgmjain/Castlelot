@@ -132,3 +132,17 @@ The world grows gradually across a run - both how many boards, and how big each 
 
 ## Zone size is also capped per round (2026-09-25)
 Whatever zone size you've bought with the shop upgrade, the amount actually usable in a match is capped per round on the same growth curve as the boards (`RunConfig.PLAYER_ZONE_CAP_START`=12 -> `MAX_ZONE_TILES`=50 by round `BOARD_GROWTH_FULL_ROUND`=10). A small early world can't hold a huge deployment zone. Buying zone upgrades early isn't wasted, though - the extra just becomes usable once the world has grown enough for it (`RunConfig.match_setup`'s `white_zone` is `min(run.zone_tiles, that round's cap)`). The starting board size was also bumped up a little (5-6 squares per side instead of 4-5) so round 1 isn't cramped; the overall cap (up to 8x8, 4 boards) is unchanged.
+
+## Arthur, the final boss (2026-09-25)
+Round 13 is Arthur alone, and he's built to be the hardest fight in the run:
+- He always fields exactly 4 distinct random legendaries (from the 12 boss pieces - never the queen), reserved on top of his army the same way any boss's own piece is, re-rolled fresh each time he's fought.
+- His effective army budget is doubled (`RunConfig.ARTHUR_BUDGET_MULTIPLIER`) on top of the usual boss multiplier, so his bought army is roughly twice the size of the round before.
+- Every one of his pieces - the 4 legendaries and the bought army alike - is flagged `score_multiplier = 0.5` (`RunConfig.ARTHUR_SCORE_MULTIPLIER`): capturing any of them only scores half the usual value. Prophecies and other modifiers still stack on top of that (Omen of Plunder's x2 on an Arthur piece nets out to an ordinary capture).
+- Net effect: the total score theoretically available from his army works out about the same as an ordinary boss's (double the pieces, half the score each), so the extra difficulty comes from a bigger, more defensively coordinated army with four powerful legendaries mixed in, not a higher score wall.
+- The AI still evaluates its own pieces at their full ordinary value when deciding what to defend or attack (`GreedyAI` is untouched) - only what YOU score for a capture is discounted.
+
+## Regular bosses got harder too (2026-09-26)
+Two changes, both make an ordinary boss (not Arthur) tougher without changing the reward you get for beating them:
+- Every boss's own pieces now cost half as much against their budget (`RunConfig.BOSS_HALF_COST_MULTIPLIER`), stacking with the existing `BOSS_AI_BUDGET_MULTIPLIER` - roughly double the army for the same numbers, same mechanism Arthur already used. Unlike Arthur, a boss's captures still score in full - only Arthur has `ARTHUR_SCORE_MULTIPLIER`.
+- From round `BOSS_SECOND_LEGENDARY_ROUND` (3) onward, a boss's reserved army is their own assigned legendary AND a queen (both free on top of the budget, same as any reserved piece) instead of just the one. Rounds 1-2 keep just the single legendary. Winning still only gives you the boss's own piece - the queen is never handed over as a reward, it's purely there to make the fight harder.
+- Arthur is now distinguished from a regular boss by his 4 guaranteed legendaries (vs a boss's 1-2) and the score-halving alone; the "half cost, bigger army" part is shared by every boss now.

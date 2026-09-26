@@ -123,14 +123,23 @@ const PLAYER_ZONE_CAP_START := 12
 const BOSS_TARGET_MULTIPLIER := 1.5
 const BOSS_AI_BUDGET_MULTIPLIER := 1.25
 
-## Arthur (round ROUNDS + 1): on top of the usual boss multipliers, he always fields this many
-## distinct random legendaries (from BOSSES; reserved, same as any boss's own piece), and every
-## piece of his - reserved or bought - costs half as much against his budget (so roughly twice
-## the army for the same numbers) but is only worth half the usual score when you capture it. The
-## two roughly cancel out for total capturable score, so the extra difficulty is a bigger, more
-## defensively coordinated army (with four legendaries in it) rather than a higher score wall.
+## Every boss's own pieces cost half as much against their budget - roughly double the army for
+## the same numbers, since a boss should feel like more of a fight than a normal match. Applies
+## to every boss, Arthur included (his other tricks stack on top of this, not instead of it).
+const BOSS_HALF_COST_MULTIPLIER := 2.0
+
+## From this round on, a boss also always fields a queen alongside their own assigned legendary
+## (both reserved, same as any boss piece) - two guaranteed legendaries instead of one. Rounds
+## before this keep just the one. Arthur (round ROUNDS + 1) has his own, bigger rule below.
+const BOSS_SECOND_LEGENDARY_ROUND := 3
+
+## Arthur (round ROUNDS + 1) always fields this many distinct random legendaries (from BOSSES;
+## reserved, same as any boss's own piece) instead of the usual one or two, and unlike an
+## ordinary boss he's the only one where a capture is worth half the usual score (his half-cost
+## army, like every boss's, already comes from BOSS_HALF_COST_MULTIPLIER above). The two roughly
+## cancel out for total capturable score, so his extra difficulty is a bigger, more defensively
+## coordinated army (with four legendaries in it) rather than a higher score wall.
 const ARTHUR_LEGENDARY_COUNT := 4
-const ARTHUR_BUDGET_MULTIPLIER := 2.0
 const ARTHUR_SCORE_MULTIPLIER := 0.5
 
 ## How far along the board-growth ramp `round_number` is: 0 at round 1, 1.0 from
@@ -157,8 +166,7 @@ static func match_setup(run: RunState) -> Dictionary:
 	if boss:
 		target *= BOSS_TARGET_MULTIPLIER
 		ai_budget *= BOSS_AI_BUDGET_MULTIPLIER
-	if run.is_final_round():
-		ai_budget *= ARTHUR_BUDGET_MULTIPLIER
+		ai_budget *= BOSS_HALF_COST_MULTIPLIER
 
 	return {
 		"board_sizes": board_sizes,

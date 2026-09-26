@@ -35,6 +35,8 @@ func begin_match() -> void:
 		var legendaries := RunConfig.BOSSES.duplicate()
 		legendaries.shuffle()
 		boss_army = legendaries.slice(0, RunConfig.ARTHUR_LEGENDARY_COUNT)
+	elif setup.boss_piece >= 0 and state.run.round_number >= RunConfig.BOSS_SECOND_LEGENDARY_ROUND:
+		boss_army.append(Piece.Type.QUEEN)
 	ArmyPlacer.auto_place(state.boards, Piece.Side.BLACK, setup.ai_budget, setup.round_type, boss_army, state.run.round_number)
 	if state.run.is_final_round():
 		for board in state.boards:

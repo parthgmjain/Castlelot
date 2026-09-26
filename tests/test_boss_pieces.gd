@@ -115,13 +115,11 @@ func test_the_points_readout_counts_the_bosss_piece() -> void:
 	var ordinary := _deal(main, 2)
 	check_eq(int(main.panel.black_points_spin_box.value), RunConfig.match_setup(ordinary).ai_budget, "an ordinary match shows just the budget")
 
-func test_ordinary_matches_and_arthur_field_no_boss_pieces() -> void:
+func test_ordinary_matches_field_no_boss_pieces() -> void:
 	var main = await load_main()
 	for match_number in [1, 2]:
 		_deal(main, match_number)
 		check(_black_pieces(main.state.boards).all(func(p): return not Piece.is_reward_only(p.piece.type)), "match %d has only ordinary pieces" % match_number)
-	_deal(main, 1, -1, RunConfig.ROUNDS + 1)
-	check(_black_pieces(main.state.boards).all(func(p): return not Piece.is_reward_only(p.piece.type)), "Arthur brings no legendary piece yet")
 
 func test_a_reserved_piece_comes_on_top_of_the_budget_not_out_of_it() -> void:
 	var board := make_board(6, 6)
@@ -265,3 +263,77 @@ func test_every_boss_piece_can_be_played_by_the_ai_without_errors() -> void:
 		check(main.state.current_match.active, "%s: the match started" % Piece.display_name(type))
 		var made := _play(main, 24)
 		check(made > 0, "%s: some moves were played" % Piece.display_name(type))
+
+# ---- half-cost bosses and the second legendary from round 3 --------------------------------------
+
+func test_a_bosss_own_pieces_cost_half_so_their_effective_budget_is_bigger() -> void:
+	var run := RunState.new()
+	run.begin()
+	run.round_number = 4
+	run.match_number = 2
+	var normal_budget: int = RunConfig.match_setup(run).ai_budget
+	run.match_number = 3
+	var boss_setup := RunConfig.match_setup(run)
+	var expected := (RunConfig.AI_BUDGET_BASE + RunConfig.AI_BUDGET_PER_MATCH * run.matches_played()) * RunConfig.BOSS_AI_BUDGET_MULTIPLIER * RunConfig.BOSS_HALF_COST_MULTIPLIER
+	check_eq(boss_setup.ai_budget, int(round(expected)), "boss budget = base x boss multiplier x half-cost multiplier")
+	check(boss_setup.ai_budget > normal_budget * 2, "noticeably more than an ordinary match's budget")
+
+func test_only_boss_matches_get_the_half_cost_bump_not_ordinary_ones() -> void:
+	var run := RunState.new()
+	run.begin()
+	run.round_number = 5
+	for match_number in [1, 2]:
+		run.match_number = match_number
+		var setup := RunConfig.match_setup(run)
+		var plain := RunConfig.AI_BUDGET_BASE + RunConfig.AI_BUDGET_PER_MATCH * run.matches_played()
+		check_eq(setup.ai_budget, int(round(plain)), "match %d: no boss multipliers at all" % match_number)
+
+func test_rounds_one_and_two_bosses_get_only_their_own_legendary() -> void:
+	var main = await load_main()
+	for round_number in [1, 2]:
+		var run := _deal(main, 3, Piece.Type.DRAGON, round_number)
+		var legendaries := _black_pieces(main.state.boards).filter(func(p): return Piece.is_reward_only(p.piece.type)).map(func(p): return p.piece.type)
+		check_eq(legendaries, [Piece.Type.DRAGON], "round %d: just the one" % round_number)
+		check(not legendaries.has(QUEEN), "and specifically no queen yet")
+
+func test_from_round_three_a_boss_also_fields_a_queen() -> void:
+	# The bought portion of the army can also happen to draw a queen from its own weighted pool
+	# (the queen is one of the five base chess types), so a single trial can't tell "guaranteed"
+	# apart from "got lucky". Across 25 trials, a genuinely guaranteed queen shows up every time;
+	# a merely-possible one wouldn't.
+	var main = await load_main()
+	for round_number in [RunConfig.BOSS_SECOND_LEGENDARY_ROUND, RunConfig.BOSS_SECOND_LEGENDARY_ROUND + 3, RunConfig.ROUNDS]:
+		for trial in 25:
+			var run := _deal(main, 3, Piece.Type.HYDRA, round_number)
+			var reward_legendaries := _black_pieces(main.state.boards).filter(func(p): return Piece.is_reward_only(p.piece.type)).map(func(p): return p.piece.type)
+			var queens := _black_pieces(main.state.boards).filter(func(p): return p.piece.type == QUEEN)
+			check_eq(reward_legendaries, [Piece.Type.HYDRA], "round %d: still just their own reward piece" % round_number)
+			check(queens.size() >= 1, "round %d trial %d: at least the guaranteed queen" % [round_number, trial])
+
+func test_before_round_three_a_queen_is_only_ever_a_random_chance_not_a_guarantee() -> void:
+	var main = await load_main()
+	var missing_a_queen := false
+	for trial in 25:
+		var run := _deal(main, 3, Piece.Type.HYDRA, 1)
+		if not _black_pieces(main.state.boards).any(func(p): return p.piece.type == QUEEN):
+			missing_a_queen = true
+			break
+	check(missing_a_queen, "round 1: at least one of 25 trials has no queen at all, so it truly isn't guaranteed yet")
+
+func test_the_boss_queen_does_not_change_who_you_win_as_a_reward() -> void:
+	var main = await load_main()
+	var run := _deal(main, 3, Piece.Type.TITAN, 6)
+	check(_black_pieces(main.state.boards).any(func(p): return p.piece.type == QUEEN), "the boss brought a queen")
+	_win(main)
+	check(run.roster.any(func(e): return e.type == Piece.Type.TITAN), "you still get the boss's own legendary")
+	check(not run.roster.any(func(e): return e.type == QUEEN), "not a free queen too - that stays a lottery/trade-up prize")
+
+func test_the_queen_still_costs_nothing_against_the_bosss_budget() -> void:
+	var main = await load_main()
+	var run := _deal(main, 3, Piece.Type.LICH, 6)
+	var setup := RunConfig.match_setup(run)
+	var spent := 0
+	for entry in _black_pieces(main.state.boards):
+		if entry.piece.type != Piece.Type.LICH and entry.piece.type != QUEEN:
+			spent += Piece.value(entry.piece.type)
+	check(spent <= setup.ai_budget, "the bought army alone stays within budget; the legendary and queen are free on top")
