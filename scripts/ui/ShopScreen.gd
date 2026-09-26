@@ -151,6 +151,7 @@ func _rebuild_roster() -> void:
 			button.toggle_mode = true
 			button.button_pressed = _selected.has(entry.id)
 			button.text = "%s %s (%d)" % [Piece.symbol(entry.type, Piece.Side.WHITE), Piece.display_name(entry.type), Piece.value(entry.type)]
+			button.tooltip_text = Piece.description(entry.type)
 			button.pressed.connect(_on_piece_toggled.bind(entry.id))
 			row.add_child(button)
 		roster_box.add_child(row)
@@ -179,6 +180,7 @@ func _rebuild_choice() -> void:
 				for type in _run.held_types(tier):
 					var button := Button.new()
 					button.text = "%s x%d" % [Piece.display_name(type), _run.count_of(type)]
+					button.tooltip_text = Piece.description(type)
 					button.custom_minimum_size = Vector2(130, 56)
 					button.pressed.connect(_on_replace_picked.bind(type))
 					choice_row.add_child(button)
@@ -188,6 +190,7 @@ func _rebuild_choice() -> void:
 			for entry in _run.roster:
 				var button := Button.new()
 				button.text = "%s\n-> %d gold" % [Piece.display_name(entry.type), Piece.value(entry.type) * Prophecies.BARGAIN_MULTIPLIER]
+				button.tooltip_text = Piece.description(entry.type)
 				button.custom_minimum_size = Vector2(110, 56)
 				button.pressed.connect(_on_bargain_picked.bind(entry.id))
 				choice_row.add_child(button)
@@ -202,6 +205,7 @@ func _rebuild_choice() -> void:
 			for type in pending.options:
 				var button := Button.new()
 				button.text = "%s\nvalue %d" % [Piece.display_name(type), Piece.value(type)]
+				button.tooltip_text = Piece.description(type)
 				button.custom_minimum_size = Vector2(130, 64)
 				button.pressed.connect(_on_upgrade_picked.bind(type))
 				choice_row.add_child(button)
@@ -211,11 +215,13 @@ func _rebuild_choice() -> void:
 			for type in _run.held_types(Piece.Tier.LEGENDARY):
 				var button := Button.new()
 				button.text = "Give up\n%s" % Piece.display_name(type)
+				button.tooltip_text = Piece.description(type)
 				button.custom_minimum_size = Vector2(130, 64)
 				button.pressed.connect(_on_give_up.bind(type))
 				choice_row.add_child(button)
 			var decline := Button.new()
 			decline.text = "Decline the\n%s" % Piece.display_name(pending.incoming)
+			decline.tooltip_text = Piece.description(pending.incoming)
 			decline.custom_minimum_size = Vector2(130, 64)
 			decline.pressed.connect(_on_give_up.bind(pending.incoming))
 			choice_row.add_child(decline)
@@ -328,6 +334,7 @@ func _card_button(card: Dictionary, tier: Piece.Tier, index: int) -> Button:
 	else:
 		var slot := "takes a free slot" if _run.free_slots(tier) > 0 else "swaps out a type"
 		button.text = "NEW: %s\nvalue %d\n%s" % [name, Piece.value(card.type), slot]
+	button.tooltip_text = Piece.description(card.type)
 	button.pressed.connect(_on_card_picked.bind(index))
 	return button
 

@@ -24,6 +24,7 @@ func _ready() -> void:
 func open(side: Piece.Side) -> void:
 	for type in _buttons:
 		_buttons[type].text = "%s %s" % [Piece.symbol(type, side), Piece.Type.find_key(type).capitalize()]
+		_buttons[type].tooltip_text = Piece.description(type)
 	show()
 	_buttons[PawnMovement.PROMOTION_CHOICES[0]].grab_focus()
 

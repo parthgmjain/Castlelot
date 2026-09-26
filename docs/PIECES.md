@@ -123,3 +123,6 @@ The AI's incidental army each match (not the boss's own piece, which is always f
 - Legendaries never appear in a random army - they're earned, not drawn (a boss still always fields its own).
 
 See `PieceSelector.EXTRA_TIER_UNLOCK` / `EXTRA_TIER_WEIGHTS` / `EXTRA_TIER_DECAYS` / `EXTRA_TIER_SUPPLY` for the placeholder numbers, and `RunFlow.begin_match` for where the run's round number is threaded in. The sandbox's own "Auto Place" buttons are unaffected (no round context = chess only), so existing sandbox testing keeps working as before.
+
+## Tooltips (2026-09-25)
+Every piece has a one-line `description` (`PieceDefs.description(type)` for the 43 extras, `Piece.CLASSIC_DESCRIPTIONS` for the six chess pieces, both reachable via `Piece.description(type)`), shown as a tooltip wherever a piece is offered before it's on the board: the sandbox's fixed chess buttons and its "More pieces..." dropdown, the deployment bench, the promotion picker, the shop's owned-piece rows, its lottery/trade-up cards, and every legendary/replacement/bargain choice button. Prophecies already had their description as visible text plus a tooltip on the title; the debug "Add prophecy..." dropdown and every piece-choice button a prophecy offers (Sanctuary, Transmutation's "become which piece", Field Promotion, etc.) now carry one too.

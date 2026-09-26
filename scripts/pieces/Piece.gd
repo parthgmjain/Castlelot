@@ -68,6 +68,21 @@ const VALUES := {
 static func display_name(type: Piece.Type) -> String:
 	return Type.find_key(type).capitalize()
 
+## What the six chess pieces do, for tooltips (the 43 extra pieces have their own in PieceDefs).
+const CLASSIC_DESCRIPTIONS := {
+	Type.KING: "Moves 1 square in any direction.",
+	Type.QUEEN: "Moves any distance in any direction.",
+	Type.ROOK: "Moves any distance horizontally or vertically.",
+	Type.BISHOP: "Moves any distance diagonally.",
+	Type.KNIGHT: "Leaps in an L-shape: 2 squares one way, then 1 square to the side.",
+	Type.PAWN: "Moves 1 square toward the enemy zone (2 from its home row) and captures 1 square diagonally forward. Promotes on reaching the enemy zone.",
+}
+
+## A one-line description of what `type` does, wherever a piece is shown before it's on the
+## board (the sandbox picker, the bench, the shop, promotion).
+static func description(type: Piece.Type) -> String:
+	return PieceDefs.description(type) if PieceDefs.has(type) else CLASSIC_DESCRIPTIONS.get(type, "")
+
 ## Text symbol for buttons and messages. Data-driven pieces have no chess glyph;
 ## the board draws them as a labelled disc instead.
 static func symbol(type: Piece.Type, side: Piece.Side) -> String:

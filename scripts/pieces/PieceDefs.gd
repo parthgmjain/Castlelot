@@ -43,6 +43,60 @@ static func value(type: Piece.Type) -> int:
 static func label(type: Piece.Type) -> String:
 	return _defs()[type].label
 
+## A one-line description of what the piece does, for tooltips wherever it's shown before
+## it's on the board (the sandbox picker, the bench, the shop, promotion). See docs/PIECES.md.
+static func description(type: Piece.Type) -> String:
+	return _DESCRIPTIONS.get(type, "")
+
+const _DESCRIPTIONS := {
+	# ---- common
+	Piece.Type.SCOUT: "1 forward or 1 sideways (no capture); captures diagonally forward.",
+	Piece.Type.SHIELDBEARER: "Pawn move/capture, but can't be captured by a piece directly in front of it.",
+	Piece.Type.ARCHER: "1 forward. Instead of moving it can capture a piece exactly 2 squares straight ahead and stay put.",
+	Piece.Type.SERF: "1 diagonally forward (no capture); captures straight forward.",
+	Piece.Type.MILITIA: "1 orthogonally in any direction incl. backward (no capture); captures diagonally forward.",
+	Piece.Type.CRAB: "1 sideways only (no capture); captures 1 diagonally in any direction.",
+	Piece.Type.TORCHBEARER: "Moves like a pawn. When captured, the capturing piece is destroyed too.",
+	Piece.Type.DRUMMER: "1 forward, can't capture. Friendly pawns next to it can move 2 forward.",
+	Piece.Type.PILGRIM: "1 forward or backward, or swaps places with an adjacent friendly piece.",
+	Piece.Type.SQUIRE: "Moves like a pawn. Starting a turn next to a friendly knight, it can make a knight jump instead.",
+	# ---- uncommon
+	Piece.Type.CAMEL: "3-1 leaper.",
+	Piece.Type.ZEBRA: "3-2 leaper.",
+	Piece.Type.TWIN_RIDER: "One or two knight jumps in the same direction (the square between the jumps must be empty).",
+	Piece.Type.NINJA: "Knight move; after a capture it may move 1 more square.",
+	Piece.Type.HAWK: "Leaps exactly 2 or 3 squares in any straight or diagonal direction.",
+	Piece.Type.CANNON: "Rook move; captures by jumping over exactly one piece.",
+	Piece.Type.CHARGER: "Rook move of at least 2 squares.",
+	Piece.Type.RANGER: "Up to 3 squares orthogonally.",
+	Piece.Type.LANCER: "Any distance forward, only 1 square backward or sideways.",
+	Piece.Type.CATAPULT: "Never moves. Captures any piece exactly 3 squares away orthogonally, over blockers.",
+	Piece.Type.TORTOISE: "Up to 2 squares orthogonally; can only be captured from behind or the sides.",
+	Piece.Type.MIRROR: "Bishop move that can bounce off a board edge once per move.",
+	Piece.Type.MONK: "Up to 3 squares diagonally, or 1 square orthogonally without capturing.",
+	Piece.Type.FERZ_GUARD: "1 square diagonally or leaps 2 squares diagonally.",
+	Piece.Type.GRASSHOPPER: "Along any queen line, must hop over one piece and land directly behind it.",
+	Piece.Type.GOLEM: "1 square orthogonally; can't be captured by pawns or knights.",
+	Piece.Type.ALCHEMIST: "King move, or swaps places with any friendly piece within 2 squares.",
+	Piece.Type.GHOST: "Up to 2 squares in any direction, passing through pieces.",
+	Piece.Type.SPEARMAN: "1 square any direction; captures up to 2 squares straight ahead.",
+	Piece.Type.BARD: "King move, can't capture. Adjacent friendly pieces can't be captured by pawns.",
+	Piece.Type.GRIFFON: "1 square diagonally, then up to 3 squares straight outward.",
+	# ---- legendary (boss rewards)
+	Piece.Type.PALADIN: "Bishop + knight. Adjacent friendly pieces can't be captured. When the king is attacked it can teleport next to the king.",
+	Piece.Type.WARLORD: "Rook + knight. Every capture gives a bonus move with one pawn.",
+	Piece.Type.EMPRESS: "Queen + knight.",
+	Piece.Type.DRAGON: "Rook move, or breathes fire capturing every enemy up to 3 squares along one line, then rests a turn.",
+	Piece.Type.PHOENIX: "Queen move. The first time it is captured it returns to its starting square 3 turns later.",
+	Piece.Type.HYDRA: "Up to 2 squares any direction. When captured it splits into 4 knights (none adjacent) or 2 (any adjacent), never more than the empty squares beside it.",
+	Piece.Type.WRAITH: "Queen move, phases through pieces. Can only be captured by pawns or other legendaries.",
+	Piece.Type.LICH: "King move or 2-square leap. Every piece it captures returns as your pawn on your back rank.",
+	Piece.Type.CHRONOMANCER: "Bishop move. Once per game it can undo the opponent's last move.",
+	Piece.Type.TITAN: "Rook move that can capture up to 2 pieces in its path in one move.",
+	Piece.Type.ORACLE: "Up to 3 squares any direction. Every second turn it takes two moves in a row.",
+	Piece.Type.STORM_WITCH: "Queen move, or teleports next to an enemy piece (no capture that turn).",
+}
+
 ## Reward-only pieces come from beating a knight, not from the shop.
 static func is_reward_only(type: Piece.Type) -> bool:
 	return _defs()[type].reward

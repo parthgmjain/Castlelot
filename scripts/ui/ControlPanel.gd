@@ -98,8 +98,14 @@ func _ready() -> void:
 	queen_button.pressed.connect(_on_place_pressed.bind(Piece.Type.QUEEN))
 	rook_button.pressed.connect(_on_place_pressed.bind(Piece.Type.ROOK))
 	bishop_button.pressed.connect(_on_place_pressed.bind(Piece.Type.BISHOP))
+	king_button.tooltip_text = Piece.description(Piece.Type.KING)
+	queen_button.tooltip_text = Piece.description(Piece.Type.QUEEN)
+	rook_button.tooltip_text = Piece.description(Piece.Type.ROOK)
+	bishop_button.tooltip_text = Piece.description(Piece.Type.BISHOP)
 	knight_button.pressed.connect(_on_place_pressed.bind(Piece.Type.KNIGHT))
 	pawn_button.pressed.connect(_on_place_pressed.bind(Piece.Type.PAWN))
+	knight_button.tooltip_text = Piece.description(Piece.Type.KNIGHT)
+	pawn_button.tooltip_text = Piece.description(Piece.Type.PAWN)
 	_build_extra_piece_picker()
 	_build_skip_bonus_button()
 	_build_debug_prophecy_picker()
@@ -171,6 +177,7 @@ func set_bench(entries: Array, armed_id: int) -> void:
 		button.toggle_mode = true
 		button.button_pressed = entry.id == armed_id
 		button.text = "%s %s" % [Piece.symbol(entry.type, Piece.Side.WHITE), Piece.Type.find_key(entry.type).capitalize()]
+		button.tooltip_text = Piece.description(entry.type)
 		button.pressed.connect(_on_bench_pressed.bind(entry.id))
 		bench_box.add_child(button)
 
@@ -221,7 +228,9 @@ func _build_extra_piece_picker() -> void:
 	extra_piece_picker.add_item("More pieces...")
 	for type in PieceDefs.types():
 		extra_piece_picker.add_item("%s (%s)" % [Piece.Type.find_key(type).capitalize(), Piece.TIER_NAMES[PieceDefs.tier(type)]])
-		extra_piece_picker.set_item_metadata(extra_piece_picker.item_count - 1, type)
+		var index := extra_piece_picker.item_count - 1
+		extra_piece_picker.set_item_metadata(index, type)
+		extra_piece_picker.get_popup().set_item_tooltip(index, Piece.description(type))
 	extra_piece_picker.item_selected.connect(_on_extra_piece_selected)
 	remove_button.get_parent().add_child(extra_piece_picker)
 	remove_button.get_parent().move_child(extra_piece_picker, remove_button.get_index())
@@ -236,7 +245,9 @@ func _build_debug_prophecy_picker() -> void:
 		if not ProphecyDefs.is_ready(id):
 			label += " - not built"
 		debug_prophecy_picker.add_item(label)
-		debug_prophecy_picker.set_item_metadata(debug_prophecy_picker.item_count - 1, id)
+		var index := debug_prophecy_picker.item_count - 1
+		debug_prophecy_picker.set_item_metadata(index, id)
+		debug_prophecy_picker.get_popup().set_item_tooltip(index, ProphecyDefs.text(id))
 	debug_prophecy_button = Button.new()
 	debug_prophecy_button.text = "Add"
 	debug_prophecy_button.pressed.connect(_on_debug_add_prophecy)

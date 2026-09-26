@@ -51,7 +51,7 @@ func _finish(result: Dictionary, index: int) -> void:
 		return
 	if result.get("needs_choice", false):
 		_choosing_index = index
-		var options: Array = result.options.map(func(opt): return { "text": _label(opt), "value": opt })
+		var options: Array = result.options.map(func(opt): return { "text": _label(opt), "value": opt, "tooltip": _tooltip(opt) })
 		strip.show_choice(result.get("prompt", "Which piece type?"), options)
 		strip.set_message("")
 		return
@@ -68,6 +68,13 @@ func _label(option: Variant) -> String:
 			return "%s at %s" % [Piece.display_name(piece.type), option.square]
 		return "Empty square %s" % option.square
 	return Piece.display_name(option)
+
+## What the choice's underlying piece does, or "" for an empty destination square.
+func _tooltip(option: Variant) -> String:
+	if option is Dictionary:
+		var piece = option.board.pieces.get(option.square)
+		return Piece.description(piece.type) if piece != null else ""
+	return Piece.description(option)
 
 func _cancel_choice() -> void:
 	_choosing_index = -1

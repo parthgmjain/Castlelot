@@ -79,6 +79,7 @@ func show_choice(prompt: String, options: Array) -> void:
 	for option in options:
 		var button := Button.new()
 		button.text = option.text
+		button.tooltip_text = option.get("tooltip", "")
 		button.pressed.connect(func(): choice_made.emit(option.value))
 		_choice_row.add_child(button)
 	_choice_row.show()
