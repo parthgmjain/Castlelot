@@ -29,7 +29,7 @@ func begin_match() -> void:
 			state.run.temp_points_bonus = Prophecies.POINTS_BONUS
 	panel.apply_setup(setup)
 	generate_boards.call()
-	ZoneController.generate(state.boards, setup.white_zone, setup.black_zone)
+	ZoneController.generate(state.boards, setup.white_zone, setup.black_zone, state.run.round_number)
 	var boss_army: Array = [setup.boss_piece] if setup.boss_piece >= 0 else []
 	if state.run.is_final_round():
 		var legendaries := RunConfig.BOSSES.duplicate()

@@ -120,6 +120,13 @@ const BOARD_GROWTH_FULL_ROUND := 10
 ## (the shop's own ceiling) by BOARD_GROWTH_FULL_ROUND, same as the boards.
 const PLAYER_ZONE_CAP_START := 12
 
+## The two zones are guaranteed to start at least this many steps apart (through the portal
+## graph, from king to king) - never just next to each other - and the guarantee grows on the
+## same round curve as the boards, so a fully-grown world keeps them properly far apart too.
+## See ZoneController.generate.
+const ZONE_MIN_DISTANCE_START := 6
+const ZONE_MIN_DISTANCE_CAP := 16
+
 const BOSS_TARGET_MULTIPLIER := 1.5
 const BOSS_AI_BUDGET_MULTIPLIER := 1.25
 
