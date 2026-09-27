@@ -85,9 +85,12 @@ func make_rig(rows: Array, size: int = 5) -> Array:
 	return [a, b]
 
 ## The real Main scene, with the AI's pause removed, already past the Start
-## Menu (see test_start_menu.gd for the menu itself). `await` it. Boards start
-## at a fixed 8x8 so tests can use fixed squares; pass random_sizes = true
-## (or change the board count) to get random ones.
+## Menu AND the Banner Select screen (see test_start_menu.gd / test_banners.gd
+## for those screens themselves) - landing in the same blank, run-inactive
+## sandbox as before those screens existed, since ~600 gameplay tests build
+## their own world by hand rather than playing through a real run. `await` it.
+## Boards start at a fixed 8x8 so tests can use fixed squares; pass
+## random_sizes = true (or change the board count) to get random ones.
 func load_main(random_sizes: bool = false) -> Node:
 	var main = MainScene.instantiate()
 	tree.root.add_child(main)
@@ -96,6 +99,8 @@ func load_main(random_sizes: bool = false) -> Node:
 	track(main)
 	await pump(2)
 	main.start_menu.start_button.pressed.emit()
+	main.state.screen = GameState.Screen.GAME
+	main._refresh_view()
 	if not random_sizes:
 		var panel: ControlPanel = main.panel
 		for box in panel._width_boxes + panel._height_boxes:

@@ -17,18 +17,19 @@ func test_a_fresh_game_opens_on_the_start_menu() -> void:
 	check(not main.panel.visible, "game panel hidden")
 	check(not main.boards_container.visible, "boards hidden")
 
-func test_pressing_start_switches_to_the_game() -> void:
+func test_pressing_start_opens_banner_select_not_the_game_directly() -> void:
 	var main = await load_main_at_menu()
 	main.start_menu.start_button.pressed.emit()
-	check_eq(main.state.screen, GameState.Screen.GAME, "moved to the game screen")
+	check_eq(main.state.screen, GameState.Screen.BANNER_SELECT, "banner select first")
 	check(not main.start_menu.visible, "start menu hidden")
-	check(main.panel.visible, "game panel shown")
-	check(main.boards_container.visible, "boards shown")
+	check(main.banner_screen.visible, "banner select shown")
+	check(not main.panel.visible, "game panel still hidden")
+	check(not main.boards_container.visible, "boards still hidden")
 
-func test_a_real_mouse_click_on_start_enters_the_game() -> void:
+func test_a_real_mouse_click_on_start_opens_banner_select() -> void:
 	var main = await load_main_at_menu()
 	await click_control(main.start_menu.start_button)
-	check_eq(main.state.screen, GameState.Screen.GAME, "click reached the button")
+	check_eq(main.state.screen, GameState.Screen.BANNER_SELECT, "click reached the button")
 
 func test_settings_and_collections_do_nothing_yet() -> void:
 	var main = await load_main_at_menu()

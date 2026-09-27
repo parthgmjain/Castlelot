@@ -29,15 +29,22 @@ func _ready() -> void:
 	result_screen.continue_pressed.connect(run_flow.result_continued)
 	shop_screen.closed.connect(run_flow.begin_match)
 	shop_screen.changed.connect(_refresh_view)
-	start_menu.start_pressed.connect(menu_flow.start_pressed)
+	start_menu.start_pressed.connect(_on_start_pressed)
 	start_menu.quit_pressed.connect(menu_flow.quit_pressed)
 	menu_flow.quit_requested.connect(_quit)
-	panel.choose_banner_requested.connect(banner_screen.open)
 	banner_screen.chosen.connect(_on_banner_chosen)
 	_generate_boards()
 
-func _on_banner_chosen(id: Banners.Id) -> void:
-	run_flow.start_run([id])
+## Start leads to the Banner Select screen, not straight into the game.
+func _on_start_pressed() -> void:
+	menu_flow.start_pressed()
+	banner_screen.open()
+
+## Picking both banners begins a real run directly - Start Menu -> Banner
+## Select -> playing, with no blank sandbox in between.
+func _on_banner_chosen(side_id: Banners.Id, trait_id: Banners.Id) -> void:
+	state.screen = GameState.Screen.GAME
+	run_flow.start_run([side_id, trait_id])
 
 func _quit() -> void:
 	get_tree().quit()
@@ -129,9 +136,11 @@ func _relayout() -> void:
 
 func _refresh_view() -> void:
 	var at_menu := state.screen == GameState.Screen.START_MENU
+	var at_banners := state.screen == GameState.Screen.BANNER_SELECT
 	start_menu.visible = at_menu
-	panel.visible = not at_menu
-	boards_container.visible = not at_menu
+	banner_screen.visible = at_banners
+	panel.visible = not at_menu and not at_banners
+	boards_container.visible = not at_menu and not at_banners
 	MoveController.refresh(state)
 	_update_points_status()
 	panel.set_match_status(MatchController.status_text(state))

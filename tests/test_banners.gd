@@ -1,12 +1,34 @@
 extends "res://tests/TestCase.gd"
 ## Run banners: the data (Banners.gd), their numeric effects on a fresh
 ## RunState/match setup, the side swap (White/Black Banner), the economy hooks
-## (Merchant's/Banker's/Hoarder's), Guardian's one-time save, and the picker UI.
+## (Merchant's/Banker's/Hoarder's), Guardian's one-time save, and the two-step
+## Banner Select screen (Start Menu -> pick a side -> pick a trait -> a run
+## begins directly, Balatro-deck-select style).
 
-func _start_with_banner(main: Node, id: Banners.Id) -> void:
-	main.panel.choose_banner_button.pressed.emit()
-	var index := Banners.ids().find(id)
-	main.banner_screen.list.get_child(index).pressed.emit()
+## Loads the real Main scene stopped at the Start Menu - unlike TestCase's own
+## load_main(), which deliberately skips past Banner Select into a blank,
+## run-inactive sandbox for the ~600 gameplay tests that don't care about
+## banners at all.
+func _load_main_at_start_menu() -> Node:
+	var main = MainScene.instantiate()
+	tree.root.add_child(main)
+	main.turn_flow.ai_delay = 0.0
+	main.shop_screen.reveal_delay = 0.0
+	track(main)
+	await pump(2)
+	return main
+
+## Drives the real Start Menu -> two-step Banner Select flow (through the
+## actual signals, the way a player would), landing with a real run begun
+## under both banners.
+func _start_with_banners(side_id: Banners.Id, trait_id: Banners.Id) -> Node:
+	var main = await _load_main_at_start_menu()
+	main.start_menu.start_button.pressed.emit()
+	var side_index: int = [Banners.Id.WHITE, Banners.Id.BLACK].find(side_id)
+	main.banner_screen.list.get_child(side_index).pressed.emit()
+	var traits: Array = Banners.ids().filter(func(id): return not Banners.is_side(id))
+	main.banner_screen.list.get_child(traits.find(trait_id)).pressed.emit()
+	return main
 
 func _ready_up(main: Node) -> void:
 	main.panel.auto_deploy_button.pressed.emit()
@@ -19,12 +41,6 @@ func _force_result(main: Node, result: String) -> void:
 	current.result_reason = "Test"
 	current.moves_left = 6
 	main._refresh_view()
-
-func _roster_value(run: RunState) -> int:
-	var total := 0
-	for entry in run.roster:
-		total += Piece.value(entry.type)
-	return total
 
 # ---- data --------------------------------------------------------------------------------
 
@@ -175,16 +191,14 @@ func test_reckless_banner_actually_boosts_a_real_wins_payout() -> void:
 	# Computed from the raw Payout constants directly (not by calling
 	# Payout.calculate/Banners.gold_multiplier itself), so this proves the
 	# multiplier really reaches RunFlow's real payout, not just the helpers.
-	var main = await load_main()
-	_start_with_banner(main, Banners.Id.RECKLESS)
+	var main = await _start_with_banners(Banners.Id.WHITE, Banners.Id.RECKLESS)
 	_ready_up(main)
 	_force_result(main, "win")               # sets moves_left = 6, currency starts at 0
 	var expected := int(round((Payout.BASE + 6 * Payout.PER_LEFTOVER_MOVE) * 1.25))
 	check_eq(main.state.run.currency, expected, "reckless's +25% gold reached the real payout")
 
 func test_merchant_banner_actually_lowers_a_real_wins_interest() -> void:
-	var main = await load_main()
-	_start_with_banner(main, Banners.Id.MERCHANT)
+	var main = await _start_with_banners(Banners.Id.WHITE, Banners.Id.MERCHANT)
 	main.state.run.currency = 100             # enough to hit the interest cap either way
 	_ready_up(main)
 	_force_result(main, "win")
@@ -243,16 +257,14 @@ func test_prophecy_price_is_scaled_by_banner_price_multiplier() -> void:
 # ---- side swap -----------------------------------------------------------------------------
 
 func test_white_banner_plays_as_white_by_default() -> void:
-	var main = await load_main()
-	_start_with_banner(main, Banners.Id.WHITE)
+	var main = await _start_with_banners(Banners.Id.WHITE, Banners.Id.IRON)
 	check_eq(Banners.player_side(main.state.run), WHITE, "white")
 	_ready_up(main)
 	check_eq(main.state.current_match.player_side, WHITE, "match agrees")
 	check(not Roster.on_field(main.state.boards, WHITE).is_empty(), "your pieces are on White's zone")
 
 func test_black_banner_plays_as_black_and_the_ai_takes_white() -> void:
-	var main = await load_main()
-	_start_with_banner(main, Banners.Id.BLACK)
+	var main = await _start_with_banners(Banners.Id.BLACK, Banners.Id.IRON)
 	check_eq(Banners.player_side(main.state.run), BLACK, "black")
 	# Before you deploy anything, only the AI's bought army is on the boards -
 	# check it landed on White (and not also on Black, your own side). White
@@ -270,8 +282,7 @@ func test_black_banner_plays_as_black_and_the_ai_takes_white() -> void:
 # ---- Guardian's Banner: one free continue -----------------------------------------------------
 
 func test_guardians_banner_survives_its_first_loss_then_ends_the_run_on_the_second() -> void:
-	var main = await load_main()
-	_start_with_banner(main, Banners.Id.GUARDIAN)
+	var main = await _start_with_banners(Banners.Id.WHITE, Banners.Id.GUARDIAN)
 	var round_title: String = main.state.run.title()
 	_force_result(main, "loss")
 	main.result_screen.continue_button.pressed.emit()
@@ -287,22 +298,35 @@ func test_guardians_banner_survives_its_first_loss_then_ends_the_run_on_the_seco
 	check(main.state.run.banners.has(Banners.Id.GUARDIAN), "the banner carries over the restart")
 	check(not main.state.run.guardian_used, "a fresh save on the new run")
 
-# ---- the picker UI ---------------------------------------------------------------------------
+# ---- the two-step picker UI -------------------------------------------------------------------
 
-func test_choosing_a_banner_opens_and_closes_the_screen_and_starts_a_run() -> void:
-	var main = await load_main()
-	check(not main.banner_screen.visible, "closed to start")
-	main.panel.choose_banner_button.pressed.emit()
-	check(main.banner_screen.visible, "open after the request")
-	check_eq(main.banner_screen.list.get_child_count(), 17, "one button per banner")
-	_start_with_banner(main, Banners.Id.IRON)
-	check(not main.banner_screen.visible, "closes on a pick")
+func test_the_side_step_offers_exactly_white_and_black() -> void:
+	var main = await _load_main_at_start_menu()
+	main.start_menu.start_button.pressed.emit()
+	check_eq(main.banner_screen.list.get_child_count(), 2, "White and Black only")
+	check_eq(main.banner_screen.title_label.text, "Choose your side", "step 1 title")
+
+func test_the_trait_step_follows_the_side_step_and_offers_the_other_fifteen() -> void:
+	var main = await _load_main_at_start_menu()
+	main.start_menu.start_button.pressed.emit()
+	main.banner_screen.list.get_child(0).pressed.emit()          # White
+	check_eq(main.banner_screen.list.get_child_count(), 15, "the 15 trait banners")
+	check_eq(main.banner_screen.title_label.text, "Choose your banner", "step 2 title")
+	check(main.state.screen == GameState.Screen.BANNER_SELECT, "still selecting, not in the game yet")
+
+func test_completing_both_steps_starts_a_run_with_both_banners_and_enters_the_game() -> void:
+	var main = await _start_with_banners(Banners.Id.BLACK, Banners.Id.IRON)
+	check(not main.banner_screen.visible, "closed once both picks are made")
+	check_eq(main.state.screen, GameState.Screen.GAME, "moved straight into the game")
+	check(main.panel.visible and main.boards_container.visible, "the game is showing")
+	check(main.state.run.active, "a real run began")
+	check(main.state.run.banners.has(Banners.Id.BLACK) and main.state.run.banners.has(Banners.Id.IRON), "both banners kept")
+	check(main.state.deployment.active, "straight into deploying for match 1")
+
+func test_real_mouse_clicks_through_both_steps_work() -> void:
+	var main = await _load_main_at_start_menu()
+	await click_control(main.start_menu.start_button)
+	await click_control(main.banner_screen.list.get_child(0))     # White
+	await click_control(main.banner_screen.list.get_child(0))     # first trait banner
+	check_eq(main.state.screen, GameState.Screen.GAME, "reached the game via real clicks")
 	check(main.state.run.active, "a run began")
-	check(main.state.run.banners.has(Banners.Id.IRON), "with the chosen banner")
-
-func test_a_real_mouse_click_on_a_banner_button_works() -> void:
-	var main = await load_main()
-	main.panel.choose_banner_button.pressed.emit()
-	await pump()                     # let the newly-shown scroll list lay itself out
-	await click_control(main.banner_screen.list.get_child(0))
-	check(main.state.run.active, "a run began from a real click")
