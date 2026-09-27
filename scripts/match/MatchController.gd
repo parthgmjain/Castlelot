@@ -1,15 +1,18 @@
 class_name MatchController
 extends RefCounted
 
-## Starts a match with `moves` player moves and a `target` score. Returns an
-## error message, or "" when it started. Modifiers carry over from the last match.
-static func start(state: GameState, moves: int, target: int) -> String:
+## Starts a match with `moves` player moves and a `target` score, fielding
+## `player_side` as the human's side (White Banner/Black Banner; White outside
+## a run). Returns an error message, or "" when it started. Modifiers carry
+## over from the last match.
+static func start(state: GameState, moves: int, target: int, player_side: Piece.Side = Piece.Side.WHITE) -> String:
 	for side in [Piece.Side.WHITE, Piece.Side.BLACK]:
 		if not _has_king(state.boards, side):
 			return "Both sides need a king - generate zones first"
 
 	var fresh := MatchState.new()
 	fresh.active = true
+	fresh.player_side = player_side
 	fresh.moves_left = moves
 	fresh.target_score = target
 	fresh.modifiers = state.current_match.modifiers

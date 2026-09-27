@@ -21,8 +21,9 @@ const WARD_TURNS := 3
 
 # ---- the shop ---------------------------------------------------------------------------------
 
-static func price(id: String) -> int:
-	return RunConfig.PROPHECY_PRICES[ProphecyDefs.rarity(id)]
+static func price(id: String, run: RunState = null) -> int:
+	var base: int = RunConfig.PROPHECY_PRICES[ProphecyDefs.rarity(id)]
+	return int(round(base * Banners.price_multiplier(run))) if run != null else base
 
 ## The cards for sale this visit: distinct built cards, each picked by rarity (the rarer, the
 ## less likely) and then evenly within the rarity.
@@ -67,15 +68,15 @@ static func buy(run: RunState, slot: int) -> Dictionary:
 	var id: String = run.prophecy_offers[slot]
 	if hand_full(run):
 		return { "ok": false, "reason": "Your hand is full - discard a prophecy first." }
-	if run.currency < price(id):
-		return { "ok": false, "reason": "Not enough gold (%s costs %d)." % [ProphecyDefs.display_name(id), price(id)] }
-	run.currency -= price(id)
+	if run.currency < price(id, run):
+		return { "ok": false, "reason": "Not enough gold (%s costs %d)." % [ProphecyDefs.display_name(id), price(id, run)] }
+	run.currency -= price(id, run)
 	run.hand.append({ "id": id, "armed": false })
 	run.prophecy_offers[slot] = ""
 	return { "ok": true, "reason": "", "id": id }
 
 static func hand_full(run: RunState) -> bool:
-	return run.hand.size() >= RunConfig.HAND_SIZE
+	return run.hand.size() >= Banners.hand_size(run)
 
 static func discard(run: RunState, index: int) -> Dictionary:
 	if index < 0 or index >= run.hand.size():

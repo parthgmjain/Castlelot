@@ -16,7 +16,8 @@ extends RefCounted
 static func price(run: RunState) -> int:
 	if run.shop_effects.get("free_pull", false):
 		return 0                                  # Lucky Draw
-	return RunConfig.PULL_PRICE_BASE + run.pulls_made * RunConfig.PULL_PRICE_STEP
+	var base := RunConfig.PULL_PRICE_BASE + run.pulls_made * RunConfig.PULL_PRICE_STEP + Banners.pull_price_delta(run)
+	return int(round(base * Banners.price_multiplier(run)))
 
 ## Weight of each tier for this run's next pull. This is the one place to plug
 ## in rubber-banding or meta bonuses later.

@@ -61,6 +61,18 @@ func test_a_zone_never_takes_squares_the_other_side_owns() -> void:
 	check_eq(board.zone_owner[Vector2i(1, 1)], BLACK, "black's square is untouched")
 	check_eq(count_zone([board], WHITE), 8, "white takes every other square")
 
+## A world small enough for the first zone to swallow it whole must not leave
+## the second side with none at all: it always keeps its own king's square,
+## even if that square was already claimed. Without this, PawnMovement's
+## distance field has no source square for that side and breaks.
+func test_a_kings_own_square_is_guaranteed_even_if_the_world_is_already_full() -> void:
+	var board := make_board(2, 2)
+	ZoneController._grow_zone(board, Vector2i(0, 0), WHITE, 4)
+	check_eq(count_zone([board], WHITE), 4, "white claims the whole tiny board first")
+	ZoneController._grow_zone(board, Vector2i(1, 1), BLACK, 5)
+	check_eq(board.zone_owner[Vector2i(1, 1)], BLACK, "black's king square is reclaimed, not left zoneless")
+	check_eq(count_zone([board], BLACK), 1, "nothing else on the board was free to take")
+
 func test_zone_rules_for_placing_pieces() -> void:
 	var board := make_board()
 	board.place_piece(Vector2i(0, 0), PAWN, WHITE)

@@ -60,7 +60,12 @@ static func _grow_zone(king_board: Board, king_square: Vector2i, side: Piece.Sid
 	var visited: Dictionary = {}
 	var queue: Array = [{ "board": king_board, "seed": king_square }]
 
-	var assigned := 0
+	# The king always stands in its own zone, even if the other side (grown
+	# first) already claimed this square - otherwise a small enough world let
+	# one side's zone swallow the other's king square and everything beyond
+	# it, leaving that side with no zone at all to spill out from.
+	king_board.set_zone(king_square, side)
+	var assigned := 1
 	while assigned < tile_count and not queue.is_empty():
 		var entry: Dictionary = queue.pop_front()
 		var board: Board = entry.board

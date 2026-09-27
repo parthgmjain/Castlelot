@@ -10,6 +10,7 @@ const BOARD_SCENE := preload("res://scenes/Board.tscn")
 @onready var result_screen: ResultScreen = $ResultLayer/ResultScreen
 @onready var shop_screen: ShopScreen = $ShopLayer/ShopScreen
 @onready var start_menu: StartMenu = $MenuLayer/StartMenu
+@onready var banner_screen: BannerScreen = $BannerLayer/BannerScreen
 
 var state := GameState.new()
 
@@ -31,7 +32,12 @@ func _ready() -> void:
 	start_menu.start_pressed.connect(menu_flow.start_pressed)
 	start_menu.quit_pressed.connect(menu_flow.quit_pressed)
 	menu_flow.quit_requested.connect(_quit)
+	panel.choose_banner_requested.connect(banner_screen.open)
+	banner_screen.chosen.connect(_on_banner_chosen)
 	_generate_boards()
+
+func _on_banner_chosen(id: Banners.Id) -> void:
+	run_flow.start_run([id])
 
 func _quit() -> void:
 	get_tree().quit()

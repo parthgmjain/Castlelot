@@ -12,6 +12,7 @@ signal place_requested(type: Piece.Type)
 signal remove_requested
 signal start_match_requested(moves: int, target: int)
 signal start_run_requested
+signal choose_banner_requested
 signal bench_piece_selected(id: int)
 signal auto_deploy_requested
 signal ready_requested
@@ -46,6 +47,7 @@ var debug_prophecy_button: Button
 @onready var ready_button: Button = $VBox/DeployRow/ReadyButton
 @onready var deploy_status_label: Label = $VBox/DeployRow/DeployStatusLabel
 @onready var start_run_button: Button = $VBox/RunRow/StartRunButton
+@onready var choose_banner_button: Button = $VBox/RunRow/ChooseBannerButton
 @onready var run_status_label: Label = $VBox/RunRow/RunStatusLabel
 @onready var count_spin_box: SpinBox = $VBox/CountRow/CountSpinBox
 @onready var refresh_button: Button = $VBox/CountRow/RefreshButton
@@ -112,6 +114,7 @@ func _ready() -> void:
 	remove_button.pressed.connect(func(): remove_requested.emit())
 	start_match_button.pressed.connect(func(): start_match_requested.emit(int(moves_spin_box.value), int(target_spin_box.value)))
 	start_run_button.pressed.connect(func(): start_run_requested.emit())
+	choose_banner_button.pressed.connect(func(): choose_banner_requested.emit())
 	auto_deploy_button.pressed.connect(func(): auto_deploy_requested.emit())
 	debug_check.toggled.connect(func(pressed: bool): debug_toggled.emit(pressed))
 	debug_win_button.pressed.connect(func(): debug_win_requested.emit())
@@ -209,7 +212,7 @@ func set_sandbox_enabled(enabled: bool) -> void:
 		count_spin_box, refresh_button, white_zone_spin_box, black_zone_spin_box, generate_zones_button,
 		white_points_spin_box, black_points_spin_box, round_option, auto_place_white_button, auto_place_black_button,
 		side_check_button, zone_edit_button, king_button, queen_button, rook_button, bishop_button, knight_button,
-		pawn_button, extra_piece_picker, remove_button, moves_spin_box, target_spin_box, start_match_button, start_run_button,
+		pawn_button, extra_piece_picker, remove_button, moves_spin_box, target_spin_box, start_match_button, start_run_button, choose_banner_button,
 	]
 	controls.append_array(_width_boxes)
 	controls.append_array(_height_boxes)

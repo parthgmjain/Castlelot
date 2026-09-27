@@ -163,9 +163,13 @@ static func match_setup(run: RunState) -> Dictionary:
 	var board_count := int(round(lerp(float(BOARD_COUNT_MIN), float(BOARD_COUNT_MAX), growth)))
 	var size_min := int(round(lerp(float(BOARD_SIZE_MIN_START), float(BOARD_SIZE_MIN_CAP), growth)))
 	var size_max := maxi(int(round(lerp(float(BOARD_SIZE_MAX_START), float(BOARD_SIZE_MAX_CAP), growth))), size_min)
+	var fixed_size := Banners.fixed_board_size(run)
 	var board_sizes: Array = []
 	for i in board_count:
-		board_sizes.append(Vector2i(randi_range(size_min, size_max), randi_range(size_min, size_max)))
+		if fixed_size:
+			board_sizes.append(Vector2i(size_max, size_max))
+		else:
+			board_sizes.append(Vector2i(randi_range(size_min, size_max), randi_range(size_min, size_max)))
 	var zone_cap := int(round(lerp(float(PLAYER_ZONE_CAP_START), float(MAX_ZONE_TILES), growth)))
 
 	var target := TARGET_BASE + TARGET_PER_MATCH * index
@@ -174,11 +178,16 @@ static func match_setup(run: RunState) -> Dictionary:
 		target *= BOSS_TARGET_MULTIPLIER
 		ai_budget *= BOSS_AI_BUDGET_MULTIPLIER
 		ai_budget *= BOSS_HALF_COST_MULTIPLIER
+	target *= Banners.target_multiplier(run)
+	ai_budget += Banners.ai_budget_delta(run, run.round_number)
+
+	var player_side := Banners.player_side(run)
+	var zones := { player_side: mini(run.zone_tiles, zone_cap), Piece.opponent(player_side): int(AI_ZONE_TILES_BASE + AI_ZONE_TILES_PER_MATCH * index) }
 
 	return {
 		"board_sizes": board_sizes,
-		"white_zone": mini(run.zone_tiles, zone_cap),
-		"black_zone": int(AI_ZONE_TILES_BASE + AI_ZONE_TILES_PER_MATCH * index),
+		"white_zone": zones[Piece.Side.WHITE],
+		"black_zone": zones[Piece.Side.BLACK],
 		"ai_budget": int(round(ai_budget)),
 		"moves": MOVES + run.bonus_moves,
 		"target": int(round(target)),

@@ -50,20 +50,28 @@ var temp_points_bonus: int = 0
 ## A choice you must make before leaving the shop ({} when none). See Lottery and Legendaries.
 var pending: Dictionary = {}
 
-func begin() -> void:
+## The banner(s) chosen for this run (see Banners.gd). Always exactly one today.
+var banners: Array = []
+
+## Guardian's Banner: whether its one-time save has already been used this run.
+var guardian_used: bool = false
+
+func begin(banner_ids: Array = [], rng: RandomNumberGenerator = null) -> void:
 	active = true
 	complete = false
 	round_number = 1
 	match_number = 1
 	boss_order = RunConfig.BOSSES.duplicate()
 	boss_order.shuffle()
-	allocated_points = RunConfig.PLAYER_POINTS_START
-	zone_tiles = RunConfig.PLAYER_ZONE_TILES
+	banners = banner_ids.duplicate()
+	guardian_used = false
+	allocated_points = RunConfig.PLAYER_POINTS_START + Banners.points_delta(self)
+	zone_tiles = RunConfig.PLAYER_ZONE_TILES + Banners.zone_delta(self)
 	pulls_made = 0
 	points_upgrades_bought = 0
 	zone_upgrades_bought = 0
 	moves_upgrades_bought = 0
-	bonus_moves = 0
+	bonus_moves = Banners.moves_delta(self)
 	roster.clear()
 	_next_roster_id = 1
 	unlocked_legendaries = []
@@ -71,7 +79,13 @@ func begin() -> void:
 	hand = []
 	prophecy_offers = []
 	shop_effects = {}
-	for type in RunConfig.STARTING_ROSTER:
+	if Banners.uses_erratic_roster(self):
+		for type in PieceSelector.select_army(RunConfig.PLAYER_POINTS_START + Banners.ERRATIC_BONUS_POINTS, "normal", rng):
+			add_to_roster(type)
+	else:
+		for type in RunConfig.STARTING_ROSTER:
+			add_to_roster(type)
+	for type in Banners.starting_extra_pieces(self, rng):
 		add_to_roster(type)
 
 func add_to_roster(type: Piece.Type) -> int:

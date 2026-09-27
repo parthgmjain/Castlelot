@@ -13,17 +13,18 @@ func bench_selected(id: int) -> void:
 	view_changed.emit()
 
 func auto_deploy() -> void:
-	Roster.auto_deploy(state.run, state.boards, state.debug_mode)
+	Roster.auto_deploy(state.run, state.boards, state.debug_mode, Banners.player_side(state.run))
 	state.deployment.armed_id = -1
 	view_changed.emit()
 
 ## A click during deployment: place the armed bench piece on a free zone square,
 ## or pick a deployed piece back up.
 func click(square: Vector2i, board: Board) -> void:
+	var side := Banners.player_side(state.run)
 	var piece = board.pieces.get(square)
 	if piece != null:
-		Roster.withdraw(board, square)
-	elif state.deployment.armed_id != -1 and Roster.deploy(state.run, state.boards, state.deployment.armed_id, board, square, state.debug_mode):
+		Roster.withdraw(board, square, side)
+	elif state.deployment.armed_id != -1 and Roster.deploy(state.run, state.boards, state.deployment.armed_id, board, square, state.debug_mode, side):
 		state.deployment.armed_id = -1
 	MoveController.clear_selection(state)
 	view_changed.emit()
@@ -33,11 +34,12 @@ func refresh_ui() -> void:
 	panel.set_deployment_visible(deployment.active)
 	if not deployment.active:
 		return
-	var bench := Roster.bench(state.run, state.boards)
-	var free := Roster.free_squares(state.boards, Piece.Side.WHITE)
+	var side := Banners.player_side(state.run)
+	var bench := Roster.bench(state.run, state.boards, side)
+	var free := Roster.free_squares(state.boards, side)
 	panel.set_bench(bench, deployment.armed_id)
 	panel.set_deploy_status("%d on the bench | %d free zone squares | Points %d/%d" % [
-		bench.size(), free.size(), Roster.points_used(state.run, state.boards), state.run.effective_points()])
+		bench.size(), free.size(), Roster.points_used(state.run, state.boards, side), state.run.effective_points()])
 	var markers := {}
 	for slot in free:
 		if not markers.has(slot.board):

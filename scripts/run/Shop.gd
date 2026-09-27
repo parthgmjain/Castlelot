@@ -65,8 +65,10 @@ static func trade_up(run: RunState, ids: Array, rng: RandomNumberGenerator = nul
 static func points_upgrade_price(run: RunState) -> int:
 	return _haggled(run, RunConfig.POINTS_UPGRADE_PRICE_BASE + run.points_upgrades_bought * RunConfig.POINTS_UPGRADE_PRICE_STEP)
 
-## Haggler's Charm halves upgrade prices (rounding up) for this shop visit.
+## Haggler's Charm halves upgrade prices (rounding up) for this shop visit, on
+## top of any banner price multiplier (Merchant's/Banker's Banner).
 static func _haggled(run: RunState, price: int) -> int:
+	price = int(round(price * Banners.price_multiplier(run)))
 	return int(ceil(price / 2.0)) if run.shop_effects.get("haggle", false) else price
 
 static func can_buy_points(run: RunState) -> bool:

@@ -252,9 +252,9 @@ func _rebuild_prophecies() -> void:
 			button.text = "Sold"
 			button.disabled = true
 		else:
-			button.text = "%s - %d gold\n%s\n%s" % [ProphecyDefs.display_name(id), Prophecies.price(id), Piece.TIER_NAMES[ProphecyDefs.rarity(id)], ProphecyDefs.text(id)]
+			button.text = "%s - %d gold\n%s\n%s" % [ProphecyDefs.display_name(id), Prophecies.price(id, _run), Piece.TIER_NAMES[ProphecyDefs.rarity(id)], ProphecyDefs.text(id)]
 			button.add_theme_color_override("font_color", ProphecyUI.color(id))
-			button.disabled = busy or _run.currency < Prophecies.price(id)
+			button.disabled = busy or _run.currency < Prophecies.price(id, _run)
 			button.tooltip_text = "%s (%s)" % [ProphecyDefs.text(id), ProphecyUI.timing_note(id)]
 		button.add_theme_font_size_override("font_size", 12)
 		button.pressed.connect(_on_buy_prophecy.bind(slot))
@@ -265,7 +265,7 @@ func _rebuild_prophecies() -> void:
 	var hand := VBoxContainer.new()
 	hand.custom_minimum_size = Vector2(330, 0)
 	var hand_header := Label.new()
-	hand_header.text = "Your hand (%d/%d)" % [_run.hand.size(), RunConfig.HAND_SIZE]
+	hand_header.text = "Your hand (%d/%d)" % [_run.hand.size(), Banners.hand_size(_run)]
 	hand.add_child(hand_header)
 	if _run.hand.is_empty():
 		var empty := Label.new()
