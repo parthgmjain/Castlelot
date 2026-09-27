@@ -266,7 +266,7 @@ func test_every_boss_piece_can_be_played_by_the_ai_without_errors() -> void:
 
 # ---- half-cost bosses and the second legendary from round 3 --------------------------------------
 
-func test_a_bosss_own_pieces_cost_half_so_their_effective_budget_is_bigger() -> void:
+func test_a_bosss_own_pieces_cost_less_so_their_effective_budget_is_bigger() -> void:
 	var run := RunState.new()
 	run.begin()
 	run.round_number = 4
@@ -276,7 +276,7 @@ func test_a_bosss_own_pieces_cost_half_so_their_effective_budget_is_bigger() -> 
 	var boss_setup := RunConfig.match_setup(run)
 	var expected := (RunConfig.AI_BUDGET_BASE + RunConfig.AI_BUDGET_PER_MATCH * run.matches_played()) * RunConfig.BOSS_AI_BUDGET_MULTIPLIER * RunConfig.BOSS_HALF_COST_MULTIPLIER
 	check_eq(boss_setup.ai_budget, int(round(expected)), "boss budget = base x boss multiplier x half-cost multiplier")
-	check(boss_setup.ai_budget > normal_budget * 2, "noticeably more than an ordinary match's budget")
+	check(boss_setup.ai_budget > normal_budget * 1.5, "noticeably more than an ordinary match's budget")
 
 func test_only_boss_matches_get_the_half_cost_bump_not_ordinary_ones() -> void:
 	var run := RunState.new()

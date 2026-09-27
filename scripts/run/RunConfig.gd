@@ -130,10 +130,13 @@ const ZONE_MIN_DISTANCE_CAP := 16
 const BOSS_TARGET_MULTIPLIER := 1.5
 const BOSS_AI_BUDGET_MULTIPLIER := 1.25
 
-## Every boss's own pieces cost half as much against their budget - roughly double the army for
-## the same numbers, since a boss should feel like more of a fight than a normal match. Applies
-## to every boss, Arthur included (his other tricks stack on top of this, not instead of it).
-const BOSS_HALF_COST_MULTIPLIER := 2.0
+## Every boss's own pieces cost less against their budget - a bigger army for the same
+## numbers, since a boss should feel like more of a fight than a normal match. Applies to
+## every boss, Arthur included (his other tricks stack on top of this, not instead of it).
+## Difficulty.boss_multiplier stacks on top of this per-tier (see RunConfig.match_setup) -
+## a flat 2.0 here made every boss a near coin-flip even at round 1 regardless of skill, so
+## Normal now carries a gentler multiplier and the harder tiers earn their own bigger one.
+const BOSS_HALF_COST_MULTIPLIER := 1.5
 
 ## From this round on, a boss also always fields a queen alongside their own assigned legendary
 ## (both reserved, same as any boss piece) - two guaranteed legendaries instead of one. Rounds
@@ -173,11 +176,11 @@ static func match_setup(run: RunState) -> Dictionary:
 	var zone_cap := int(round(lerp(float(PLAYER_ZONE_CAP_START), float(MAX_ZONE_TILES), growth)))
 
 	var target := TARGET_BASE + TARGET_PER_MATCH * index
-	var ai_budget := AI_BUDGET_BASE + AI_BUDGET_PER_MATCH * index
+	var ai_budget := (AI_BUDGET_BASE + AI_BUDGET_PER_MATCH * index) * Difficulty.ai_budget_multiplier(run.difficulty)
 	if boss:
-		target *= BOSS_TARGET_MULTIPLIER
-		ai_budget *= BOSS_AI_BUDGET_MULTIPLIER
-		ai_budget *= BOSS_HALF_COST_MULTIPLIER
+		target *= BOSS_TARGET_MULTIPLIER * Difficulty.boss_multiplier(run.difficulty)
+		ai_budget *= BOSS_AI_BUDGET_MULTIPLIER * BOSS_HALF_COST_MULTIPLIER * Difficulty.boss_multiplier(run.difficulty)
+	target *= Difficulty.target_multiplier(run.difficulty)
 	target *= Banners.target_multiplier(run)
 	ai_budget += Banners.ai_budget_delta(run, run.round_number)
 

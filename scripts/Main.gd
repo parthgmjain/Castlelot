@@ -42,9 +42,9 @@ func _on_start_pressed() -> void:
 
 ## Picking both banners begins a real run directly - Start Menu -> Banner
 ## Select -> playing, with no blank sandbox in between.
-func _on_banner_chosen(side_id: Banners.Id, trait_id: Banners.Id) -> void:
+func _on_banner_chosen(side_id: Banners.Id, trait_id: Banners.Id, difficulty: Difficulty.Level) -> void:
 	state.screen = GameState.Screen.GAME
-	run_flow.start_run([side_id, trait_id])
+	run_flow.start_run([side_id, trait_id], null, difficulty)
 
 func _quit() -> void:
 	get_tree().quit()

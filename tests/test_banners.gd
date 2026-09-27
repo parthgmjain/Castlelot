@@ -1,9 +1,12 @@
 extends "res://tests/TestCase.gd"
 ## Run banners: the data (Banners.gd), their numeric effects on a fresh
 ## RunState/match setup, the side swap (White/Black Banner), the economy hooks
-## (Merchant's/Banker's/Hoarder's), Guardian's one-time save, and the two-step
-## Banner Select screen (Start Menu -> pick a side -> pick a trait -> a run
-## begins directly, Balatro-deck-select style).
+## (Merchant's/Banker's/Hoarder's), Guardian's one-time save, and the
+## three-step Banner Select screen (Start Menu -> side -> trait -> difficulty
+## -> a run begins directly, Balatro-deck-select style). Difficulty's own
+## numeric effects (AI budget, target, gold, prices, Easy's retry) are covered
+## separately in tests/test_difficulty.gd - this file just checks the picker
+## stores the choice and carries it through restarts/UI correctly.
 
 ## Loads the real Main scene stopped at the Start Menu - unlike TestCase's own
 ## load_main(), which deliberately skips past Banner Select into a blank,
@@ -18,16 +21,18 @@ func _load_main_at_start_menu() -> Node:
 	await pump(2)
 	return main
 
-## Drives the real Start Menu -> two-step Banner Select flow (through the
+## Drives the real Start Menu -> three-step Banner Select flow (through the
 ## actual signals, the way a player would), landing with a real run begun
-## under both banners.
-func _start_with_banners(side_id: Banners.Id, trait_id: Banners.Id) -> Node:
+## under both banners and the given difficulty (defaults to Normal - most
+## tests don't care).
+func _start_with_banners(side_id: Banners.Id, trait_id: Banners.Id, difficulty: Difficulty.Level = Difficulty.Level.NORMAL) -> Node:
 	var main = await _load_main_at_start_menu()
 	main.start_menu.start_button.pressed.emit()
 	var side_index: int = [Banners.Id.WHITE, Banners.Id.BLACK].find(side_id)
 	main.banner_screen.list.get_child(side_index).pressed.emit()
 	var traits: Array = Banners.ids().filter(func(id): return not Banners.is_side(id))
 	main.banner_screen.list.get_child(traits.find(trait_id)).pressed.emit()
+	main.banner_screen.list.get_child(Difficulty.levels().find(difficulty)).pressed.emit()
 	return main
 
 func _ready_up(main: Node) -> void:
@@ -298,7 +303,7 @@ func test_guardians_banner_survives_its_first_loss_then_ends_the_run_on_the_seco
 	check(main.state.run.banners.has(Banners.Id.GUARDIAN), "the banner carries over the restart")
 	check(not main.state.run.guardian_used, "a fresh save on the new run")
 
-# ---- the two-step picker UI -------------------------------------------------------------------
+# ---- the three-step picker UI -----------------------------------------------------------------
 
 func test_the_side_step_offers_exactly_white_and_black() -> void:
 	var main = await _load_main_at_start_menu()
@@ -314,19 +319,47 @@ func test_the_trait_step_follows_the_side_step_and_offers_the_other_fifteen() ->
 	check_eq(main.banner_screen.title_label.text, "Choose your banner", "step 2 title")
 	check(main.state.screen == GameState.Screen.BANNER_SELECT, "still selecting, not in the game yet")
 
-func test_completing_both_steps_starts_a_run_with_both_banners_and_enters_the_game() -> void:
-	var main = await _start_with_banners(Banners.Id.BLACK, Banners.Id.IRON)
-	check(not main.banner_screen.visible, "closed once both picks are made")
+func test_the_difficulty_step_follows_the_trait_step_and_offers_all_four_levels() -> void:
+	var main = await _load_main_at_start_menu()
+	main.start_menu.start_button.pressed.emit()
+	main.banner_screen.list.get_child(0).pressed.emit()          # White
+	main.banner_screen.list.get_child(0).pressed.emit()          # first trait banner
+	check_eq(main.banner_screen.list.get_child_count(), 4, "Easy, Normal, Hard, Nightmare")
+	check_eq(main.banner_screen.title_label.text, "Choose your difficulty", "step 3 title")
+	check(main.state.screen == GameState.Screen.BANNER_SELECT, "still selecting, not in the game yet")
+
+func test_completing_all_three_steps_starts_a_run_with_both_banners_and_enters_the_game() -> void:
+	var main = await _start_with_banners(Banners.Id.BLACK, Banners.Id.IRON, Difficulty.Level.HARD)
+	check(not main.banner_screen.visible, "closed once all three picks are made")
 	check_eq(main.state.screen, GameState.Screen.GAME, "moved straight into the game")
 	check(main.panel.visible and main.boards_container.visible, "the game is showing")
 	check(main.state.run.active, "a real run began")
 	check(main.state.run.banners.has(Banners.Id.BLACK) and main.state.run.banners.has(Banners.Id.IRON), "both banners kept")
+	check_eq(main.state.run.difficulty, Difficulty.Level.HARD, "difficulty kept")
 	check(main.state.deployment.active, "straight into deploying for match 1")
 
-func test_real_mouse_clicks_through_both_steps_work() -> void:
+## begin() itself (starting points/zone/moves) is untouched by difficulty - only
+## match_setup/Shop/Payout are, which is what tests/test_difficulty.gd covers.
+## See that file's header for why (RunState.begin's numbers are Banners' turf).
+func test_difficulty_does_not_change_the_starting_roster_setup() -> void:
+	var easy := RunState.new()
+	easy.begin([Banners.Id.WHITE], null, Difficulty.Level.EASY)
+	var nightmare := RunState.new()
+	nightmare.begin([Banners.Id.WHITE], null, Difficulty.Level.NIGHTMARE)
+	check_eq(easy.allocated_points, nightmare.allocated_points, "same points")
+	check_eq(easy.zone_tiles, nightmare.zone_tiles, "same zone")
+	check_eq(easy.bonus_moves, nightmare.bonus_moves, "same moves")
+
+func test_difficulty_defaults_to_normal_when_not_specified() -> void:
+	var run := RunState.new()
+	run.begin([Banners.Id.WHITE])
+	check_eq(run.difficulty, Difficulty.Level.NORMAL, "normal by default")
+
+func test_real_mouse_clicks_through_all_three_steps_work() -> void:
 	var main = await _load_main_at_start_menu()
 	await click_control(main.start_menu.start_button)
 	await click_control(main.banner_screen.list.get_child(0))     # White
 	await click_control(main.banner_screen.list.get_child(0))     # first trait banner
+	await click_control(main.banner_screen.list.get_child(0))     # first difficulty
 	check_eq(main.state.screen, GameState.Screen.GAME, "reached the game via real clicks")
 	check(main.state.run.active, "a run began")

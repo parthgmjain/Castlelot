@@ -56,7 +56,11 @@ var banners: Array = []
 ## Guardian's Banner: whether its one-time save has already been used this run.
 var guardian_used: bool = false
 
-func begin(banner_ids: Array = [], rng: RandomNumberGenerator = null) -> void:
+## Picked alongside the banners; scales AI budget/target/gold/prices and grants Easy its
+## one-time retry (see Difficulty.gd, threaded through RunConfig/Payout/Shop/RunFlow).
+var difficulty: Difficulty.Level = Difficulty.Level.NORMAL
+
+func begin(banner_ids: Array = [], rng: RandomNumberGenerator = null, difficulty_level: Difficulty.Level = Difficulty.Level.NORMAL) -> void:
 	active = true
 	complete = false
 	round_number = 1
@@ -64,6 +68,7 @@ func begin(banner_ids: Array = [], rng: RandomNumberGenerator = null) -> void:
 	boss_order = RunConfig.BOSSES.duplicate()
 	boss_order.shuffle()
 	banners = banner_ids.duplicate()
+	difficulty = difficulty_level
 	guardian_used = false
 	allocated_points = RunConfig.PLAYER_POINTS_START + Banners.points_delta(self)
 	zone_tiles = RunConfig.PLAYER_ZONE_TILES + Banners.zone_delta(self)

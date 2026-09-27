@@ -13,9 +13,9 @@ var shop_screen: ShopScreen
 ## Rebuilds the boards from scratch (owned by Main, which owns the board nodes).
 var generate_boards: Callable
 
-func start_run(banner_ids: Array = [], rng: RandomNumberGenerator = null) -> void:
+func start_run(banner_ids: Array = [], rng: RandomNumberGenerator = null, difficulty: Difficulty.Level = Difficulty.Level.NORMAL) -> void:
 	state.run = RunState.new()
-	state.run.begin(banner_ids, rng)
+	state.run.begin(banner_ids, rng, difficulty)
 	begin_match()
 
 ## Builds the run's current match from RunConfig and starts deployment.
@@ -38,7 +38,8 @@ func begin_match() -> void:
 		boss_army = legendaries.slice(0, RunConfig.ARTHUR_LEGENDARY_COUNT)
 	elif setup.boss_piece >= 0 and state.run.round_number >= RunConfig.BOSS_SECOND_LEGENDARY_ROUND:
 		boss_army.append(Piece.Type.QUEEN)
-	ArmyPlacer.auto_place(state.boards, ai_side, setup.ai_budget, setup.round_type, boss_army, state.run.round_number)
+	var ai_unlock_round := Difficulty.ai_unlock_round(state.run.difficulty, state.run.round_number)
+	ArmyPlacer.auto_place(state.boards, ai_side, setup.ai_budget, setup.round_type, boss_army, ai_unlock_round)
 	if state.run.is_final_round():
 		for board in state.boards:
 			for piece in board.pieces.values():
@@ -79,7 +80,8 @@ func settle_if_finished() -> void:
 	var payout := {}
 	var notes: Array = []
 	if current.result == "win":
-		payout = Payout.calculate(current, state.run.currency, Banners.interest_cap(state.run), Banners.gold_multiplier(state.run))
+		var gold_multiplier := Banners.gold_multiplier(state.run) * Difficulty.gold_multiplier(state.run.difficulty)
+		payout = Payout.calculate(current, state.run.currency, Banners.interest_cap(state.run), gold_multiplier)
 		if state.run.active:
 			payout = Prophecies.apply_payout(state.run, payout)
 			if payout.has("tithe"):
@@ -115,17 +117,19 @@ func settle_if_finished() -> void:
 	result_screen.show_result(current, payout, state.run.currency, context, button, notes)
 
 ## In a run: a win moves on to the next match (or finishes the run after
-## Arthur) and a loss starts a new run (Guardian's Banner spends its one-time
-## save instead, retrying the same match). Outside a run a loss just wipes the gold.
+## Arthur) and a loss starts a new run (Guardian's Banner, or Easy difficulty,
+## spends its one-time save instead, retrying the same match). Outside a run
+## a loss just wipes the gold.
 func result_continued() -> void:
 	var lost := state.current_match.result == "loss"
 	if state.run.active:
 		if lost:
-			if state.run.banners.has(Banners.Id.GUARDIAN) and not state.run.guardian_used:
+			var has_retry := state.run.banners.has(Banners.Id.GUARDIAN) or Difficulty.grants_retry(state.run.difficulty)
+			if has_retry and not state.run.guardian_used:
 				state.run.guardian_used = true
 				begin_match()
 			else:
-				start_run(state.run.banners)
+				start_run(state.run.banners, null, state.run.difficulty)
 		elif state.run.advance():
 			shop_screen.open(state.run, state.run.title())
 		else:

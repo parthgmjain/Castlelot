@@ -1,8 +1,11 @@
 class_name Payout
 extends RefCounted
 
-## Placeholder numbers - tune freely.
-const BASE := 5
+## Placeholder numbers - tune freely. BASE was 5 until a 2026-09-27 full-run simulation
+## pass showed gold income couldn't keep pace with AI_BUDGET's per-match growth (a player
+## saving every coin for Points upgrades was still ~2 boss-budget-multiples behind by
+## round 4) - raised to keep pace with a rebalanced boss curve (see RunConfig.match_setup).
+const BASE := 10
 const PER_LEFTOVER_MOVE := 1
 const INTEREST_STEP := 5       # 1 interest for every this much currency held...
 const INTEREST_CAP := 5        # ...up to this much
