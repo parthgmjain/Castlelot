@@ -46,4 +46,11 @@ static func hand_row(entry: Dictionary, buttons: Array, compact: bool = false) -
 		button.pressed.connect(spec.action)
 		row.add_child(button)
 	box.add_child(row)
+	# Appended last (not first) so it doesn't shift title/text/row's existing
+	# indices - a reserved slot for the card's real artwork, not drawn here.
+	var art := TextureRect.new()
+	art.name = "Art"
+	art.custom_minimum_size = Vector2(0, 60)
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	box.add_child(art)
 	return box

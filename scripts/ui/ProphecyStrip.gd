@@ -1,8 +1,11 @@
 class_name ProphecyStrip
 extends PanelContainer
-## The prophecies you carry, shown down the left of the board during a run: play a match card
-## on your turn, arm an armed card before a match, or discard. A card that needs a choice
-## (Blessing of the Blade) shows its options underneath.
+## The prophecies you carry, shown down the right of the board during a run (mirrors
+## InfoSidebar's left column - both clear BossBanner up top and the roster/deployment
+## bar at the bottom): play a match card on your turn, arm an armed card before a
+## match, or discard. A card that needs a choice (Blessing of the Blade) shows its
+## options underneath. Each card's `Art` node (see ProphecyUI.hand_row) is an empty
+## TextureRect - a reserved slot for real artwork, not drawn here.
 
 signal play_requested(index: int)
 signal arm_requested(index: int, armed: bool)
@@ -15,7 +18,16 @@ var _choice_prompt: Label
 var _choice_row: HFlowContainer
 
 func _ready() -> void:
-	position = Vector2(8, 385)
+	anchor_left = 1.0
+	anchor_right = 1.0
+	anchor_top = 0.0
+	anchor_bottom = 1.0
+	offset_left = -280.0
+	offset_right = 0.0
+	offset_top = 130.0
+	offset_bottom = -270.0
+	grow_horizontal = 0
+	grow_vertical = 2
 	custom_minimum_size = Vector2(260, 0)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 6)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://bqx7n8m0k3v1a"]
+[gd_scene load_steps=11 format=3 uid="uid://bqx7n8m0k3v1a"]
 
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ui/ControlPanel.gd" id="2_panel"]
@@ -7,6 +7,9 @@
 [ext_resource type="Script" path="res://scripts/ui/ShopScreen.gd" id="5_shop"]
 [ext_resource type="Script" path="res://scripts/ui/StartMenu.gd" id="6_menu"]
 [ext_resource type="Script" path="res://scripts/ui/BannerScreen.gd" id="7_banner"]
+[ext_resource type="Script" path="res://scripts/ui/BossBanner.gd" id="8_boss"]
+[ext_resource type="Script" path="res://scripts/ui/RosterStrip.gd" id="9_roster"]
+[ext_resource type="Script" path="res://scripts/ui/InfoSidebar.gd" id="10_info"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -18,6 +21,7 @@ position = Vector2(40, 390)
 anchors_preset = 0
 offset_right = 1280.0
 offset_bottom = 390.0
+mouse_filter = 2
 script = ExtResource("2_panel")
 
 [node name="VBox" type="VBoxContainer" parent="UI"]
@@ -104,31 +108,6 @@ text = "Moves left:"
 [node name="DebugMovesSpin" type="SpinBox" parent="UI/VBox/DebugRow"]
 layout_mode = 2
 max_value = 999.0
-
-[node name="DeployRow" type="HBoxContainer" parent="UI/VBox"]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="DeployLabel" type="Label" parent="UI/VBox/DeployRow"]
-layout_mode = 2
-text = "Bench:"
-
-[node name="BenchBox" type="HBoxContainer" parent="UI/VBox/DeployRow"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="AutoDeployButton" type="Button" parent="UI/VBox/DeployRow"]
-layout_mode = 2
-text = "Auto Deploy"
-
-[node name="ReadyButton" type="Button" parent="UI/VBox/DeployRow"]
-layout_mode = 2
-text = "Start Match"
-
-[node name="DeployStatusLabel" type="Label" parent="UI/VBox/DeployRow"]
-layout_mode = 2
-text = ""
 
 [node name="CountRow" type="HBoxContainer" parent="UI/VBox"]
 layout_mode = 2
@@ -309,6 +288,232 @@ layout_mode = 2
 text = ""
 autowrap_mode = 3
 
+[node name="DeploymentLayer" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="DeploymentBench" type="Control" parent="DeploymentLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -260.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="Background" type="ColorRect" parent="DeploymentLayer/DeploymentBench"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.12, 0.92)
+
+[node name="Margin" type="MarginContainer" parent="DeploymentLayer/DeploymentBench"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="DeploymentLayer/DeploymentBench/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusRow" type="HBoxContainer" parent="DeploymentLayer/DeploymentBench/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="DeployStatusLabel" type="Label" parent="DeploymentLayer/DeploymentBench/Margin/VBox/StatusRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = ""
+
+[node name="AutoDeployButton" type="Button" parent="DeploymentLayer/DeploymentBench/Margin/VBox/StatusRow"]
+layout_mode = 2
+text = "Auto Deploy"
+
+[node name="ReadyButton" type="Button" parent="DeploymentLayer/DeploymentBench/Margin/VBox/StatusRow"]
+layout_mode = 2
+text = "Start Match"
+
+[node name="Scroll" type="ScrollContainer" parent="DeploymentLayer/DeploymentBench/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="BenchBox" type="HBoxContainer" parent="DeploymentLayer/DeploymentBench/Margin/VBox/Scroll"]
+layout_mode = 2
+theme_override_constants/separation = 10
+size_flags_vertical = 3
+
+[node name="BossLayer" type="CanvasLayer" parent="."]
+layer = 4
+
+[node name="BossBanner" type="Control" parent="BossLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 120.0
+grow_horizontal = 2
+script = ExtResource("8_boss")
+
+[node name="Art" type="TextureRect" parent="BossLayer/BossBanner"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+stretch_mode = 6
+
+[node name="NameLabel" type="Label" parent="BossLayer/BossBanner"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 24
+text = "Boss"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RosterLayer" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="RosterStrip" type="Control" parent="RosterLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -180.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("9_roster")
+
+[node name="Background" type="ColorRect" parent="RosterLayer/RosterStrip"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.12, 0.92)
+
+[node name="Margin" type="MarginContainer" parent="RosterLayer/RosterStrip"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 12
+
+[node name="Scroll" type="ScrollContainer" parent="RosterLayer/RosterStrip/Margin"]
+layout_mode = 2
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="Box" type="HBoxContainer" parent="RosterLayer/RosterStrip/Margin/Scroll"]
+layout_mode = 2
+theme_override_constants/separation = 10
+size_flags_vertical = 3
+
+[node name="InfoLayer" type="CanvasLayer" parent="."]
+layer = 4
+
+[node name="InfoSidebar" type="Control" parent="InfoLayer"]
+visible = false
+layout_mode = 3
+anchor_bottom = 1.0
+offset_top = 130.0
+offset_right = 260.0
+offset_bottom = -270.0
+grow_vertical = 2
+script = ExtResource("10_info")
+
+[node name="Background" type="ColorRect" parent="InfoLayer/InfoSidebar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.12, 0.92)
+
+[node name="Margin" type="MarginContainer" parent="InfoLayer/InfoSidebar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="InfoLayer/InfoSidebar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Stats" type="VBoxContainer" parent="InfoLayer/InfoSidebar/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RoundLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Round"
+
+[node name="GoldLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+layout_mode = 2
+text = "Gold: 0"
+
+[node name="ScoreLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+layout_mode = 2
+text = "Score: 0 / 0"
+
+[node name="MovesLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+layout_mode = 2
+text = "Moves left: 0"
+
+[node name="TurnLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+layout_mode = 2
+text = "Your Turn"
+
+[node name="ValuesHeader" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "PIECE VALUES"
+
+[node name="Scroll" type="ScrollContainer" parent="InfoLayer/InfoSidebar/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ValueList" type="VBoxContainer" parent="InfoLayer/InfoSidebar/Margin/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
 [node name="PromotionLayer" type="CanvasLayer" parent="."]
 layer = 10
 
@@ -462,99 +667,117 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0.65)
 
-[node name="Center" type="CenterContainer" parent="ShopLayer/ShopScreen"]
+[node name="Panel" type="PanelContainer" parent="ShopLayer/ShopScreen"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
 
-[node name="Panel" type="PanelContainer" parent="ShopLayer/ShopScreen/Center"]
-custom_minimum_size = Vector2(780, 0)
+[node name="Margin" type="MarginContainer" parent="ShopLayer/ShopScreen/Panel"]
 layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 24
 
-[node name="Margin" type="MarginContainer" parent="ShopLayer/ShopScreen/Center/Panel"]
+[node name="Scroll" type="ScrollContainer" parent="ShopLayer/ShopScreen/Panel/Margin"]
 layout_mode = 2
-theme_override_constants/margin_left = 30
-theme_override_constants/margin_top = 22
-theme_override_constants/margin_right = 30
-theme_override_constants/margin_bottom = 22
+horizontal_scroll_mode = 0
 
-[node name="VBox" type="VBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 9
 
-[node name="Title" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="Title" type="Label" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 30
 text = "SHOP"
 horizontal_alignment = 1
 
-[node name="Gold" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="Gold" type="Label" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "Gold: 0"
 horizontal_alignment = 1
 
-[node name="Message" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="Message" type="Label" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 horizontal_alignment = 1
 
-[node name="PiecesHeader" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="PiecesHeader" type="Label" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 text = "PIECES  -  select pieces of one tier to trade up (5 commons, 5 uncommons or 7 rares)"
 
-[node name="RosterBox" type="VBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="RosterBox" type="VBoxContainer" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="OddsLabel" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="OddsLabel" type="Label" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 text = ""
 
-[node name="PieceActions" type="HBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="PieceActions" type="HBoxContainer" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="PullButton" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox/PieceActions"]
+[node name="PullButton" type="Button" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox/PieceActions"]
+custom_minimum_size = Vector2(220, 90)
 layout_mode = 2
-text = "Lottery Pull"
+text = "Draft"
 
-[node name="TradeUpButton" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox/PieceActions"]
+[node name="TradeUpButton" type="Button" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox/PieceActions"]
 layout_mode = 2
 text = "Trade up"
 
-[node name="UpgradesHeader" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="UpgradesHeader" type="Label" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 text = "UPGRADES  -  what you can field each match"
 
-[node name="UpgradeActions" type="HBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="UpgradeActions" type="HBoxContainer" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="PointsUpgradeButton" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox/UpgradeActions"]
+[node name="PointsUpgradeButton" type="Button" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox/UpgradeActions"]
+custom_minimum_size = Vector2(120, 90)
 layout_mode = 2
 text = "Allocated points"
+autowrap_mode = 3
 
-[node name="ZoneUpgradeButton" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox/UpgradeActions"]
+[node name="ZoneUpgradeButton" type="Button" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox/UpgradeActions"]
+custom_minimum_size = Vector2(120, 90)
 layout_mode = 2
 text = "Zone size"
+autowrap_mode = 3
 
-[node name="MovesUpgradeButton" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox/UpgradeActions"]
+[node name="MovesUpgradeButton" type="Button" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox/UpgradeActions"]
+custom_minimum_size = Vector2(120, 90)
 layout_mode = 2
 text = "Moves"
+autowrap_mode = 3
 
-[node name="CardsHeader" type="Label" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="CardsHeader" type="Label" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 text = "PROPHECIES  -  one-time cards you carry up to 3 (the rarer, the stronger)"
 
-[node name="CardsRow" type="HBoxContainer" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="ProphecyArea" type="HBoxContainer" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Oracle" type="TextureRect" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox/ProphecyArea"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+size_flags_vertical = 3
+stretch_mode = 5
+
+[node name="CardsRow" type="HBoxContainer" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox/ProphecyArea"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="Leave" type="Button" parent="ShopLayer/ShopScreen/Center/Panel/Margin/VBox"]
+[node name="Leave" type="Button" parent="ShopLayer/ShopScreen/Panel/Margin/Scroll/VBox"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "Next Match"
@@ -592,7 +815,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Panel" type="PanelContainer" parent="BannerLayer/BannerScreen/Center"]
-custom_minimum_size = Vector2(560, 860)
+custom_minimum_size = Vector2(940, 560)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="BannerLayer/BannerScreen/Center/Panel"]
@@ -613,14 +836,16 @@ text = "Choose your Banner"
 horizontal_alignment = 1
 
 [node name="Scroll" type="ScrollContainer" parent="BannerLayer/BannerScreen/Center/Panel/Margin/VBox"]
-custom_minimum_size = Vector2(0, 780)
+custom_minimum_size = Vector2(0, 460)
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
 
-[node name="List" type="VBoxContainer" parent="BannerLayer/BannerScreen/Center/Panel/Margin/VBox/Scroll"]
+[node name="List" type="HBoxContainer" parent="BannerLayer/BannerScreen/Center/Panel/Margin/VBox/Scroll"]
 layout_mode = 2
-theme_override_constants/separation = 6
-size_flags_horizontal = 3
+theme_override_constants/separation = 16
+size_flags_vertical = 3
 
 [node name="MenuLayer" type="CanvasLayer" parent="."]
 layer = 20

@@ -359,3 +359,39 @@ func test_adding_an_unknown_id_does_nothing() -> void:
 	var main = await load_main()
 	main.debug_flow.add_prophecy("not_a_real_card")
 	check(main.state.run.hand.is_empty(), "refused quietly")
+
+# ---- sandbox rows only show once debug mode is on ------------------------------------------------
+
+func _sandbox_rows(main: Node) -> Array:
+	var panel: ControlPanel = main.panel
+	return [panel.count_row, panel.sizes_row, panel.zone_row, panel.points_row, panel.auto_place_row, panel.piece_row, panel.match_row]
+
+func test_sandbox_rows_are_hidden_by_default() -> void:
+	var main = await load_main()
+	for row in _sandbox_rows(main):
+		check(not row.visible, "%s starts hidden" % row.name)
+	check(not main.panel.match_status_label.visible, "the status line too")
+
+func test_run_row_and_debug_toggle_stay_visible_regardless() -> void:
+	var main = await load_main()
+	check(main.panel.start_run_button.visible and main.panel.debug_check.visible, "always reachable, on or off")
+
+func test_sandbox_rows_appear_once_debug_mode_is_toggled_on() -> void:
+	var main = await load_main()
+	_debug(main, true)
+	for row in _sandbox_rows(main):
+		check(row.visible, "%s shows once debug mode is on" % row.name)
+	check(main.panel.match_status_label.visible, "the status line too")
+
+func test_sandbox_rows_hide_again_when_debug_mode_is_toggled_off() -> void:
+	var main = await load_main()
+	_debug(main, true)
+	_debug(main, false)
+	for row in _sandbox_rows(main):
+		check(not row.visible, "%s hides again" % row.name)
+
+func test_sandbox_rows_stay_hidden_through_a_real_run_with_debug_mode_off() -> void:
+	var main = await load_main()
+	main.panel.start_run_button.pressed.emit()
+	for row in _sandbox_rows(main):
+		check(not row.visible, "%s still hidden mid-run" % row.name)

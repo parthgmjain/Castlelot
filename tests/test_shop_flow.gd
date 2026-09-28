@@ -56,7 +56,7 @@ func test_the_shop_opens_after_a_win_and_shows_everything() -> void:
 	check(_row_label(shop, 2).contains("Rare (1/3 types)"), _row_label(shop, 2))
 	check(_row_label(shop, 3).contains("Legendary (0/2 types)"), _row_label(shop, 3))
 	check(_row(shop, 2)[0].text.contains("Rook (5)"), "each piece shows what it costs: %s" % _row(shop, 2)[0].text)
-	check_eq(shop.pull_button.text, "Lottery Pull - %d gold" % RunConfig.PULL_PRICE_BASE, "the lottery button")
+	check_eq(shop.pull_button.text, "Draft - %d gold" % RunConfig.PULL_PRICE_BASE, "the lottery button")
 	var odds := Lottery.odds(main.state.run)
 	for tier in odds:
 		var shown := "%s %d%%" % [Piece.TIER_NAMES[tier], roundi(odds[tier] * 100.0)]

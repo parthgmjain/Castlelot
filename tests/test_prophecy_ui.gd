@@ -172,7 +172,7 @@ func test_lucky_draw_shows_a_free_pull() -> void:
 	main.state.run.hand.append({ "id": "lucky_draw", "armed": false })
 	shop.refresh()
 	_button(_hand_rows(shop)[0], "Play").pressed.emit()
-	check_eq(shop.pull_button.text, "Lottery Pull - 0 gold", shop.pull_button.text)
+	check_eq(shop.pull_button.text, "Draft - 0 gold", shop.pull_button.text)
 	shop.pull_button.pressed.emit()
 	check_eq(main.state.run.currency, 20, "nothing was paid")
 

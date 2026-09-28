@@ -12,19 +12,23 @@ const TIER_COLORS := {
 	Piece.Tier.LEGENDARY: Color(1.0, 0.8, 0.25),
 }
 
-@onready var panel: PanelContainer = $Center/Panel
-@onready var title_label: Label = $Center/Panel/Margin/VBox/Title
-@onready var gold_label: Label = $Center/Panel/Margin/VBox/Gold
-@onready var message_label: Label = $Center/Panel/Margin/VBox/Message
-@onready var roster_box: VBoxContainer = $Center/Panel/Margin/VBox/RosterBox
-@onready var odds_label: Label = $Center/Panel/Margin/VBox/OddsLabel
-@onready var pull_button: Button = $Center/Panel/Margin/VBox/PieceActions/PullButton
-@onready var trade_up_button: Button = $Center/Panel/Margin/VBox/PieceActions/TradeUpButton
-@onready var points_upgrade_button: Button = $Center/Panel/Margin/VBox/UpgradeActions/PointsUpgradeButton
-@onready var zone_upgrade_button: Button = $Center/Panel/Margin/VBox/UpgradeActions/ZoneUpgradeButton
-@onready var moves_upgrade_button: Button = $Center/Panel/Margin/VBox/UpgradeActions/MovesUpgradeButton
-@onready var cards_row: HBoxContainer = $Center/Panel/Margin/VBox/CardsRow
-@onready var leave_button: Button = $Center/Panel/Margin/VBox/Leave
+@onready var panel: PanelContainer = $Panel
+@onready var title_label: Label = $Panel/Margin/Scroll/VBox/Title
+@onready var gold_label: Label = $Panel/Margin/Scroll/VBox/Gold
+@onready var message_label: Label = $Panel/Margin/Scroll/VBox/Message
+@onready var roster_box: VBoxContainer = $Panel/Margin/Scroll/VBox/RosterBox
+@onready var odds_label: Label = $Panel/Margin/Scroll/VBox/OddsLabel
+@onready var pull_button: Button = $Panel/Margin/Scroll/VBox/PieceActions/PullButton
+@onready var trade_up_button: Button = $Panel/Margin/Scroll/VBox/PieceActions/TradeUpButton
+@onready var points_upgrade_button: Button = $Panel/Margin/Scroll/VBox/UpgradeActions/PointsUpgradeButton
+@onready var zone_upgrade_button: Button = $Panel/Margin/Scroll/VBox/UpgradeActions/ZoneUpgradeButton
+@onready var moves_upgrade_button: Button = $Panel/Margin/Scroll/VBox/UpgradeActions/MovesUpgradeButton
+## The oracle presenting the prophecies for sale: one reserved image for the
+## whole offer row, not per-card - see _rebuild_prophecies. An empty
+## TextureRect, real artwork drops in later.
+@onready var oracle_art: TextureRect = $Panel/Margin/Scroll/VBox/ProphecyArea/Oracle
+@onready var cards_row: HBoxContainer = $Panel/Margin/Scroll/VBox/ProphecyArea/CardsRow
+@onready var leave_button: Button = $Panel/Margin/Scroll/VBox/Leave
 
 ## Where a choice from run.pending is laid out: a prompt and a row of buttons (built in _ready).
 var choice_box: VBoxContainer
@@ -107,7 +111,7 @@ func refresh() -> void:
 	odds_label.text = "Lottery odds: %s  (the tier is revealed first, then you choose from %d cards)" % ["  |  ".join(parts), RunConfig.CARDS_OFFERED]
 
 	var price := Lottery.price(_run)
-	pull_button.text = "Lottery Pull - %d gold" % price
+	pull_button.text = "Draft - %d gold" % price
 	pull_button.disabled = busy or _run.currency < price
 
 	var check := Shop.check_trade_up(_run, _selected.keys())
@@ -147,14 +151,27 @@ func _rebuild_roster() -> void:
 			none.text = "-"
 			row.add_child(none)
 		for entry in pieces:
-			var button := Button.new()
-			button.toggle_mode = true
-			button.button_pressed = _selected.has(entry.id)
-			button.text = "%s %s (%d)" % [Piece.symbol(entry.type, Piece.Side.WHITE), Piece.display_name(entry.type), Piece.value(entry.type)]
-			button.tooltip_text = Piece.description(entry.type)
-			button.pressed.connect(_on_piece_toggled.bind(entry.id))
-			row.add_child(button)
+			row.add_child(_make_roster_card(entry))
 		roster_box.add_child(row)
+
+## A single roster piece: a reserved `Art` slot (an empty TextureRect - real
+## artwork drops in later) appended after the button's own text, so it
+## doesn't shift anything tests already reach for. A separate component from
+## the deployment bench's/BannerScreen's cards, so they can diverge later.
+func _make_roster_card(entry: Dictionary) -> Button:
+	var button := Button.new()
+	button.custom_minimum_size = Vector2(140, 56)
+	button.toggle_mode = true
+	button.button_pressed = _selected.has(entry.id)
+	button.text = "%s %s (%d)" % [Piece.symbol(entry.type, Piece.Side.WHITE), Piece.display_name(entry.type), Piece.value(entry.type)]
+	button.tooltip_text = Piece.description(entry.type)
+	button.pressed.connect(_on_piece_toggled.bind(entry.id))
+	var art := TextureRect.new()
+	art.name = "Art"
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	button.add_child(art)
+	return button
 
 # ---- the choice waiting in run.pending -----------------------------------------------------
 
@@ -258,6 +275,13 @@ func _rebuild_prophecies() -> void:
 			button.tooltip_text = "%s (%s)" % [ProphecyDefs.text(id), ProphecyUI.timing_note(id)]
 		button.add_theme_font_size_override("font_size", 12)
 		button.pressed.connect(_on_buy_prophecy.bind(slot))
+		# Appended last (not first) so it does not shift the button's own
+		# text - a reserved slot for the card's real artwork.
+		var art := TextureRect.new()
+		art.name = "Art"
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		button.add_child(art)
 		grid.add_child(button)
 	sale.add_child(grid)
 	cards_row.add_child(sale)

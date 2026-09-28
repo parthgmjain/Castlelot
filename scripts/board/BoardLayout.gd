@@ -4,8 +4,11 @@ extends RefCounted
 const SQUARE_SIZE := Board.SQUARE_SIZE
 const DIRECTIONS := ["RIGHT", "LEFT", "UP", "DOWN"]
 const DIR_VECTORS := { "RIGHT": Vector2i(1, 0), "LEFT": Vector2i(-1, 0), "UP": Vector2i(0, -1), "DOWN": Vector2i(0, 1) }
-const PLAY_AREA := Vector2(1200.0, 500.0)
-const BASE_POSITION := Vector2(40.0, 410.0)
+## The center square boards actually get to occupy, in a 1280x960 window: clear of
+## BossBanner (top, 120px), InfoSidebar/ProphecyStrip (left/right, 260px each,
+## y 130-690), and the roster/deployment bar (bottom, up to 260px), with some padding.
+const PLAY_AREA := Vector2(700.0, 540.0)
+const BASE_POSITION := Vector2(280.0, 140.0)
 
 ## Which earlier board (and side of it) board `index` should attach to.
 ## The root board has no parent.

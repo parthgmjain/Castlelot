@@ -28,6 +28,11 @@ signal skip_bonus_requested
 const MIN_DIM := 2
 const MAX_DIM := 10
 
+## Bench piece cards: a separate component from BannerScreen's cards (see
+## _make_bench_card) even though the shapes are similar today, so the two
+## can diverge later without entangling them.
+const BENCH_CARD_SIZE := Vector2(110, 170)
+
 @onready var debug_check: CheckButton = $VBox/RunRow/DebugCheckButton
 @onready var debug_row: HBoxContainer = $VBox/DebugRow
 @onready var debug_win_button: Button = $VBox/DebugRow/DebugWinButton
@@ -40,26 +45,34 @@ const MAX_DIM := 10
 @onready var debug_moves_spin: SpinBox = $VBox/DebugRow/DebugMovesSpin
 var debug_prophecy_picker: OptionButton
 var debug_prophecy_button: Button
-@onready var deploy_row: HBoxContainer = $VBox/DeployRow
-@onready var bench_box: HBoxContainer = $VBox/DeployRow/BenchBox
-@onready var auto_deploy_button: Button = $VBox/DeployRow/AutoDeployButton
-@onready var ready_button: Button = $VBox/DeployRow/ReadyButton
-@onready var deploy_status_label: Label = $VBox/DeployRow/DeployStatusLabel
+## The deployment bench lives in its own CanvasLayer (DeploymentLayer), not
+## under this control's own VBox, so it can sit pinned to the bottom of the
+## screen as a proper scrolling card menu instead of another sandbox row.
+@onready var deploy_row: Control = $"../DeploymentLayer/DeploymentBench"
+@onready var bench_box: HBoxContainer = $"../DeploymentLayer/DeploymentBench/Margin/VBox/Scroll/BenchBox"
+@onready var auto_deploy_button: Button = $"../DeploymentLayer/DeploymentBench/Margin/VBox/StatusRow/AutoDeployButton"
+@onready var ready_button: Button = $"../DeploymentLayer/DeploymentBench/Margin/VBox/StatusRow/ReadyButton"
+@onready var deploy_status_label: Label = $"../DeploymentLayer/DeploymentBench/Margin/VBox/StatusRow/DeployStatusLabel"
 @onready var start_run_button: Button = $VBox/RunRow/StartRunButton
 @onready var run_status_label: Label = $VBox/RunRow/RunStatusLabel
+@onready var count_row: HBoxContainer = $VBox/CountRow
 @onready var count_spin_box: SpinBox = $VBox/CountRow/CountSpinBox
 @onready var refresh_button: Button = $VBox/CountRow/RefreshButton
 @onready var sizes_row: HBoxContainer = $VBox/SizesRow
+@onready var zone_row: HBoxContainer = $VBox/ZoneRow
 @onready var white_zone_spin_box: SpinBox = $VBox/ZoneRow/WhiteZoneSpinBox
 @onready var black_zone_spin_box: SpinBox = $VBox/ZoneRow/BlackZoneSpinBox
 @onready var generate_zones_button: Button = $VBox/ZoneRow/GenerateZonesButton
+@onready var points_row: HBoxContainer = $VBox/PointsRow
 @onready var white_points_spin_box: SpinBox = $VBox/PointsRow/WhitePointsSpinBox
 @onready var black_points_spin_box: SpinBox = $VBox/PointsRow/BlackPointsSpinBox
 @onready var points_status_label: Label = $VBox/PointsRow/PointsStatusLabel
+@onready var auto_place_row: HBoxContainer = $VBox/AutoPlaceRow
 @onready var round_option: OptionButton = $VBox/AutoPlaceRow/RoundOption
 @onready var auto_place_white_button: Button = $VBox/AutoPlaceRow/AutoPlaceWhiteButton
 @onready var auto_place_black_button: Button = $VBox/AutoPlaceRow/AutoPlaceBlackButton
 @onready var auto_place_status_label: Label = $VBox/AutoPlaceRow/AutoPlaceStatusLabel
+@onready var piece_row: HBoxContainer = $VBox/PieceRow
 @onready var side_check_button: CheckButton = $VBox/PieceRow/SideCheckButton
 @onready var zone_edit_button: CheckButton = $VBox/PieceRow/ZoneEditButton
 @onready var king_button: Button = $VBox/PieceRow/KingButton
@@ -71,6 +84,7 @@ var debug_prophecy_button: Button
 @onready var remove_button: Button = $VBox/PieceRow/RemoveButton
 var extra_piece_picker: OptionButton
 var skip_bonus_button: Button
+@onready var match_row: HBoxContainer = $VBox/MatchRow
 @onready var moves_spin_box: SpinBox = $VBox/MatchRow/MovesSpinBox
 @onready var target_spin_box: SpinBox = $VBox/MatchRow/TargetSpinBox
 @onready var start_match_button: Button = $VBox/MatchRow/StartMatchButton
@@ -167,19 +181,38 @@ func set_deployment_visible(shown: bool) -> void:
 func set_deploy_status(text: String) -> void:
 	deploy_status_label.text = text
 
-## One toggle button per benched roster piece; the armed one is pressed in.
+## One toggle card per benched roster piece; the armed one is pressed in.
 func set_bench(entries: Array, armed_id: int) -> void:
 	for child in bench_box.get_children():
 		bench_box.remove_child(child)
 		child.queue_free()
 	for entry in entries:
-		var button := Button.new()
-		button.toggle_mode = true
-		button.button_pressed = entry.id == armed_id
-		button.text = "%s %s" % [Piece.symbol(entry.type, Piece.Side.WHITE), Piece.Type.find_key(entry.type).capitalize()]
-		button.tooltip_text = Piece.description(entry.type)
-		button.pressed.connect(_on_bench_pressed.bind(entry.id))
-		bench_box.add_child(button)
+		bench_box.add_child(_make_bench_card(entry, entry.id == armed_id))
+
+## A single bench card: a reserved `Art` slot (an empty TextureRect - real
+## artwork drops in later) above the piece's symbol and name, the whole
+## thing a toggle button so the armed piece shows pressed in. Keeps the
+## same button.text content as before (still starts with the piece's
+## symbol and capitalized name) so it reads correctly even before any art
+## exists.
+func _make_bench_card(entry: Dictionary, armed: bool) -> Button:
+	var button := Button.new()
+	button.custom_minimum_size = BENCH_CARD_SIZE
+	button.toggle_mode = true
+	button.button_pressed = armed
+	button.text = "%s %s" % [Piece.symbol(entry.type, Piece.Side.WHITE), Piece.Type.find_key(entry.type).capitalize()]
+	button.tooltip_text = Piece.description(entry.type)
+	button.pressed.connect(_on_bench_pressed.bind(entry.id))
+
+	var art := TextureRect.new()
+	art.name = "Art"
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.set_anchors_preset(Control.PRESET_FULL_RECT)
+	art.offset_bottom = -28.0    # leaves room for the button's own text at the bottom
+	button.add_child(art)
+
+	return button
 
 func _on_bench_pressed(id: int) -> void:
 	bench_piece_selected.emit(id)
@@ -204,6 +237,18 @@ func set_wallet(currency: int) -> void:
 
 ## Locks (or unlocks) every sandbox setup control, so a match in progress
 ## can't have its boards, zones or armies changed underneath it.
+## The sandbox/debug rows (board setup, manual piece placement, the raw match
+## controls) are dev tools now that a real run has its own deployment bench,
+## in-match HUD and shop - they only show at all once Debug Mode is on,
+## instead of merely being disabled. RunRow (Start Run, the Debug Mode
+## toggle itself) always stays visible so Debug Mode can be turned back on;
+## DebugRow has its own visibility, already tied to the same toggle (see
+## DebugFlow.toggled -> set_debug_visible).
+func set_sandbox_visible(shown: bool) -> void:
+	for row in [count_row, sizes_row, zone_row, points_row, auto_place_row, piece_row, match_row]:
+		row.visible = shown
+	match_status_label.visible = shown
+
 func set_sandbox_enabled(enabled: bool) -> void:
 	var controls: Array = [
 		count_spin_box, refresh_button, white_zone_spin_box, black_zone_spin_box, generate_zones_button,

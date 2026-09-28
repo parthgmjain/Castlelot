@@ -11,6 +11,9 @@ const BOARD_SCENE := preload("res://scenes/Board.tscn")
 @onready var shop_screen: ShopScreen = $ShopLayer/ShopScreen
 @onready var start_menu: StartMenu = $MenuLayer/StartMenu
 @onready var banner_screen: BannerScreen = $BannerLayer/BannerScreen
+@onready var boss_banner: BossBanner = $BossLayer/BossBanner
+@onready var roster_strip: RosterStrip = $RosterLayer/RosterStrip
+@onready var info_sidebar: InfoSidebar = $InfoLayer/InfoSidebar
 
 var state := GameState.new()
 
@@ -145,11 +148,15 @@ func _refresh_view() -> void:
 	_update_points_status()
 	panel.set_match_status(MatchController.status_text(state))
 	panel.set_sandbox_enabled(state.debug_mode or (not state.current_match.active and not state.run.active))
+	panel.set_sandbox_visible(state.debug_mode)
 	if state.debug_mode:
 		panel.sync_debug_values(state.run.round_number, state.run.match_number, state.run.currency, state.current_match.moves_left)
 	run_flow.settle_if_finished()
 	panel.set_wallet(state.run.currency)
 	panel.set_run_status(state.run.title())
+	boss_banner.update(state.run)
+	roster_strip.update(state)
+	info_sidebar.update(state)
 	panel.set_bonus_visible(not state.current_match.bonus.is_empty() and (state.debug_mode or state.current_match.turn_side == state.current_match.player_side))
 	deployment_flow.refresh_ui()
 	prophecy_flow.refresh_ui()
