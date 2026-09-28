@@ -14,6 +14,7 @@ const BOARD_SCENE := preload("res://scenes/Board.tscn")
 @onready var boss_banner: BossBanner = $BossLayer/BossBanner
 @onready var roster_strip: RosterStrip = $RosterLayer/RosterStrip
 @onready var info_sidebar: InfoSidebar = $InfoLayer/InfoSidebar
+@onready var piece_values_popup: PieceValuesPopup = $PieceValuesLayer/PieceValuesPopup
 
 var state := GameState.new()
 
@@ -36,6 +37,7 @@ func _ready() -> void:
 	start_menu.quit_pressed.connect(menu_flow.quit_pressed)
 	menu_flow.quit_requested.connect(_quit)
 	banner_screen.chosen.connect(_on_banner_chosen)
+	info_sidebar.values_requested.connect(piece_values_popup.open)
 	_generate_boards()
 
 ## Start leads to the Banner Select screen, not straight into the game.

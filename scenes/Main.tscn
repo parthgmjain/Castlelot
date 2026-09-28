@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://bqx7n8m0k3v1a"]
+[gd_scene load_steps=12 format=3 uid="uid://bqx7n8m0k3v1a"]
 
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ui/ControlPanel.gd" id="2_panel"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/ui/BossBanner.gd" id="8_boss"]
 [ext_resource type="Script" path="res://scripts/ui/RosterStrip.gd" id="9_roster"]
 [ext_resource type="Script" path="res://scripts/ui/InfoSidebar.gd" id="10_info"]
+[ext_resource type="Script" path="res://scripts/ui/PieceValuesPopup.gd" id="11_values"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -476,7 +477,8 @@ theme_override_constants/separation = 10
 
 [node name="Stats" type="VBoxContainer" parent="InfoLayer/InfoSidebar/Margin/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 6
+size_flags_vertical = 3
+theme_override_constants/separation = 10
 
 [node name="RoundLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
 layout_mode = 2
@@ -485,34 +487,27 @@ text = "Round"
 
 [node name="GoldLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
 text = "Gold: 0"
 
 [node name="ScoreLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
 text = "Score: 0 / 0"
 
 [node name="MovesLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
 text = "Moves left: 0"
 
 [node name="TurnLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
 text = "Your Turn"
 
-[node name="ValuesHeader" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox"]
+[node name="ValuesButton" type="Button" parent="InfoLayer/InfoSidebar/Margin/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "PIECE VALUES"
-
-[node name="Scroll" type="ScrollContainer" parent="InfoLayer/InfoSidebar/Margin/VBox"]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="ValueList" type="VBoxContainer" parent="InfoLayer/InfoSidebar/Margin/VBox/Scroll"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 2
+text = "Piece Values"
 
 [node name="PromotionLayer" type="CanvasLayer" parent="."]
 layer = 10
@@ -844,8 +839,78 @@ vertical_scroll_mode = 0
 
 [node name="List" type="HBoxContainer" parent="BannerLayer/BannerScreen/Center/Panel/Margin/VBox/Scroll"]
 layout_mode = 2
-theme_override_constants/separation = 16
+size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="PieceValuesLayer" type="CanvasLayer" parent="."]
+layer = 14
+
+[node name="PieceValuesPopup" type="Control" parent="PieceValuesLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("11_values")
+
+[node name="Dim" type="ColorRect" parent="PieceValuesLayer/PieceValuesPopup"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Center" type="CenterContainer" parent="PieceValuesLayer/PieceValuesPopup"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="PieceValuesLayer/PieceValuesPopup/Center"]
+custom_minimum_size = Vector2(420, 640)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="PieceValuesLayer/PieceValuesPopup/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="PieceValuesLayer/PieceValuesPopup/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="PieceValuesLayer/PieceValuesPopup/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Piece Values"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="PieceValuesLayer/PieceValuesPopup/Center/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 520)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ValueList" type="VBoxContainer" parent="PieceValuesLayer/PieceValuesPopup/Center/Panel/Margin/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="CloseButton" type="Button" parent="PieceValuesLayer/PieceValuesPopup/Center/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Close"
 
 [node name="MenuLayer" type="CanvasLayer" parent="."]
 layer = 20

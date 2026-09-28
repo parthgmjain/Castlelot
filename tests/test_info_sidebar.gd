@@ -1,6 +1,7 @@
 extends "res://tests/TestCase.gd"
-## The left-side Balatro-style run/match info panel and its piece-value
-## reference. See scripts/ui/InfoSidebar.gd.
+## The left-side Balatro-style run/match info panel. See scripts/ui/InfoSidebar.gd.
+## The piece-value reference it used to show inline is now a popup opened
+## from here - see tests/test_piece_values_popup.gd for that.
 
 func _start_run() -> Node:
 	var main = await load_main()
@@ -45,16 +46,11 @@ func test_gold_updates_after_a_win() -> void:
 	check(main.info_sidebar.gold_label.text.contains(str(main.state.run.currency)), main.info_sidebar.gold_label.text)
 	check(main.state.run.currency > 0, "actually paid out")
 
-func test_the_piece_value_reference_lists_every_non_king_piece_grouped_by_tier() -> void:
+func test_the_values_button_opens_the_piece_values_popup() -> void:
 	var main = await load_main()
-	var rows: Array = main.info_sidebar.value_list.get_children()
-	var everyone := Piece.types_in_tier(Piece.Tier.COMMON) + Piece.types_in_tier(Piece.Tier.UNCOMMON) \
-		+ Piece.types_in_tier(Piece.Tier.RARE) + Piece.types_in_tier(Piece.Tier.LEGENDARY)
-	check_eq(rows.size(), everyone.size() + 4, "one row per piece plus 4 tier headers")
-	var text := rows.map(func(r): return r.text)
-	check(text.has("Pawn - 1"), "pawn's value")
-	check(text.has("Queen - 9"), "queen's value")
-	check(not text.any(func(t): return t.begins_with("King")), "the king isn't a card, not listed")
+	check(not main.piece_values_popup.visible, "closed by default")
+	main.info_sidebar.values_button.pressed.emit()
+	check(main.piece_values_popup.visible, "opened by the sidebar's button")
 
 func test_hides_again_once_the_run_ends() -> void:
 	var main = await _start_run()
