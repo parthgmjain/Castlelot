@@ -395,3 +395,26 @@ func test_sandbox_rows_stay_hidden_through_a_real_run_with_debug_mode_off() -> v
 	main.panel.start_run_button.pressed.emit()
 	for row in _sandbox_rows(main):
 		check(not row.visible, "%s still hidden mid-run" % row.name)
+
+## Regression: BossBanner/InfoSidebar/ProphecyStrip geometrically overlap the
+## sandbox panel once Debug Mode makes it visible again mid-run (BossBanner
+## covers the same top strip as RunRow; InfoSidebar covers the same left
+## strip as Count/Sizes/Zone/Points/AutoPlace/Piece row). Their own bare
+## background used to default to mouse_filter STOP, silently swallowing real
+## clicks meant for the sandbox controls underneath - see project memory for
+## the user-reported bug this guards against.
+func test_real_clicks_reach_sandbox_controls_through_the_overlapping_hud_panels() -> void:
+	var main = await load_main()
+	await pump(3)
+	# debug_check/start_run_button sit in RunRow (y ~10-40), squarely under
+	# BossBanner's rect (y 0-120) once it's showing.
+	await click_control(main.panel.debug_check)
+	check(main.state.debug_mode, "debug mode toggled on by a real click under BossBanner's rect")
+	await click_control(main.panel.start_run_button)
+	check(main.state.run.active and main.state.deployment.active, "a run started, deploying - also under BossBanner")
+	check(main.boss_banner.visible and main.info_sidebar.visible, "the overlapping HUD panels are indeed showing")
+	# zone_edit_button (PieceRow) sits at roughly (118, 269) - squarely under
+	# InfoSidebar's rect (0-260, 130-690), not BossBanner's.
+	check(not main.state.zone_edit_mode, "off before the click")
+	await click_control(main.panel.zone_edit_button)
+	check(main.state.zone_edit_mode, "a real click under InfoSidebar's rect still toggled zone-edit mode")

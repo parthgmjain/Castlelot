@@ -29,7 +29,12 @@ func _ready() -> void:
 	grow_horizontal = 0
 	grow_vertical = 2
 	custom_minimum_size = Vector2(260, 0)
+	# Only its own cards/buttons should capture clicks - the bare panel
+	# background must not, since it can overlap the debug sandbox panel
+	# (same fix as BossBanner/InfoSidebar - see project memory).
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var box := VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_theme_constant_override("separation", 6)
 	add_child(box)
 	var header := Label.new()
@@ -37,6 +42,7 @@ func _ready() -> void:
 	header.text = "PROPHECIES"
 	box.add_child(header)
 	_rows = VBoxContainer.new()
+	_rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_rows.add_theme_constant_override("separation", 8)
 	box.add_child(_rows)
 	_message = Label.new()
