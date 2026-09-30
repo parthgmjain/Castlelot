@@ -119,6 +119,7 @@ func _load_animated_banner(sprite: AnimatedSprite2D, card_name: String) -> void:
 		return
 
 	var texture := ImageTexture.create_from_image(image)
+	texture.set_filtering_enabled(false)
 	var frames := SpriteFrames.new()
 	frames.set_animation_speed("default", 2)
 
@@ -139,7 +140,9 @@ func _load_animated_banner(sprite: AnimatedSprite2D, card_name: String) -> void:
 func _load_banner_border(border: TextureRect) -> void:
 	var image := Image.new()
 	if image.load("res://assets/banners/banner_border.png") == OK:
-		border.texture = ImageTexture.create_from_image(image)
+		var texture := ImageTexture.create_from_image(image)
+		texture.set_filtering_enabled(false)
+		border.texture = texture
 
 ## Removes the previous step's cards immediately (not just queue_free, which
 ## would leave them counted in get_children() until the next frame).
