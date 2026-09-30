@@ -82,11 +82,19 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 	return button
 
 func _load_banner_texture(art: TextureRect, card_name: String) -> void:
+	var png_path := ""
 	match card_name:
 		"White Banner":
-			art.texture = load("res://assets/banners/white_banner.png")
+			png_path = "res://assets/banners/white_banner.png"
 		"Black Banner":
-			art.texture = load("res://assets/banners/black_banner.png")
+			png_path = "res://assets/banners/black_banner.png"
+
+	if png_path.is_empty():
+		return
+
+	var image := Image.new()
+	if image.load(png_path) == OK:
+		art.texture = ImageTexture.create_from_image(image)
 
 ## Removes the previous step's cards immediately (not just queue_free, which
 ## would leave them counted in get_children() until the next frame).
