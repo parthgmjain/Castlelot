@@ -68,6 +68,7 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	art.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_load_banner_texture(art, card_name)
 	vbox.add_child(art)
 
 	var name_label := Label.new()
@@ -79,6 +80,13 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 	vbox.add_child(name_label)
 
 	return button
+
+func _load_banner_texture(art: TextureRect, card_name: String) -> void:
+	match card_name:
+		"White Banner":
+			art.texture = load("res://assets/banners/white_banner.png")
+		"Black Banner":
+			art.texture = load("res://assets/banners/black_banner.png")
 
 ## Removes the previous step's cards immediately (not just queue_free, which
 ## would leave them counted in get_children() until the next frame).
