@@ -1,7 +1,7 @@
 extends "res://tests/TestCase.gd"
 ## A whole run through the real UI: Start Run, deploying, matches setting
 ## themselves up, bosses, winning on, losing back to the start, and finishing
-## after Arthur.
+## after God.
 
 func _start(main: Node) -> void:
 	main.panel.start_run_button.pressed.emit()
@@ -128,7 +128,7 @@ func test_three_wins_start_the_next_round() -> void:
 	check_eq(main.state.run.title(), "Round 2/12 - Match 1/3", "round two")
 	check(main.state.current_match.active, "and a match is running")
 
-func test_a_full_run_is_thirty_seven_matches_then_arthur_then_done() -> void:
+func test_a_full_run_is_thirty_seven_matches_then_god_then_done() -> void:
 	var main = await load_main()
 	_begin(main)
 	var matches := 1
@@ -147,9 +147,9 @@ func test_a_full_run_is_thirty_seven_matches_then_arthur_then_done() -> void:
 		_leave_shop(main)
 		_ready_up(main)
 		matches += 1
-	check_eq(matches, 37, "36 ordinary matches plus Arthur")
-	check_eq(boss_names.size(), 13, "12 legendary bosses and Arthur")
-	check_eq(boss_names[12], "Arthur", "Arthur last")
+	check_eq(matches, 37, "36 ordinary matches plus God")
+	check_eq(boss_names.size(), 13, "12 legendary bosses and God")
+	check_eq(boss_names[12], "God", "God last")
 	var unique := {}
 	for n in boss_names.slice(0, 12):
 		unique[n] = true

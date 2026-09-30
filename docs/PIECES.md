@@ -2,7 +2,15 @@
 
 Design by the game's author. Status: [x] built, [ ] not yet. Values are placeholders (points budget / capture score x10).
 "Forward" for a piece means its heading toward the enemy zone (`PawnMovement.heading`), "sideways" is perpendicular to it.
-The twelve legendary pieces ARE the twelve round bosses (`RunConfig.BOSSES`; the Knights of the Round Table are gone): each round's boss is named after its piece, fields that piece in its army, and the piece joins your roster when you win. There is no ability choice any more. Arthur (round 13) stays as the final boss.
+The twelve legendary pieces ARE the twelve round bosses (`RunConfig.BOSSES`; the Knights of the Round Table are gone): each fields that piece in its army and the piece joins your roster when you win. There is no ability choice any more. God (round 13) stays as the final boss.
+
+## Boss theme: an invasion of heaven (2026-09-29)
+The bosses' mechanics are untouched, but each has a heaven-invasion identity now (`BossThemes.gd`), and the run's boss order is no longer fully random - it's a fixed narrative arc, only shuffled within each group:
+1. **Saint Peter** (Chronomancer) guards the gate alone, round 1 - the weakest legendary on purpose, since you have none of your own yet.
+2. **The Four Horsemen** (rounds 2-5, shuffled among themselves): Death (Lich - the fallen return as your pawns), War (Warlord - every capture escalates), Famine (Titan - devours two pieces in one pass), Pestilence (Hydra - splits and spreads when struck).
+3. **The Angels** (rounds 6-9, shuffled): Seraphim (Dragon - "the burning ones"), Archangel Michael (Paladin - the guardian), Archangel Gabriel (Storm Witch - the swift messenger), Principality (Wraith - unseen, hard to pin down).
+4. **The Virtues** (rounds 10-12, shuffled): Humility (Empress - deliberate irony, the strongest piece), Diligence (Phoenix - never stays down), Temperance (Oracle - measured, disciplined power).
+5. **God** (round 13, final boss) - was "Arthur"; no mechanical change.
 Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everything below is new.
 
 ## Tiers, points and slots (the shop's economy)
@@ -119,7 +127,7 @@ The AI's incidental army each match (not the boss's own piece, which is always f
 - Round 1 is exactly the five chess types (queen, rook, bishop, knight, pawn) - no extras at all.
 - From round 2, common-tier extras start turning up, reaching full weight by round 5.
 - From round 4, uncommon-tier extras start, full weight by round 8.
-- From round 7, rare-tier extras start, full weight by round 12 (and Arthur, round 13).
+- From round 7, rare-tier extras start, full weight by round 12 (and God, round 13).
 - Legendaries never appear in a random army - they're earned, not drawn (a boss still always fields its own).
 
 See `PieceSelector.EXTRA_TIER_UNLOCK` / `EXTRA_TIER_WEIGHTS` / `EXTRA_TIER_DECAYS` / `EXTRA_TIER_SUPPLY` for the placeholder numbers, and `RunFlow.begin_match` for where the run's round number is threaded in. The sandbox's own "Auto Place" buttons are unaffected (no round context = chess only), so existing sandbox testing keeps working as before.
@@ -128,28 +136,28 @@ See `PieceSelector.EXTRA_TIER_UNLOCK` / `EXTRA_TIER_WEIGHTS` / `EXTRA_TIER_DECAY
 Every piece has a one-line `description` (`PieceDefs.description(type)` for the 43 extras, `Piece.CLASSIC_DESCRIPTIONS` for the six chess pieces, both reachable via `Piece.description(type)`), shown as a tooltip wherever a piece is offered before it's on the board: the sandbox's fixed chess buttons and its "More pieces..." dropdown, the deployment bench, the promotion picker, the shop's owned-piece rows, its lottery/trade-up cards, and every legendary/replacement/bargain choice button. Prophecies already had their description as visible text plus a tooltip on the title; the debug "Add prophecy..." dropdown and every piece-choice button a prophecy offers (Sanctuary, Transmutation's "become which piece", Field Promotion, etc.) now carry one too.
 
 ## Board growth (2026-09-25)
-The world grows gradually across a run - both how many boards, and how big each one is - so it starts as a tight 2-board arena in round 1 and never balloons past 4 boards of up to 8x8 by round 10. It's a straight linear ramp on the round number (`RunConfig.board_growth`), capped there deliberately: with common-tier pieces mostly moving 1 square, a much bigger map would make them impractical to use, which is why the cap exists (`BOARD_COUNT_MAX`, `BOARD_SIZE_MAX_CAP`). Arthur (round 13) sits at the same cap as rounds 10-12, not beyond it.
+The world grows gradually across a run - both how many boards, and how big each one is - so it starts as a tight 2-board arena in round 1 and never balloons past 4 boards of up to 8x8 by round 10. It's a straight linear ramp on the round number (`RunConfig.board_growth`), capped there deliberately: with common-tier pieces mostly moving 1 square, a much bigger map would make them impractical to use, which is why the cap exists (`BOARD_COUNT_MAX`, `BOARD_SIZE_MAX_CAP`). God (round 13) sits at the same cap as rounds 10-12, not beyond it.
 
 ## Zone size is also capped per round (2026-09-25)
 Whatever zone size you've bought with the shop upgrade, the amount actually usable in a match is capped per round on the same growth curve as the boards (`RunConfig.PLAYER_ZONE_CAP_START`=12 -> `MAX_ZONE_TILES`=50 by round `BOARD_GROWTH_FULL_ROUND`=10). A small early world can't hold a huge deployment zone. Buying zone upgrades early isn't wasted, though - the extra just becomes usable once the world has grown enough for it (`RunConfig.match_setup`'s `white_zone` is `min(run.zone_tiles, that round's cap)`). The starting board size was also bumped up a little (5-6 squares per side instead of 4-5) so round 1 isn't cramped; the overall cap (up to 8x8, 4 boards) is unchanged.
 
-## Arthur, the final boss (2026-09-25)
-Round 13 is Arthur alone, and he's built to be the hardest fight in the run:
+## God, the final boss (2026-09-25)
+Round 13 is God alone, and he's built to be the hardest fight in the run:
 - He always fields exactly 4 distinct random legendaries (from the 12 boss pieces - never the queen), reserved on top of his army the same way any boss's own piece is, re-rolled fresh each time he's fought.
-- His effective army budget is boosted via `RunConfig.BOSS_HALF_COST_MULTIPLIER` (shared with every other boss - see "Regular bosses got harder too" below; Arthur no longer has a separate budget multiplier of his own) on top of the usual boss multiplier, so his bought army is noticeably bigger than the round before (see "Difficulty tiers wired up" below for the exact current multiplier and how it now varies by difficulty).
-- Every one of his pieces - the 4 legendaries and the bought army alike - is flagged `score_multiplier = 0.5` (`RunConfig.ARTHUR_SCORE_MULTIPLIER`): capturing any of them only scores half the usual value. Prophecies and other modifiers still stack on top of that (Omen of Plunder's x2 on an Arthur piece nets out to an ordinary capture).
+- His effective army budget is boosted via `RunConfig.BOSS_HALF_COST_MULTIPLIER` (shared with every other boss - see "Regular bosses got harder too" below; God no longer has a separate budget multiplier of his own) on top of the usual boss multiplier, so his bought army is noticeably bigger than the round before (see "Difficulty tiers wired up" below for the exact current multiplier and how it now varies by difficulty).
+- Every one of his pieces - the 4 legendaries and the bought army alike - is flagged `score_multiplier = 0.5` (`RunConfig.GOD_SCORE_MULTIPLIER`): capturing any of them only scores half the usual value. Prophecies and other modifiers still stack on top of that (Omen of Plunder's x2 on a God piece nets out to an ordinary capture).
 - Net effect: the total score theoretically available from his army works out about the same as an ordinary boss's (a bigger army, half the score each), so the extra difficulty comes from a bigger, more defensively coordinated army with four powerful legendaries mixed in, not a higher score wall.
 - The AI still evaluates its own pieces at their full ordinary value when deciding what to defend or attack (`GreedyAI` is untouched) - only what YOU score for a capture is discounted.
 
 ## Regular bosses got harder too (2026-09-26)
-Two changes, both make an ordinary boss (not Arthur) tougher without changing the reward you get for beating them:
-- Every boss's own pieces now cost less against their budget (`RunConfig.BOSS_HALF_COST_MULTIPLIER`), stacking with the existing `BOSS_AI_BUDGET_MULTIPLIER` - a bigger army for the same numbers, same mechanism Arthur already used. Unlike Arthur, a boss's captures still score in full - only Arthur has `ARTHUR_SCORE_MULTIPLIER`. (2026-09-27: `BOSS_HALF_COST_MULTIPLIER` was retuned from a flat 2.0 to 1.5, and `Difficulty.boss_multiplier` now stacks a further per-tier multiplier on top - see "Difficulty tiers wired up" below.)
+Two changes, both make an ordinary boss (not God) tougher without changing the reward you get for beating them:
+- Every boss's own pieces now cost less against their budget (`RunConfig.BOSS_HALF_COST_MULTIPLIER`), stacking with the existing `BOSS_AI_BUDGET_MULTIPLIER` - a bigger army for the same numbers, same mechanism God already used. Unlike God, a boss's captures still score in full - only God has `GOD_SCORE_MULTIPLIER`. (2026-09-27: `BOSS_HALF_COST_MULTIPLIER` was retuned from a flat 2.0 to 1.5, and `Difficulty.boss_multiplier` now stacks a further per-tier multiplier on top - see "Difficulty tiers wired up" below.)
 - From round `BOSS_SECOND_LEGENDARY_ROUND` (3) onward, a boss's reserved army is their own assigned legendary AND a queen (both free on top of the budget, same as any reserved piece) instead of just the one. Rounds 1-2 keep just the single legendary. Winning still only gives you the boss's own piece - the queen is never handed over as a reward, it's purely there to make the fight harder.
-- Arthur is now distinguished from a regular boss by his 4 guaranteed legendaries (vs a boss's 1-2) and the score-halving alone; the "cheaper pieces, bigger army" part is shared by every boss now.
+- God is now distinguished from a regular boss by his 4 guaranteed legendaries (vs a boss's 1-2) and the score-halving alone; the "cheaper pieces, bigger army" part is shared by every boss now.
 
 ## Zones are guaranteed a minimum distance apart, growing with the round (2026-09-26)
 The old king-placement heuristic (`ZoneController._farthest_board`) picked Black's board by raw Euclidean layout position, not by actual portal-graph distance - two boards that looked far apart on screen could still be a couple of portal hops from each other, spawning the two zones right next to each other. `ZoneController.generate` now uses `BoardGraph.distance_field` to compute the real graph distance (in cardinal steps, through portals) from White's king to every board corner, and `_pick_black_king` picks randomly among the corners that meet this round's minimum separation - falling back to a random corner among those tied for farthest available if nothing meets it (a very small or oddly-connected world).
-- The minimum ramps on the same `RunConfig.board_growth` curve already used for board count/size and the zone-tile cap: `ZONE_MIN_DISTANCE_START` (6) at round 1, up to `ZONE_MIN_DISTANCE_CAP` (16) by round `BOARD_GROWTH_FULL_ROUND` (10), held there through Arthur.
+- The minimum ramps on the same `RunConfig.board_growth` curve already used for board count/size and the zone-tile cap: `ZONE_MIN_DISTANCE_START` (6) at round 1, up to `ZONE_MIN_DISTANCE_CAP` (16) by round `BOARD_GROWTH_FULL_ROUND` (10), held there through God.
 - Picking randomly among every corner that qualifies (rather than always the single farthest) keeps match-to-match placement varied instead of robotically identical, while still honoring the guarantee.
 - `generate` takes an optional `round_number` (`RunFlow.begin_match` threads `state.run.round_number` through; the sandbox's "Generate Zones" button leaves it at the default -1, i.e. round 1's baseline) and an optional `rng` for deterministic tests.
 

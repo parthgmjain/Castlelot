@@ -4,10 +4,12 @@ extends RefCounted
 # ---- run structure --------------------------------------------------------
 const ROUNDS := 12
 const MATCHES_PER_ROUND := 3          # the last match of every round is a boss
-const FINAL_BOSS := "Arthur"          # faced alone in round ROUNDS + 1
-## The round bosses, one per round in a random order each run. Each is a legendary
-## piece: it takes the field with the boss's army and is yours if you win. Every
-## reward-only piece in PieceDefs must be listed here exactly once.
+const FINAL_BOSS := "God"             # faced alone in round ROUNDS + 1
+## The round bosses, one per round. Each is a legendary piece: it takes the field
+## with the boss's army and is yours if you win. Every reward-only piece in PieceDefs
+## must be listed here exactly once. The run's actual order (Peter, then the Four
+## Horsemen, then a band of angels, then a trio of virtues) and display names live
+## in BossThemes.gd - this array is just the full membership.
 const BOSSES := [
 	Piece.Type.PALADIN, Piece.Type.WARLORD, Piece.Type.EMPRESS, Piece.Type.DRAGON,
 	Piece.Type.PHOENIX, Piece.Type.HYDRA, Piece.Type.WRAITH, Piece.Type.LICH,
@@ -103,7 +105,7 @@ const TARGET_PER_MATCH := 2.0
 ## Boards grow gradually as a run goes on - more of them, and each one a little bigger - but
 ## capped well before it gets so big that the common-tier pieces (mostly 1-square movers) can't
 ## meaningfully reach anything. The ramp is linear from round 1 to BOARD_GROWTH_FULL_ROUND, then
-## holds at the cap (Arthur, round ROUNDS + 1, stays at the cap too). The starting size is already
+## holds at the cap (God, round ROUNDS + 1, stays at the cap too). The starting size is already
 ## a proper little arena, not a cramped one - it's the CAP that keeps things from ballooning.
 const BOARD_COUNT_MIN := 2
 const BOARD_COUNT_MAX := 4
@@ -132,7 +134,7 @@ const BOSS_AI_BUDGET_MULTIPLIER := 1.25
 
 ## Every boss's own pieces cost less against their budget - a bigger army for the same
 ## numbers, since a boss should feel like more of a fight than a normal match. Applies to
-## every boss, Arthur included (his other tricks stack on top of this, not instead of it).
+## every boss, God included (his other tricks stack on top of this, not instead of it).
 ## Difficulty.boss_multiplier stacks on top of this per-tier (see RunConfig.match_setup) -
 ## a flat 2.0 here made every boss a near coin-flip even at round 1 regardless of skill, so
 ## Normal now carries a gentler multiplier and the harder tiers earn their own bigger one.
@@ -140,20 +142,20 @@ const BOSS_HALF_COST_MULTIPLIER := 1.5
 
 ## From this round on, a boss also always fields a queen alongside their own assigned legendary
 ## (both reserved, same as any boss piece) - two guaranteed legendaries instead of one. Rounds
-## before this keep just the one. Arthur (round ROUNDS + 1) has his own, bigger rule below.
+## before this keep just the one. God (round ROUNDS + 1) has his own, bigger rule below.
 const BOSS_SECOND_LEGENDARY_ROUND := 3
 
-## Arthur (round ROUNDS + 1) always fields this many distinct random legendaries (from BOSSES;
+## God (round ROUNDS + 1) always fields this many distinct random legendaries (from BOSSES;
 ## reserved, same as any boss's own piece) instead of the usual one or two, and unlike an
 ## ordinary boss he's the only one where a capture is worth half the usual score (his half-cost
 ## army, like every boss's, already comes from BOSS_HALF_COST_MULTIPLIER above). The two roughly
 ## cancel out for total capturable score, so his extra difficulty is a bigger, more defensively
 ## coordinated army (with four legendaries in it) rather than a higher score wall.
-const ARTHUR_LEGENDARY_COUNT := 4
-const ARTHUR_SCORE_MULTIPLIER := 0.5
+const GOD_LEGENDARY_COUNT := 4
+const GOD_SCORE_MULTIPLIER := 0.5
 
 ## How far along the board-growth ramp `round_number` is: 0 at round 1, 1.0 from
-## BOARD_GROWTH_FULL_ROUND onward (Arthur included).
+## BOARD_GROWTH_FULL_ROUND onward (God included).
 static func board_growth(round_number: int) -> float:
 	return clampf(float(round_number - 1) / float(BOARD_GROWTH_FULL_ROUND - 1), 0.0, 1.0)
 

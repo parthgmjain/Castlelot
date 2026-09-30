@@ -35,7 +35,7 @@ func begin_match() -> void:
 	if state.run.is_final_round():
 		var legendaries := RunConfig.BOSSES.duplicate()
 		legendaries.shuffle()
-		boss_army = legendaries.slice(0, RunConfig.ARTHUR_LEGENDARY_COUNT)
+		boss_army = legendaries.slice(0, RunConfig.GOD_LEGENDARY_COUNT)
 	elif setup.boss_piece >= 0 and state.run.round_number >= RunConfig.BOSS_SECOND_LEGENDARY_ROUND:
 		boss_army.append(Piece.Type.QUEEN)
 	var ai_unlock_round := Difficulty.ai_unlock_round(state.run.difficulty, state.run.round_number)
@@ -44,7 +44,7 @@ func begin_match() -> void:
 		for board in state.boards:
 			for piece in board.pieces.values():
 				if piece.side == ai_side:
-					piece["score_multiplier"] = RunConfig.ARTHUR_SCORE_MULTIPLIER
+					piece["score_multiplier"] = RunConfig.GOD_SCORE_MULTIPLIER
 	state.deployment.begin(setup)
 	MoveController.mark_last_move(state, {})
 	view_changed.emit()
@@ -117,7 +117,7 @@ func settle_if_finished() -> void:
 	result_screen.show_result(current, payout, state.run.currency, context, button, notes)
 
 ## In a run: a win moves on to the next match (or finishes the run after
-## Arthur) and a loss starts a new run (Guardian's Banner, or Easy difficulty,
+## God) and a loss starts a new run (Guardian's Banner, or Easy difficulty,
 ## spends its one-time save instead, retrying the same match). Outside a run
 ## a loss just wipes the gold.
 func result_continued() -> void:

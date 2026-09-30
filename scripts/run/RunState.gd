@@ -65,8 +65,7 @@ func begin(banner_ids: Array = [], rng: RandomNumberGenerator = null, difficulty
 	complete = false
 	round_number = 1
 	match_number = 1
-	boss_order = RunConfig.BOSSES.duplicate()
-	boss_order.shuffle()
+	boss_order = BossThemes.ordered_bosses()
 	banners = banner_ids.duplicate()
 	difficulty = difficulty_level
 	guardian_used = false
@@ -138,7 +137,7 @@ func remove_from_roster(id: int) -> void:
 func effective_points() -> int:
 	return allocated_points + temp_points_bonus
 
-## Arthur's round, after the last ordinary one.
+## God's round, after the last ordinary one.
 func is_final_round() -> bool:
 	return round_number > RunConfig.ROUNDS
 
@@ -149,7 +148,7 @@ func is_boss() -> bool:
 	return match_number == matches_in_round()
 
 ## The legendary piece this match's boss fields and drops (a Piece.Type), or -1 when
-## the match has no such boss (an ordinary match, or Arthur).
+## the match has no such boss (an ordinary match, or God).
 func boss_piece() -> int:
 	if not is_boss() or is_final_round() or boss_order.size() < round_number:
 		return -1
@@ -161,13 +160,13 @@ func boss_name() -> String:
 	if is_final_round():
 		return RunConfig.FINAL_BOSS
 	var type := boss_piece()
-	return Piece.display_name(type) if type >= 0 else "Boss"
+	return BossThemes.display_name(type) if type >= 0 else "Boss"
 
 ## How many matches came before this one in the run.
 func matches_played() -> int:
 	return (round_number - 1) * RunConfig.MATCHES_PER_ROUND + (match_number - 1)
 
-## Moves to the next match. Returns false (and completes the run) after Arthur.
+## Moves to the next match. Returns false (and completes the run) after God.
 func advance() -> bool:
 	if match_number < matches_in_round():
 		match_number += 1

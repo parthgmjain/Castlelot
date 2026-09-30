@@ -6,7 +6,7 @@ const CHIPS_PER_VALUE := 10
 
 ## What capturing `victim` with `attacker` scores: (chips + modifier bonuses)
 ## x multiplier. A victim counts as whatever it currently is, so a promoted queen is worth a
-## queen. `score_multiplier` on the victim's own dict (Arthur's pieces are worth half) is the
+## queen. `score_multiplier` on the victim's own dict (God's pieces are worth half) is the
 ## starting multiplier; prophecies and other modifiers still stack on top of it as usual.
 static func capture_score(current_match: MatchState, attacker: Dictionary, victim: Dictionary, board: Board, square: Vector2i) -> int:
 	var context := {

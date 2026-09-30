@@ -482,34 +482,65 @@ theme_override_constants/separation = 10
 
 [node name="Stats" type="VBoxContainer" parent="InfoLayer/InfoSidebar/Margin/VBox"]
 layout_mode = 2
-size_flags_vertical = 3
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="RoundLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+[node name="TopRow" type="HBoxContainer" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="RoundBox" type="PanelContainer" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats/TopRow"]
+layout_mode = 2
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="RoundLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats/TopRow/RoundBox"]
 layout_mode = 2
 autowrap_mode = 3
+horizontal_alignment = 1
 text = "Round"
 
-[node name="GoldLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+[node name="MatchBox" type="PanelContainer" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats/TopRow"]
+layout_mode = 2
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="MatchLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats/TopRow/MatchBox"]
+layout_mode = 2
+autowrap_mode = 3
+horizontal_alignment = 1
+text = "Match"
+
+[node name="GoldBox" type="PanelContainer" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="GoldLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats/GoldBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
 text = "Gold: 0"
 
-[node name="ScoreLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+[node name="MovesBox" type="PanelContainer" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "Score: 0 / 0"
+mouse_filter = 2
 
-[node name="MovesLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+[node name="MovesLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats/MovesBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
 text = "Moves left: 0"
 
-[node name="TurnLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+[node name="ScoreBox" type="PanelContainer" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ScoreLabel" type="Label" parent="InfoLayer/InfoSidebar/Margin/VBox/Stats/ScoreBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "Your Turn"
+horizontal_alignment = 1
+text = "Score: 0 / 0"
 
 [node name="ValuesButton" type="Button" parent="InfoLayer/InfoSidebar/Margin/VBox"]
 layout_mode = 2

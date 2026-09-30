@@ -328,7 +328,7 @@ func test_there_is_no_shop_after_the_final_boss_or_after_a_loss() -> void:
 	current.result_reason = "Test"
 	main._refresh_view()
 	main.result_screen.continue_button.pressed.emit()
-	check(main.state.run.complete and not main.shop_screen.visible, "no shop after Arthur")
+	check(main.state.run.complete and not main.shop_screen.visible, "no shop after God")
 	_begin_run(main)
 	var lost: MatchState = main.state.current_match
 	lost.active = false

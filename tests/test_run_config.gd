@@ -17,7 +17,7 @@ func test_boss_matches_use_the_boss_round_type_and_others_do_not() -> void:
 	check_eq(_setup_at(1, 1).round_type, "normal", "match 1")
 	check_eq(_setup_at(1, 2).round_type, "normal", "match 2")
 	check_eq(_setup_at(1, 3).round_type, "boss", "match 3")
-	check_eq(_setup_at(13, 1).round_type, "boss", "Arthur")
+	check_eq(_setup_at(13, 1).round_type, "boss", "God")
 	check(PieceSelector.ROUND_MODIFIERS.has("boss"), "the selector knows the boss type")
 
 func test_bosses_are_harder_than_the_match_before_them() -> void:
@@ -83,7 +83,7 @@ func test_board_sizes_grow_with_the_round_up_to_a_cap() -> void:
 		check(size.x <= RunConfig.BOARD_SIZE_MAX_CAP and size.y <= RunConfig.BOARD_SIZE_MAX_CAP, "never bigger than the cap: %s" % str(size))
 	check(RunConfig.board_growth(1) == 0.0, "no growth at round 1")
 	check(RunConfig.board_growth(RunConfig.BOARD_GROWTH_FULL_ROUND) == 1.0, "fully grown by the target round")
-	check(RunConfig.board_growth(RunConfig.ROUNDS + 1) == 1.0, "and Arthur stays at the cap, not beyond it")
+	check(RunConfig.board_growth(RunConfig.ROUNDS + 1) == 1.0, "and God stays at the cap, not beyond it")
 
 # ---- zone size is also capped per round --------------------------------------------------------
 

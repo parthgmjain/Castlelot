@@ -1,6 +1,7 @@
 extends "res://tests/TestCase.gd"
-## The twelve round bosses are the twelve legendary pieces: each is named after its piece,
-## takes the field with the boss's army, and joins your roster when you win.
+## The twelve round bosses are the twelve legendary pieces: each takes the field with
+## the boss's army, joins your roster when you win, and is named for a heaven-invasion
+## theme (BossThemes.gd) rather than its own piece name.
 
 func _run_at(round_number: int, match_number: int, boss: int = -1) -> RunState:
 	var run := RunState.new()
@@ -53,21 +54,21 @@ func test_the_twelve_bosses_are_exactly_the_reward_pieces() -> void:
 	for type in PieceDefs.types():
 		check_eq(RunConfig.BOSSES.has(type), Piece.is_reward_only(type), "%s: a reward piece if and only if a boss" % Piece.display_name(type))
 
-func test_a_boss_is_named_after_its_piece() -> void:
+func test_a_boss_is_named_for_its_heaven_invasion_theme() -> void:
 	for type in RunConfig.BOSSES:
 		var run := _run_at(3, 3, type)
 		check_eq(run.boss_piece(), type, "the piece")
-		check_eq(run.boss_name(), Piece.display_name(type), "the name")
+		check_eq(run.boss_name(), BossThemes.display_name(type), "the theme name")
 		check(not run.boss_name().begins_with("Sir "), "no knights any more")
-	check_eq(Piece.display_name(Piece.Type.STORM_WITCH), "Storm Witch", "two-word names read properly")
+	check_eq(BossThemes.display_name(Piece.Type.STORM_WITCH), "Archangel Gabriel", "reskinned, not the piece's own name")
 
 func test_only_round_bosses_have_a_piece() -> void:
 	for match_number in [1, 2]:
 		check_eq(_run_at(4, match_number).boss_piece(), -1, "ordinary match %d has none" % match_number)
 		check_eq(RunConfig.match_setup(_run_at(4, match_number)).boss_piece, -1, "and neither does its setup")
 	var arthur := _run_at(RunConfig.ROUNDS + 1, 1)
-	check_eq(arthur.boss_piece(), -1, "Arthur has no legendary piece")
-	check_eq(arthur.boss_name(), "Arthur", "but is still a boss")
+	check_eq(arthur.boss_piece(), -1, "God has no legendary piece")
+	check_eq(arthur.boss_name(), "God", "but is still a boss")
 	var boss := _run_at(4, 3)
 	check_eq(RunConfig.match_setup(boss).boss_piece, boss.boss_order[3], "a round boss's setup carries its piece")
 
@@ -189,7 +190,7 @@ func test_beating_arthur_gives_no_legendary() -> void:
 	var main = await load_main()
 	var run := _deal(main, 1, -1, RunConfig.ROUNDS + 1)
 	_win(main)
-	check(run.roster.all(func(e): return not Piece.is_reward_only(e.type)), "Arthur drops nothing yet")
+	check(run.roster.all(func(e): return not Piece.is_reward_only(e.type)), "God drops nothing yet")
 
 func test_losing_a_boss_match_gives_nothing() -> void:
 	var main = await load_main()

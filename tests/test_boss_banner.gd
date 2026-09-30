@@ -1,7 +1,7 @@
 extends "res://tests/TestCase.gd"
 ## The top-of-screen "enemy" banner: shown throughout an active run (not
 ## just boss matches), named for the actual boss on a boss match (including
-## Arthur), a generic "Enemy" fallback the rest of the time. See
+## God), a generic "Enemy" fallback the rest of the time. See
 ## scripts/ui/BossBanner.gd.
 
 func _start_run() -> Node:
@@ -35,8 +35,8 @@ func test_shown_and_named_for_arthur() -> void:
 	main.state.run.round_number = RunConfig.ROUNDS + 1
 	main.state.run.match_number = 1
 	main.run_flow.begin_match()
-	check(main.boss_banner.visible, "arthur is a boss too")
-	check_eq(main.boss_banner.name_label.text, RunConfig.FINAL_BOSS, "named Arthur")
+	check(main.boss_banner.visible, "god is a boss too")
+	check_eq(main.boss_banner.name_label.text, RunConfig.FINAL_BOSS, "named God")
 
 func test_hides_again_once_the_run_ends() -> void:
 	var main = await _start_run()

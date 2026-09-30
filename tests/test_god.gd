@@ -1,5 +1,5 @@
 extends "res://tests/TestCase.gd"
-## Arthur (round ROUNDS + 1, the final boss): 4 guaranteed random legendaries, a doubled
+## God (round ROUNDS + 1, the final boss): 4 guaranteed random legendaries, a doubled
 ## effective army budget (his pieces cost half against it), and half score value for capturing
 ## any of his pieces.
 
@@ -33,8 +33,8 @@ func test_arthur_always_fields_exactly_four_distinct_legendaries() -> void:
 		var unique := {}
 		for t in legendaries:
 			unique[t] = true
-		check_eq(unique.size(), RunConfig.ARTHUR_LEGENDARY_COUNT, "trial %d: four distinct legendaries" % trial)
-		check_eq(legendaries.size(), RunConfig.ARTHUR_LEGENDARY_COUNT, "no duplicates among them")
+		check_eq(unique.size(), RunConfig.GOD_LEGENDARY_COUNT, "trial %d: four distinct legendaries" % trial)
+		check_eq(legendaries.size(), RunConfig.GOD_LEGENDARY_COUNT, "no duplicates among them")
 		for t in legendaries:
 			check(RunConfig.BOSSES.has(t), "%s is one of the twelve boss legendaries" % Piece.display_name(t))
 
@@ -62,7 +62,7 @@ func test_ordinary_boss_matches_still_get_only_their_own_one_legendary() -> void
 # ---- doubled effective budget ---------------------------------------------------------------
 
 func test_arthurs_budget_matches_an_ordinary_bosss_now_they_share_the_half_cost_rule() -> void:
-	# Arthur's own extra difficulty is the 4 legendaries and the score-halving, not a bigger
+	# God's own extra difficulty is the 4 legendaries and the score-halving, not a bigger
 	# budget than a regular boss any more - both get BOSS_HALF_COST_MULTIPLIER the same way, so
 	# the only difference left between them is the one extra match's worth of natural growth.
 	var normal := RunState.new()
@@ -100,12 +100,12 @@ func test_arthurs_pieces_are_flagged_half_value() -> void:
 	var main = await load_main()
 	_deal_arthur(main)
 	for entry in _black_pieces(main.state.boards):
-		check_eq(entry.piece.get("score_multiplier", 1.0), RunConfig.ARTHUR_SCORE_MULTIPLIER, "%s is flagged half value" % Piece.display_name(entry.piece.type))
+		check_eq(entry.piece.get("score_multiplier", 1.0), RunConfig.GOD_SCORE_MULTIPLIER, "%s is flagged half value" % Piece.display_name(entry.piece.type))
 
 func test_capturing_one_of_arthurs_pieces_scores_half() -> void:
 	var board := make_board(8, 8)
 	var state := make_state(board, [[V(0, 0), KING, BLACK], [V(7, 7), KING, WHITE], [V(0, 7), ROOK, WHITE], [V(0, 4), ROOK, BLACK]])
-	board.pieces[V(0, 4)]["score_multiplier"] = RunConfig.ARTHUR_SCORE_MULTIPLIER
+	board.pieces[V(0, 4)]["score_multiplier"] = RunConfig.GOD_SCORE_MULTIPLIER
 	MatchController.start(state, 10, 999)
 	state.active_board = board
 	state.active_square = V(0, 7)
@@ -128,7 +128,7 @@ func test_an_unflagged_piece_still_scores_in_full() -> void:
 func test_prophecy_multipliers_still_stack_on_top_of_the_half_value() -> void:
 	var board := make_board(8, 8)
 	var state := make_state(board, [[V(0, 0), KING, BLACK], [V(7, 7), KING, WHITE], [V(0, 7), ROOK, WHITE], [V(0, 4), ROOK, BLACK]])
-	board.pieces[V(0, 4)]["score_multiplier"] = RunConfig.ARTHUR_SCORE_MULTIPLIER
+	board.pieces[V(0, 4)]["score_multiplier"] = RunConfig.GOD_SCORE_MULTIPLIER
 	MatchController.start(state, 10, 999)
 	state.run = RunState.new()
 	state.run.begin()
@@ -139,7 +139,7 @@ func test_prophecy_multipliers_still_stack_on_top_of_the_half_value() -> void:
 	MoveController.refresh(state)
 	var result := MoveController.click(state, board, V(0, 4))
 	MatchController.record_move(state, result)
-	check_eq(state.current_match.scores[WHITE], Piece.value(ROOK) * Scoring.CHIPS_PER_VALUE, "0.5 (Arthur) x 2 (Omen of Plunder) nets out to the ordinary value")
+	check_eq(state.current_match.scores[WHITE], Piece.value(ROOK) * Scoring.CHIPS_PER_VALUE, "0.5 (God) x 2 (Omen of Plunder) nets out to the ordinary value")
 
 # ---- through a full match ----------------------------------------------------------------------
 
