@@ -65,10 +65,17 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 	var is_animated_banner := card_name in ["White Banner", "Black Banner"]
 
 	if is_animated_banner:
+		var art_container := Control.new()
+		art_container.name = "Art"
+		art_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		art_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
 		var sprite := AnimatedSprite2D.new()
-		sprite.name = "Art"
+		sprite.centered = true
 		_load_animated_banner(sprite, card_name)
-		vbox.add_child(sprite)
+		art_container.add_child(sprite)
+
+		vbox.add_child(art_container)
 	else:
 		var art := TextureRect.new()
 		art.name = "Art"
@@ -117,6 +124,7 @@ func _load_animated_banner(sprite: AnimatedSprite2D, card_name: String) -> void:
 		frames.add_frame("default", frame_texture)
 
 	sprite.sprite_frames = frames
+	sprite.scale = Vector2(6, 6)
 	sprite.play("default")
 
 ## Removes the previous step's cards immediately (not just queue_free, which
