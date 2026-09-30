@@ -47,11 +47,10 @@ func _show_difficulty_step() -> void:
 	for level in Difficulty.levels():
 		list.add_child(_make_card(Difficulty.display_name(level), "", _on_difficulty_chosen.bind(level)))
 
-## One vertical banner card: a reserved `Art` slot (an empty TextureRect -
-## real artwork drops in later, only the layout exists here) above a name
-## label, the whole thing clickable. `description` (when given) becomes the
-## card's tooltip. Every child has mouse_filter = IGNORE so clicks reach the
-## button underneath them rather than being absorbed.
+## One vertical banner card: animated banners use AnimatedSprite2D for proper
+## frame-by-frame animation, other cards use TextureRect. `description` (when
+## given) becomes the card's tooltip. Every child has mouse_filter = IGNORE so
+## clicks reach the button underneath them rather than being absorbed.
 func _make_card(card_name: String, description: String, handler: Callable) -> Button:
 	var button := Button.new()
 	button.custom_minimum_size = CARD_SIZE
@@ -63,13 +62,22 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(vbox)
 
-	var art := TextureRect.new()
-	art.name = "Art"
-	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	art.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_load_banner_texture(art, card_name)
-	vbox.add_child(art)
+	var is_animated_banner := card_name in ["White Banner", "Black Banner"]
+
+	if is_animated_banner:
+		var sprite := AnimatedSprite2D.new()
+		sprite.name = "Art"
+		sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		sprite.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		_load_animated_banner(sprite, card_name)
+		vbox.add_child(sprite)
+	else:
+		var art := TextureRect.new()
+		art.name = "Art"
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		art.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		vbox.add_child(art)
 
 	var name_label := Label.new()
 	name_label.name = "NameLabel"
@@ -81,7 +89,7 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 
 	return button
 
-func _load_banner_texture(art: TextureRect, card_name: String) -> void:
+func _load_animated_banner(sprite: AnimatedSprite2D, card_name: String) -> void:
 	var png_path := ""
 	match card_name:
 		"White Banner":
@@ -93,8 +101,26 @@ func _load_banner_texture(art: TextureRect, card_name: String) -> void:
 		return
 
 	var image := Image.new()
-	if image.load(png_path) == OK:
-		art.texture = ImageTexture.create_from_image(image)
+	if image.load(png_path) != OK:
+		return
+
+	var texture := ImageTexture.create_from_image(image)
+	var frames := SpriteFrames.new()
+	frames.add_animation("default")
+	frames.set_animation_speed("default", 2)
+
+	var frame_width = image.get_width() / 2
+	var frame_height = image.get_height()
+
+	for i in range(2):
+		var atlas_rect := Rect2(i * frame_width, 0, frame_width, frame_height)
+		var frame_texture := AtlasTexture.new()
+		frame_texture.atlas = texture
+		frame_texture.region = atlas_rect
+		frames.add_frame("default", frame_texture)
+
+	sprite.sprite_frames = frames
+	sprite.play("default")
 
 ## Removes the previous step's cards immediately (not just queue_free, which
 ## would leave them counted in get_children() until the next frame).
