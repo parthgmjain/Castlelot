@@ -71,6 +71,13 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 		art_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		art_container.custom_minimum_size = Vector2(200, 350)
 
+		var border := TextureRect.new()
+		border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		border.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		border.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_load_banner_border(border)
+		art_container.add_child(border)
+
 		var sprite := AnimatedSprite2D.new()
 		sprite.centered = true
 		sprite.position = Vector2(100, 175)
@@ -128,6 +135,11 @@ func _load_animated_banner(sprite: AnimatedSprite2D, card_name: String) -> void:
 	sprite.sprite_frames = frames
 	sprite.scale = Vector2(6, 6)
 	sprite.play("default")
+
+func _load_banner_border(border: TextureRect) -> void:
+	var image := Image.new()
+	if image.load("res://assets/banners/banner_border.png") == OK:
+		border.texture = ImageTexture.create_from_image(image)
 
 ## Removes the previous step's cards immediately (not just queue_free, which
 ## would leave them counted in get_children() until the next frame).
