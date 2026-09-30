@@ -104,7 +104,6 @@ func _load_animated_banner(sprite: AnimatedSprite2D, card_name: String) -> void:
 
 	var texture := ImageTexture.create_from_image(image)
 	var frames := SpriteFrames.new()
-	frames.add_animation("default")
 	frames.set_animation_speed("default", 2)
 
 	var frame_width = image.get_width() / 2
