@@ -67,8 +67,6 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 	if is_animated_banner:
 		var sprite := AnimatedSprite2D.new()
 		sprite.name = "Art"
-		sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		sprite.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		_load_animated_banner(sprite, card_name)
 		vbox.add_child(sprite)
 	else:
