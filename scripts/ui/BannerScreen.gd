@@ -69,9 +69,11 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 		art_container.name = "Art"
 		art_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		art_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		art_container.custom_minimum_size = Vector2(200, 350)
 
 		var sprite := AnimatedSprite2D.new()
 		sprite.centered = true
+		sprite.position = Vector2(100, 175)
 		_load_animated_banner(sprite, card_name)
 		art_container.add_child(sprite)
 
