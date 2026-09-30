@@ -37,6 +37,22 @@ func test_tier_sizes() -> void:
 	check_eq(_types(Piece.Tier.RARE).size(), 11, "rare")
 	check_eq(_types(Piece.Tier.LEGENDARY).size(), 13, "legendary: the queen and the twelve boss pieces")
 
+## A handful of pieces used to be plain real-world animals with no connection to the game's
+## heaven/hell battle theme - renamed at the enum level (not just a display override) so
+## there's exactly one name for each of them everywhere in the code. Ninja was equally out
+## of place but the user chose to keep it.
+func test_the_reskinned_pieces_have_no_trace_of_their_old_animal_names() -> void:
+	for type in [Piece.Type.IMP, Piece.Type.GARGOYLE, Piece.Type.HARPY, Piece.Type.BASTION, Piece.Type.CHIMERA, Piece.Type.LOCUST]:
+		check(not Piece.Type.keys()[type].to_lower() in ["crab", "camel", "hawk", "tortoise", "zebra", "grasshopper"], "%s: no old name survives" % Piece.Type.keys()[type])
+	var expected := {
+		Piece.Type.IMP: "Imp", Piece.Type.GARGOYLE: "Gargoyle", Piece.Type.HARPY: "Harpy",
+		Piece.Type.BASTION: "Bastion", Piece.Type.CHIMERA: "Chimera", Piece.Type.LOCUST: "Locust",
+	}
+	for type in expected:
+		check_eq(Piece.display_name(type), expected[type], "%s reads correctly" % Piece.Type.keys()[type])
+	check_eq(Piece.display_name(Piece.Type.NINJA), "Ninja", "kept as-is")
+	check_eq(Piece.display_name(Piece.Type.STORM_WITCH), "Storm Witch", "two-word names still auto-derive fine")
+
 func test_each_buyable_tier_has_more_kinds_than_slots_so_there_are_replacements_to_offer() -> void:
 	for tier in [Piece.Tier.COMMON, Piece.Tier.UNCOMMON, Piece.Tier.RARE]:
 		check(Lottery.pool(tier).size() >= RunConfig.SLOTS_PER_TIER[tier] + 2, "%s has room for 2 replacement cards" % Piece.TIER_NAMES[tier])
@@ -44,7 +60,7 @@ func test_each_buyable_tier_has_more_kinds_than_slots_so_there_are_replacements_
 func test_the_placements_you_will_notice() -> void:
 	var expected := {
 		PAWN: Piece.Tier.COMMON, Piece.Type.SCOUT: Piece.Tier.COMMON, Piece.Type.ARCHER: Piece.Tier.COMMON, Piece.Type.SQUIRE: Piece.Tier.COMMON,
-		KNIGHT: Piece.Tier.UNCOMMON, BISHOP: Piece.Tier.UNCOMMON, Piece.Type.CAMEL: Piece.Tier.UNCOMMON, Piece.Type.GOLEM: Piece.Tier.UNCOMMON, Piece.Type.BARD: Piece.Tier.UNCOMMON,
+		KNIGHT: Piece.Tier.UNCOMMON, BISHOP: Piece.Tier.UNCOMMON, Piece.Type.GARGOYLE: Piece.Tier.UNCOMMON, Piece.Type.GOLEM: Piece.Tier.UNCOMMON, Piece.Type.BARD: Piece.Tier.UNCOMMON,
 		ROOK: Piece.Tier.RARE, Piece.Type.CANNON: Piece.Tier.RARE, Piece.Type.GHOST: Piece.Tier.RARE, Piece.Type.NINJA: Piece.Tier.RARE, Piece.Type.ALCHEMIST: Piece.Tier.RARE,
 		QUEEN: Piece.Tier.LEGENDARY, Piece.Type.DRAGON: Piece.Tier.LEGENDARY,
 	}

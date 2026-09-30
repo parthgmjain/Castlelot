@@ -27,7 +27,7 @@ func _types(cards: Array) -> Array:
 # A run whose common tier is full: pawn x3 plus four other types.
 func _full_commons() -> RunState:
 	var run := _run()
-	for type in [Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.CRAB, Piece.Type.DRUMMER]:
+	for type in [Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.IMP, Piece.Type.DRUMMER]:
 		_give(run, type)
 	return run
 
@@ -201,7 +201,7 @@ func test_you_can_only_replace_a_type_you_hold() -> void:
 	var run := _full_commons()
 	Lottery.begin_choice(run, Piece.Tier.COMMON, "pull", _rng())
 	Lottery.pick_card(run, run.pending.cards.find_custom(func(c): return c.kind == "new"))
-	var refused := Lottery.pick_replacement(run, Piece.Type.CAMEL)
+	var refused := Lottery.pick_replacement(run, Piece.Type.GARGOYLE)
 	check(not refused.ok, "a piece you don't hold can't be swapped out")
 	check_eq(run.pending.stage, "replace", "and the choice stays open")
 

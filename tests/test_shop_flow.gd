@@ -149,7 +149,7 @@ func test_choosing_a_new_type_for_a_full_tier_asks_which_slot_to_swap_out() -> v
 	var main = await load_main()
 	var shop := _to_shop(main, 50)
 	var run: RunState = main.state.run
-	for type in [Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.CRAB, Piece.Type.DRUMMER]:
+	for type in [Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.IMP, Piece.Type.DRUMMER]:
 		run.add_to_roster(type)
 	Lottery.begin_choice(run, Piece.Tier.COMMON, "pull")
 	shop.refresh()

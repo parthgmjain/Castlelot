@@ -4,6 +4,9 @@ Design by the game's author. Status: [x] built, [ ] not yet. Values are placehol
 "Forward" for a piece means its heading toward the enemy zone (`PawnMovement.heading`), "sideways" is perpendicular to it.
 The twelve legendary pieces ARE the twelve round bosses (`RunConfig.BOSSES`; the Knights of the Round Table are gone): each fields that piece in its army and the piece joins your roster when you win. There is no ability choice any more. God (round 13) stays as the final boss.
 
+## A handful of ordinary pieces reskinned too (2026-09-29)
+Going through all 43 extras (plus the base chess pieces) for the same heaven/hell fit as the bosses: almost everything already reads fine (military roles, religious/mystical ones like Pilgrim/Monk/Alchemist/Ghost, constructs like Golem). Only 6 were plain real-world animal names with zero battle/heaven/hell resonance, so those got renamed at the `Piece.Type` enum level itself (not just a display-string override, to avoid any future confusion between the enum key and the shown name): Crab->Imp, Camel->Gargoyle, Hawk->Harpy, Tortoise->Bastion, Zebra->Chimera, Grasshopper->Locust (kept as a Biblical-plague reference, not just an insect). Board labels updated too (Im/Ga/Ha/Bs/Ci/Lo). The internal `"grasshopper"` move-*kind* string in `PieceDefs`/`PieceMoves` was deliberately left alone - it's fairy-chess mechanic vocabulary (same category as `"cannon"`, `"leap"`, `"slide"`), not the piece's own flavor name. Ninja was deliberately kept as-is (the user's call). Ferz Guard, Mirror, Bard, Twin Rider, Cannon, Griffon and everything else were judged close enough to fit without a rename.
+
 ## Boss theme: an invasion of heaven (2026-09-29)
 The bosses' mechanics are untouched, but each has a heaven-invasion identity now (`BossThemes.gd`), and the run's boss order is no longer fully random - it's a fixed narrative arc, only shuffled within each group:
 1. **Saint Peter** (Chronomancer) guards the gate alone, round 1 - the weakest legendary on purpose, since you have none of your own yet.
@@ -18,15 +21,15 @@ Chess pieces (king, queen, rook, bishop, knight, pawn) are the base set; everyth
 Four tiers. Points are what a piece costs against your allocated points (and capture score is points x10). Values are placeholders to balance later; the source of truth is `PieceDefs.gd` / `Piece.gd`.
 
 **Common** (hold up to 5 types) - 11 pieces:
-- 1 pt: Crab, Drummer, Pawn, Scout, Serf
+- 1 pt: Imp, Drummer, Pawn, Scout, Serf
 - 2 pt: Archer, Militia, Pilgrim, Shieldbearer, Squire, Torchbearer
 
 **Uncommon** (hold up to 5 types) - 13 pieces:
 - 2 pt: Bard, Ferz Guard
-- 3 pt: Bishop, Camel, Charger, Golem, Hawk, Knight, Monk, Ranger, Spearman, Tortoise, Zebra
+- 3 pt: Bishop, Gargoyle, Charger, Golem, Harpy, Knight, Monk, Ranger, Spearman, Bastion, Chimera
 
 **Rare** (hold up to 3 types) - 11 pieces:
-- 4 pt: Alchemist, Catapult, Grasshopper, Lancer, Mirror, Ninja, Twin Rider
+- 4 pt: Alchemist, Catapult, Locust, Lancer, Mirror, Ninja, Twin Rider
 - 5 pt: Cannon, Ghost, Griffon, Rook
 
 **Legendary** (hold up to 2 types) - 13 pieces:
@@ -47,28 +50,28 @@ How the shop uses them:
 - [x] Archer: 1 forward. Instead of moving it can capture a piece exactly 2 squares straight ahead and stay put.
 - [x] Serf: 1 diagonally forward (no capture); captures straight forward.
 - [x] Militia: 1 orthogonally in any direction incl. backward (no capture); captures diagonally forward.
-- [x] Crab: 1 sideways only (no capture); captures 1 diagonally in any direction.
+- [x] Imp (formerly Crab): 1 sideways only (no capture); captures 1 diagonally in any direction.
 - [x] Torchbearer: moves like a pawn. When captured, the capturing piece is destroyed too.
 - [x] Drummer: 1 forward, can't capture. Friendly pawns next to it can move 2 forward.
 - [x] Pilgrim: 1 forward or backward, or swaps places with an adjacent friendly piece.
 - [x] Squire: moves like a pawn. Starting a turn next to a friendly knight, it can make a knight jump instead.
 
 ## Uncommon tier (rook/bishop/knight level)
-- [x] Camel: 3-1 leaper.
-- [x] Zebra: 3-2 leaper.
+- [x] Gargoyle (formerly Camel): 3-1 leaper.
+- [x] Chimera (formerly Zebra): 3-2 leaper.
 - [x] Twin Rider: one or two knight jumps in the same direction (the square between the jumps must be empty).
 - [x] Ninja: knight move; after a capture it may move 1 more square.
-- [x] Hawk: leaps exactly 2 or 3 squares in any straight or diagonal direction.
+- [x] Harpy (formerly Hawk): leaps exactly 2 or 3 squares in any straight or diagonal direction.
 - [x] Cannon: rook move; captures by jumping over exactly one piece.
 - [x] Charger: rook move of at least 2 squares.
 - [x] Ranger: up to 3 squares orthogonally.
 - [x] Lancer: any distance forward, only 1 square backward or sideways.
 - [x] Catapult: never moves. Captures any piece exactly 3 squares away orthogonally, over blockers.
-- [x] Tortoise: up to 2 squares orthogonally; can only be captured from behind or the sides.
+- [x] Bastion (formerly Tortoise): up to 2 squares orthogonally; can only be captured from behind or the sides.
 - [x] Mirror: bishop move that can bounce off a board edge once per move.
 - [x] Monk: up to 3 squares diagonally, or 1 square orthogonally without capturing.
 - [x] Ferz Guard: 1 square diagonally or leaps 2 squares diagonally.
-- [x] Grasshopper: along any queen line, must hop over one piece and land directly behind it.
+- [x] Locust (formerly Grasshopper): along any queen line, must hop over one piece and land directly behind it.
 - [x] Golem: 1 square orthogonally; can't be captured by pawns or knights.
 - [x] Alchemist: king move, or swaps places with any friendly piece within 2 squares.
 - [x] Ghost: up to 2 squares in any direction, passing through pieces.
@@ -101,7 +104,7 @@ How the shop uses them:
 - Dragon: fire is orthogonal, burns every enemy within 3 squares in one line and passes over friends unharmed. It rests through its side's next turn (not in the sandbox, where there are no turns).
 - Protection is one rule for every attack (`CaptureRules`, applied around `Piece.get_legal_moves`): protected pieces just drop out of an attacker's moves, and a Dragon's flame skips them but still burns the rest of the line.
 - Shieldbearer: "directly in front" means the one square ahead of it along its heading; a rook further up the file can still take it.
-- Tortoise: "from the front" means any attacker on the front side of it (measured along its heading, across board seams too); beside or behind is fine.
+- Bastion: "from the front" means any attacker on the front side of it (measured along its heading, across board seams too); beside or behind is fine.
 - Golem: "pawns or knights" means only the real Pawn and Knight types.
 - Bard: its aura shields the friendly pieces on the 8 squares around it (including across seams) from pawns only; the Bard itself is not covered.
 - Wraith: "legendaries" includes the queen; pawns can still take it.

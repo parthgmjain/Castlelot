@@ -51,8 +51,8 @@ func test_militia_walks_any_orthogonal_way_and_captures_diagonally_forward() -> 
 	_same(_caps(busy), [V(2, 3)], "only forward diagonals")
 	check(not _plain(busy).has(V(3, 3)), "no walking into a piece")
 
-func test_crab_moves_sideways_and_captures_on_every_diagonal() -> void:
-	var busy := _moves(Piece.Type.CRAB, V(3, 4), [[V(2, 3), PAWN, BLACK], [V(4, 5), PAWN, BLACK], [V(3, 3), PAWN, BLACK]])
+func test_imp_moves_sideways_and_captures_on_every_diagonal() -> void:
+	var busy := _moves(Piece.Type.IMP, V(3, 4), [[V(2, 3), PAWN, BLACK], [V(4, 5), PAWN, BLACK], [V(3, 3), PAWN, BLACK]])
 	_same(_plain(busy), [V(2, 4), V(4, 4)], "sideways only")
 	_same(_caps(busy), [V(2, 3), V(4, 5)], "captures forward or backward diagonally, not straight")
 
@@ -66,27 +66,27 @@ func test_pawn_tier_pieces_use_their_heading_not_the_screen() -> void:
 
 # ---- uncommon tier: leapers ----------------------------------------------------
 
-func test_camel_and_zebra_leap_over_everything() -> void:
+func test_gargoyle_and_chimera_leap_over_everything() -> void:
 	var crowd: Array = []
 	for x in range(2, 5):
 		for y in range(3, 6):
 			if V(x, y) != V(3, 4):
 				crowd.append([V(x, y), PAWN, WHITE])
-	_same(_plain(_moves(Piece.Type.CAMEL, V(3, 4), crowd)), [V(6, 3), V(6, 5), V(0, 3), V(0, 5), V(4, 1), V(2, 1), V(4, 7), V(2, 7)], "camel is 3-1")
-	_same(_plain(_moves(Piece.Type.ZEBRA, V(3, 4))), [V(6, 2), V(6, 6), V(0, 2), V(0, 6), V(5, 1), V(1, 1), V(5, 7), V(1, 7)], "zebra is 3-2")
+	_same(_plain(_moves(Piece.Type.GARGOYLE, V(3, 4), crowd)), [V(6, 3), V(6, 5), V(0, 3), V(0, 5), V(4, 1), V(2, 1), V(4, 7), V(2, 7)], "gargoyle is 3-1")
+	_same(_plain(_moves(Piece.Type.CHIMERA, V(3, 4))), [V(6, 2), V(6, 6), V(0, 2), V(0, 6), V(5, 1), V(1, 1), V(5, 7), V(1, 7)], "chimera is 3-2")
 
-func test_camel_captures_where_it_lands_and_is_stopped_by_friends_there() -> void:
-	var moves := _moves(Piece.Type.CAMEL, V(3, 4), [[V(6, 3), PAWN, BLACK], [V(6, 5), PAWN, WHITE]])
+func test_gargoyle_captures_where_it_lands_and_is_stopped_by_friends_there() -> void:
+	var moves := _moves(Piece.Type.GARGOYLE, V(3, 4), [[V(6, 3), PAWN, BLACK], [V(6, 5), PAWN, WHITE]])
 	_same(_caps(moves), [V(6, 3)], "enemy landing square")
 	check(not _plain(moves).has(V(6, 5)), "friendly landing square")
 
-func test_hawk_leaps_exactly_two_or_three_in_any_line() -> void:
-	var moves := _moves(Piece.Type.HAWK, V(3, 3))
+func test_harpy_leaps_exactly_two_or_three_in_any_line() -> void:
+	var moves := _moves(Piece.Type.HARPY, V(3, 3))
 	_same(_plain(moves), [
 		V(5, 3), V(1, 3), V(3, 5), V(3, 1), V(5, 5), V(1, 5), V(5, 1), V(1, 1),
 		V(6, 3), V(0, 3), V(3, 6), V(3, 0), V(6, 6), V(0, 6), V(6, 0), V(0, 0),
 	], "sixteen squares")
-	var blocked := _moves(Piece.Type.HAWK, V(3, 3), [[V(4, 3), PAWN, WHITE], [V(4, 4), PAWN, WHITE]])
+	var blocked := _moves(Piece.Type.HARPY, V(3, 3), [[V(4, 3), PAWN, WHITE], [V(4, 4), PAWN, WHITE]])
 	check_eq(_plain(blocked).size(), 16, "pieces in between don't matter")
 
 func test_twin_rider_makes_one_or_two_jumps_the_same_way() -> void:
@@ -174,8 +174,8 @@ func test_cannon_cannot_capture_a_piece_with_no_screen_or_two_screens() -> void:
 	var moves := _moves(Piece.Type.CANNON, V(3, 3), [[V(3, 2), PAWN, BLACK], [V(6, 3), PAWN, WHITE], [V(5, 3), PAWN, WHITE], [V(7, 3), PAWN, BLACK]])
 	check(_caps(moves).is_empty(), "adjacent enemy and enemy behind two screens are both safe")
 
-func test_grasshopper_hops_one_piece_and_lands_right_behind() -> void:
-	var moves := _moves(Piece.Type.GRASSHOPPER, V(3, 3), [
+func test_locust_hops_one_piece_and_lands_right_behind() -> void:
+	var moves := _moves(Piece.Type.LOCUST, V(3, 3), [
 		[V(3, 5), PAWN, WHITE],                                # over a friend onto an empty square
 		[V(5, 5), PAWN, BLACK], [V(6, 6), PAWN, BLACK],        # over an enemy, capturing the one behind
 		[V(2, 3), PAWN, BLACK], [V(1, 3), PAWN, WHITE],        # landing square occupied by a friend: no hop
@@ -209,13 +209,13 @@ func test_leapers_and_hoppers_cross_portals() -> void:
 	var rig := make_rig([2])
 	var a: Board = rig[0]
 	var b: Board = rig[1]
-	var hawk := _moves(Piece.Type.HAWK, V(3, 2), [], WHITE, a)
-	check(has_move(hawk, b, V(0, 2)), "hawk: two squares right crosses the seam")
+	var harpy := _moves(Piece.Type.HARPY, V(3, 2), [], WHITE, a)
+	check(has_move(harpy, b, V(0, 2)), "harpy: two squares right crosses the seam")
 
-	var hopper := _moves(Piece.Type.GRASSHOPPER, V(3, 2), [[V(4, 2), PAWN, WHITE]], WHITE, a)
-	check(has_move(hopper, b, V(0, 2)), "grasshopper: hops a screen at the seam and lands on board B")
+	var hopper := _moves(Piece.Type.LOCUST, V(3, 2), [[V(4, 2), PAWN, WHITE]], WHITE, a)
+	check(has_move(hopper, b, V(0, 2)), "locust: hops a screen at the seam and lands on board B")
 	put(b, V(0, 2), PAWN, WHITE)
-	var landing_taken := Piece.get_legal_moves(Piece.Type.GRASSHOPPER, WHITE, a, V(3, 2))
+	var landing_taken := Piece.get_legal_moves(Piece.Type.LOCUST, WHITE, a, V(3, 2))
 	check(not has_move(landing_taken, b, V(0, 2)), "but not onto a friend waiting there")
 
 func test_cannon_screens_and_targets_can_be_on_the_next_board() -> void:
@@ -249,10 +249,10 @@ func test_every_data_piece_has_a_tier_value_and_a_unique_label() -> void:
 
 func test_new_pieces_join_the_lottery_pools() -> void:
 	var commons := Lottery.pool(Piece.Tier.COMMON)
-	for type in [PAWN, Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.MILITIA, Piece.Type.CRAB]:
+	for type in [PAWN, Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.MILITIA, Piece.Type.IMP]:
 		check(commons.has(type), "common pool has %s" % Piece.Type.find_key(type))
 	var uncommons := Lottery.pool(Piece.Tier.UNCOMMON)
-	for type in [BISHOP, KNIGHT, Piece.Type.CAMEL, Piece.Type.GOLEM]:
+	for type in [BISHOP, KNIGHT, Piece.Type.GARGOYLE, Piece.Type.GOLEM]:
 		check(uncommons.has(type), "uncommon pool has %s" % Piece.Type.find_key(type))
 	var rares := Lottery.pool(Piece.Tier.RARE)
 	for type in [ROOK, Piece.Type.GRIFFON, Piece.Type.MIRROR, Piece.Type.CANNON]:
@@ -262,21 +262,21 @@ func test_new_pieces_join_the_lottery_pools() -> void:
 func test_a_new_piece_can_be_deployed_and_costs_its_value() -> void:
 	var run := RunState.new()
 	run.begin()
-	var id: int = run.add_to_roster(Piece.Type.CAMEL)
+	var id: int = run.add_to_roster(Piece.Type.GARGOYLE)
 	var board := make_board(8, 8)
 	board.zone_owner[V(3, 3)] = WHITE
 	var before := Roster.points_used(run, [board])
 	check(Roster.deploy(run, [board], id, board, V(3, 3)), "deployed")
-	check_eq(Roster.points_used(run, [board]) - before, Piece.value(Piece.Type.CAMEL), "counts its value against the budget")
+	check_eq(Roster.points_used(run, [board]) - before, Piece.value(Piece.Type.GARGOYLE), "counts its value against the budget")
 
 func test_the_ai_uses_a_new_piece() -> void:
 	var board := make_board(8, 8)
 	var state := make_state(board, [
 		[V(0, 0), KING, BLACK], [V(7, 7), KING, WHITE],
-		[V(2, 2), Piece.Type.CAMEL, BLACK], [V(5, 3), QUEEN, WHITE],          # a camel jump (3,1) from (2,2)
+		[V(2, 2), Piece.Type.GARGOYLE, BLACK], [V(5, 3), QUEEN, WHITE],          # a gargoyle jump (3,1) from (2,2)
 	])
 	var choice := GreedyAI.choose_move(state, BLACK)
-	check(not choice.is_empty() and choice.square == V(2, 2) and choice.move.square == V(5, 3), "the camel takes the queen")
+	check(not choice.is_empty() and choice.square == V(2, 2) and choice.move.square == V(5, 3), "the gargoyle takes the queen")
 
 func test_scoring_uses_the_new_piece_value() -> void:
 	var current := MatchState.new()

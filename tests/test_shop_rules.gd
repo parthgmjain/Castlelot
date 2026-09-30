@@ -58,7 +58,7 @@ func test_five_pawns_trade_up_and_offer_uncommon_cards() -> void:
 
 func test_five_uncommons_offer_rare_cards() -> void:
 	var run := _run()
-	var ids := _ids_of(run, KNIGHT, 1) + _ids_of(run, BISHOP, 1) + _give(run, KNIGHT, 2) + _give(run, Piece.Type.CAMEL, 1)
+	var ids := _ids_of(run, KNIGHT, 1) + _ids_of(run, BISHOP, 1) + _give(run, KNIGHT, 2) + _give(run, Piece.Type.GARGOYLE, 1)
 	var result := Shop.trade_up(run, ids)
 	check(result.ok and result.to == Piece.Tier.RARE, "traded up to rare")
 	check_eq(run.pending.tier, Piece.Tier.RARE, "rare cards")
@@ -110,10 +110,10 @@ func test_you_choose_which_pieces_to_sacrifice() -> void:
 
 func test_sacrificing_a_whole_type_frees_its_slot_for_the_offer() -> void:
 	var run := _run()
-	for type in [Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.CRAB, Piece.Type.DRUMMER]:
+	for type in [Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.IMP, Piece.Type.DRUMMER]:
 		_give(run, type, 1)
 	check_eq(run.free_slots(Piece.Tier.COMMON), 0, "common is full")
-	var ids := _ids_of(run, Piece.Type.SCOUT, 1) + _ids_of(run, Piece.Type.SERF, 1) + _ids_of(run, Piece.Type.CRAB, 1) + _ids_of(run, Piece.Type.DRUMMER, 1) + _ids_of(run, PAWN, 1)
+	var ids := _ids_of(run, Piece.Type.SCOUT, 1) + _ids_of(run, Piece.Type.SERF, 1) + _ids_of(run, Piece.Type.IMP, 1) + _ids_of(run, Piece.Type.DRUMMER, 1) + _ids_of(run, PAWN, 1)
 	Shop.trade_up(run, ids)
 	check_eq(run.free_slots(Piece.Tier.COMMON), 4, "four common slots are open again")
 

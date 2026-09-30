@@ -1,5 +1,5 @@
 extends "res://tests/TestCase.gd"
-## Pieces that can't be captured by certain attackers: Shieldbearer, Tortoise, Golem,
+## Pieces that can't be captured by certain attackers: Shieldbearer, Bastion, Golem,
 ## Bard (an aura for its neighbours) and Wraith.
 
 func V(x: int, y: int) -> Vector2i:
@@ -44,11 +44,11 @@ func test_shieldbearer_moves_like_a_pawn_that_cannot_walk_into_a_capture() -> vo
 	var moves := Piece.get_legal_moves(Piece.Type.SHIELDBEARER, WHITE, board, V(3, 4))
 	check_eq(moves.map(func(m): return m.square), [V(2, 3)], "captures diagonally forward only; blocked ahead")
 
-# ---- Tortoise -------------------------------------------------------------------------
+# ---- Bastion -------------------------------------------------------------------------
 
-func test_tortoise_can_only_be_captured_from_behind_or_the_sides() -> void:
+func test_bastion_can_only_be_captured_from_behind_or_the_sides() -> void:
 	var board := _board([
-		[V(3, 4), Piece.Type.TORTOISE, WHITE],
+		[V(3, 4), Piece.Type.BASTION, WHITE],
 		[V(3, 1), ROOK, BLACK], [V(5, 2), Piece.Type.BISHOP, BLACK],          # in front, straight and diagonal
 		[V(0, 4), ROOK, BLACK],                                                # beside it
 		[V(3, 7), ROOK, BLACK], [V(5, 6), Piece.Type.BISHOP, BLACK],           # behind, straight and diagonal
@@ -59,22 +59,22 @@ func test_tortoise_can_only_be_captured_from_behind_or_the_sides() -> void:
 	check(_can_take(board, V(3, 7), V(3, 4)), "from behind")
 	check(_can_take(board, V(5, 6), V(3, 4)), "from behind, diagonally")
 
-func test_tortoise_moves_up_to_two_orthogonally_and_captures_normally() -> void:
-	var board := _board([[V(3, 4), Piece.Type.TORTOISE, WHITE], [V(3, 2), PAWN, BLACK]])
-	var moves := Piece.get_legal_moves(Piece.Type.TORTOISE, WHITE, board, V(3, 4))
+func test_bastion_moves_up_to_two_orthogonally_and_captures_normally() -> void:
+	var board := _board([[V(3, 4), Piece.Type.BASTION, WHITE], [V(3, 2), PAWN, BLACK]])
+	var moves := Piece.get_legal_moves(Piece.Type.BASTION, WHITE, board, V(3, 4))
 	var squares := moves.map(func(m): return m.square)
 	for expected in [V(3, 3), V(3, 5), V(3, 6), V(2, 4), V(1, 4), V(4, 4), V(5, 4), V(3, 2)]:
 		check(squares.has(expected), "can reach %s" % str(expected))
 	check_eq(squares.size(), 8, "and nothing else")
 
-func test_tortoise_front_is_measured_across_board_seams() -> void:
+func test_bastion_front_is_measured_across_board_seams() -> void:
 	var rig := make_rig([2])
 	var a: Board = rig[0]
 	var b: Board = rig[1]
 	b.position = Vector2(5 * Board.SQUARE_SIZE, 0)          # B sits to the right of A, like the real layout
 	for row in 5:
-		b.zone_owner[Vector2i(4, row)] = BLACK              # the enemy zone is on B, so the tortoise faces right
-	put(a, V(2, 2), Piece.Type.TORTOISE, WHITE)
+		b.zone_owner[Vector2i(4, row)] = BLACK              # the enemy zone is on B, so the bastion faces right
+	put(a, V(2, 2), Piece.Type.BASTION, WHITE)
 	put(b, V(0, 2), ROOK, BLACK)                            # in front of it, on the other board
 	put(a, V(0, 2), ROOK, BLACK)                            # behind it
 	check(not Piece.get_legal_moves(ROOK, BLACK, b, V(0, 2)).any(func(m): return m.capture and m.board == a and m.square == V(2, 2)), "the rook on B is in front, and can't")
@@ -88,7 +88,7 @@ func test_golem_cannot_be_captured_by_pawns_or_knights() -> void:
 	check(not _can_take(board, V(1, 3), V(3, 4)), "not by a knight")
 
 func test_golem_can_be_captured_by_everything_else() -> void:
-	var board := _board([[V(3, 4), Piece.Type.GOLEM, WHITE], [V(3, 1), ROOK, BLACK], [V(6, 1), BISHOP, BLACK], [V(3, 7), QUEEN, BLACK], [V(0, 3), Piece.Type.CAMEL, BLACK]])
+	var board := _board([[V(3, 4), Piece.Type.GOLEM, WHITE], [V(3, 1), ROOK, BLACK], [V(6, 1), BISHOP, BLACK], [V(3, 7), QUEEN, BLACK], [V(0, 3), Piece.Type.GARGOYLE, BLACK]])
 	for from in [V(3, 1), V(6, 1), V(3, 7), V(0, 3)]:
 		check(_can_take(board, from, V(3, 4)), "%s can" % Piece.Type.find_key(board.pieces[from].type))
 
@@ -174,14 +174,14 @@ func test_a_catapult_shot_at_a_protected_piece_is_not_offered() -> void:
 func test_dragon_fire_skips_protected_pieces_but_still_burns_the_rest() -> void:
 	var board := _board([
 		[V(3, 3), Piece.Type.DRAGON, BLACK],
-		[V(3, 4), Piece.Type.TORTOISE, WHITE],                # the dragon is in front of it: protected from it
+		[V(3, 4), Piece.Type.BASTION, WHITE],                # the dragon is in front of it: protected from it
 		[V(3, 5), PAWN, WHITE],
 	])
 	var moves := Piece.get_legal_moves(Piece.Type.DRAGON, BLACK, board, V(3, 3))
 	var fire := moves.filter(func(m): return m.get("special", false))
 	check_eq(fire.size(), 1, "only the pawn is a target")
 	check(fire[0].square == V(3, 5) and fire[0].hits.size() == 1, "and the flame reaches just that one")
-	check(not moves.any(func(m): return m.square == V(3, 4) and m.capture), "no normal capture of the tortoise either")
+	check(not moves.any(func(m): return m.square == V(3, 4) and m.capture), "no normal capture of the bastion either")
 
 func test_dragon_fire_keeps_hitting_the_unprotected_in_a_mixed_line() -> void:
 	var board := _board([
@@ -194,9 +194,9 @@ func test_dragon_fire_keeps_hitting_the_unprotected_in_a_mixed_line() -> void:
 	check_eq(fire[0].hits.size(), 2, "and both burn")
 
 func test_titan_cannot_double_capture_through_a_protected_piece() -> void:
-	var board := _board([[V(3, 1), Piece.Type.TITAN, BLACK], [V(3, 3), Piece.Type.TORTOISE, WHITE], [V(3, 5), ROOK, WHITE]])
+	var board := _board([[V(3, 1), Piece.Type.TITAN, BLACK], [V(3, 3), Piece.Type.BASTION, WHITE], [V(3, 5), ROOK, WHITE]])
 	var moves := Piece.get_legal_moves(Piece.Type.TITAN, BLACK, board, V(3, 1))
-	check(not moves.any(func(m): return m.capture), "the tortoise faces the titan, so no capture, and no double capture past it")
+	check(not moves.any(func(m): return m.capture), "the bastion faces the titan, so no capture, and no double capture past it")
 
 # ---- through the game ---------------------------------------------------------------------
 

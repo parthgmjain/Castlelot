@@ -55,27 +55,27 @@ const _DESCRIPTIONS := {
 	Piece.Type.ARCHER: "1 forward. Instead of moving it can capture a piece exactly 2 squares straight ahead and stay put.",
 	Piece.Type.SERF: "1 diagonally forward (no capture); captures straight forward.",
 	Piece.Type.MILITIA: "1 orthogonally in any direction incl. backward (no capture); captures diagonally forward.",
-	Piece.Type.CRAB: "1 sideways only (no capture); captures 1 diagonally in any direction.",
+	Piece.Type.IMP: "1 sideways only (no capture); captures 1 diagonally in any direction.",
 	Piece.Type.TORCHBEARER: "Moves like a pawn. When captured, the capturing piece is destroyed too.",
 	Piece.Type.DRUMMER: "1 forward, can't capture. Friendly pawns next to it can move 2 forward.",
 	Piece.Type.PILGRIM: "1 forward or backward, or swaps places with an adjacent friendly piece.",
 	Piece.Type.SQUIRE: "Moves like a pawn. Starting a turn next to a friendly knight, it can make a knight jump instead.",
 	# ---- uncommon
-	Piece.Type.CAMEL: "3-1 leaper.",
-	Piece.Type.ZEBRA: "3-2 leaper.",
+	Piece.Type.GARGOYLE: "3-1 leaper.",
+	Piece.Type.CHIMERA: "3-2 leaper.",
 	Piece.Type.TWIN_RIDER: "One or two knight jumps in the same direction (the square between the jumps must be empty).",
 	Piece.Type.NINJA: "Knight move; after a capture it may move 1 more square.",
-	Piece.Type.HAWK: "Leaps exactly 2 or 3 squares in any straight or diagonal direction.",
+	Piece.Type.HARPY: "Leaps exactly 2 or 3 squares in any straight or diagonal direction.",
 	Piece.Type.CANNON: "Rook move; captures by jumping over exactly one piece.",
 	Piece.Type.CHARGER: "Rook move of at least 2 squares.",
 	Piece.Type.RANGER: "Up to 3 squares orthogonally.",
 	Piece.Type.LANCER: "Any distance forward, only 1 square backward or sideways.",
 	Piece.Type.CATAPULT: "Never moves. Captures any piece exactly 3 squares away orthogonally, over blockers.",
-	Piece.Type.TORTOISE: "Up to 2 squares orthogonally; can only be captured from behind or the sides.",
+	Piece.Type.BASTION: "Up to 2 squares orthogonally; can only be captured from behind or the sides.",
 	Piece.Type.MIRROR: "Bishop move that can bounce off a board edge once per move.",
 	Piece.Type.MONK: "Up to 3 squares diagonally, or 1 square orthogonally without capturing.",
 	Piece.Type.FERZ_GUARD: "1 square diagonally or leaps 2 squares diagonally.",
-	Piece.Type.GRASSHOPPER: "Along any queen line, must hop over one piece and land directly behind it.",
+	Piece.Type.LOCUST: "Along any queen line, must hop over one piece and land directly behind it.",
 	Piece.Type.GOLEM: "1 square orthogonally; can't be captured by pawns or knights.",
 	Piece.Type.ALCHEMIST: "King move, or swaps places with any friendly piece within 2 squares.",
 	Piece.Type.GHOST: "Up to 2 squares in any direction, passing through pieces.",
@@ -171,10 +171,10 @@ static func _build() -> Dictionary:
 		for y in range(-2, 3):
 			if x != 0 or y != 0:
 				within_two.append(Vector2i(x, y))
-	var hawk_jumps: Array = []
+	var harpy_jumps: Array = []
 	for distance in [2, 3]:
-		hawk_jumps.append_array(_symmetric(distance, 0))
-		hawk_jumps.append_array(_symmetric(distance, distance))
+		harpy_jumps.append_array(_symmetric(distance, 0))
+		harpy_jumps.append_array(_symmetric(distance, distance))
 
 	return {
 		# ---- pawn tier
@@ -190,7 +190,7 @@ static func _build() -> Dictionary:
 			{ "kind": "step", "to": ORTHOGONAL, "mode": "move" },
 			{ "kind": "step", "to": front_diagonals, "mode": "capture", "local": true },
 		]),
-		Piece.Type.CRAB: _def(common, 1, "Cr", [
+		Piece.Type.IMP: _def(common, 1, "Im", [
 			{ "kind": "step", "to": beside, "mode": "move", "local": true },
 			{ "kind": "step", "to": DIAGONAL, "mode": "capture" },
 		]),
@@ -215,10 +215,10 @@ static func _build() -> Dictionary:
 			{ "kind": "shot", "dirs": forward, "distance": 2, "clear_line": true, "local": true },
 		]),
 		# ---- uncommon tier
-		Piece.Type.CAMEL: _def(uncommon, 3, "Ca", [{ "kind": "leap", "to": _symmetric(3, 1) }]),
-		Piece.Type.ZEBRA: _def(uncommon, 3, "Ze", [{ "kind": "leap", "to": _symmetric(3, 2) }]),
+		Piece.Type.GARGOYLE: _def(uncommon, 3, "Ga", [{ "kind": "leap", "to": _symmetric(3, 1) }]),
+		Piece.Type.CHIMERA: _def(uncommon, 3, "Ci", [{ "kind": "leap", "to": _symmetric(3, 2) }]),
 		Piece.Type.TWIN_RIDER: _def(rare, 4, "Tw", [{ "kind": "twin_leap", "to": Piece.KNIGHT_OFFSETS }]),
-		Piece.Type.HAWK: _def(uncommon, 3, "Ha", [{ "kind": "leap", "to": hawk_jumps }]),
+		Piece.Type.HARPY: _def(uncommon, 3, "Ha", [{ "kind": "leap", "to": harpy_jumps }]),
 		Piece.Type.CANNON: _def(rare, 5, "Cn", [{ "kind": "cannon", "dirs": ORTHOGONAL }]),
 		Piece.Type.CHARGER: _def(uncommon, 3, "Ch", [{ "kind": "slide", "dirs": ORTHOGONAL, "min": 2 }]),
 		Piece.Type.RANGER: _def(uncommon, 3, "Ra", [{ "kind": "slide", "dirs": ORTHOGONAL, "max": 3 }]),
@@ -235,14 +235,14 @@ static func _build() -> Dictionary:
 			{ "kind": "step", "to": DIAGONAL },
 			{ "kind": "leap", "to": _symmetric(2, 2) },
 		]),
-		Piece.Type.GRASSHOPPER: _def(rare, 4, "Gr", [{ "kind": "grasshopper", "dirs": ALL_DIRECTIONS }]),
+		Piece.Type.LOCUST: _def(rare, 4, "Lo", [{ "kind": "grasshopper", "dirs": ALL_DIRECTIONS }]),
 		Piece.Type.GHOST: _def(rare, 5, "Gh", [{ "kind": "slide", "dirs": ALL_DIRECTIONS, "max": 2, "through": true }]),
 		Piece.Type.SPEARMAN: _def(uncommon, 3, "Sp", [
 			{ "kind": "step", "to": ALL_DIRECTIONS },
 			{ "kind": "slide", "dirs": forward, "max": 2, "mode": "capture", "local": true },
 		]),
 		Piece.Type.GRIFFON: _def(rare, 5, "Gf", [{ "kind": "step_slide", "dirs": DIAGONAL, "then_max": 3 }]),
-		Piece.Type.TORTOISE: _guarded(_def(uncommon, 3, "To", [{ "kind": "slide", "dirs": ORTHOGONAL, "max": 2 }]),
+		Piece.Type.BASTION: _guarded(_def(uncommon, 3, "Bs", [{ "kind": "slide", "dirs": ORTHOGONAL, "max": 2 }]),
 			[{ "kind": "from_front" }]),
 		Piece.Type.GOLEM: _guarded(_def(uncommon, 3, "Go", [{ "kind": "step", "to": ORTHOGONAL }]),
 			[{ "kind": "attacker_types", "types": [Piece.Type.PAWN, Piece.Type.KNIGHT] }]),

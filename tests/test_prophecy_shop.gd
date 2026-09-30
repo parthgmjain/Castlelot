@@ -88,7 +88,7 @@ func test_wider_net_shows_seven_cards_once() -> void:
 
 func test_wider_net_keeps_three_owned_cards_and_adds_new_ones() -> void:
 	var run := _run()
-	for type in [Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.CRAB]:
+	for type in [Piece.Type.SCOUT, Piece.Type.SERF, Piece.Type.IMP]:
 		run.add_to_roster(type)
 	_play(run, "wider_net")
 	Lottery.begin_choice(run, Piece.Tier.COMMON, "pull", _rng())
