@@ -56,16 +56,18 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 	button.custom_minimum_size = CARD_SIZE
 	button.tooltip_text = description
 	button.pressed.connect(handler)
-	button.modulate = Color.WHITE
-	var empty_style := StyleBox.new()
+
+	var empty_style := StyleBoxEmpty.new()
 	button.add_theme_stylebox_override("normal", empty_style)
 	button.add_theme_stylebox_override("hover", empty_style)
 	button.add_theme_stylebox_override("pressed", empty_style)
 	button.add_theme_stylebox_override("focus", empty_style)
+	button.add_theme_stylebox_override("disabled", empty_style)
 
 	var vbox := VBoxContainer.new()
 	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_theme_constant_override("separation", 0)
 	button.add_child(vbox)
 
 	var is_animated_banner := card_name in ["White Banner", "Black Banner"]
