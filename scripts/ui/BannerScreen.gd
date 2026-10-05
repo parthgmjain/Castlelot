@@ -47,10 +47,8 @@ func _show_difficulty_step() -> void:
 	for level in Difficulty.levels():
 		list.add_child(_make_card(Difficulty.display_name(level), "", _on_difficulty_chosen.bind(level)))
 
-## One vertical banner card: animated banners use AnimatedSprite2D for proper
-## frame-by-frame animation, other cards use TextureRect. `description` (when
-## given) becomes the card's tooltip. Every child has mouse_filter = IGNORE so
-## clicks reach the button underneath them rather than being absorbed.
+## Card: border frame with banner animation inside. The border IS the visual
+## container. Clickable area matches the border size.
 func _make_card(card_name: String, description: String, handler: Callable) -> Button:
 	var button := Button.new()
 	button.custom_minimum_size = CARD_SIZE
@@ -64,45 +62,29 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 	button.add_theme_stylebox_override("focus", empty_style)
 	button.add_theme_stylebox_override("disabled", empty_style)
 
-	var vbox := VBoxContainer.new()
-	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbox.add_theme_constant_override("separation", 0)
-	button.add_child(vbox)
-
 	var is_animated_banner := card_name in ["White Banner", "Black Banner"]
 
 	if is_animated_banner:
 		var border := TextureRect.new()
-		border.name = "Art"
 		border.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		border.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		border.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		border.stretch_mode = TextureRect.STRETCH_KEEP
 		border.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		border.set_anchors_preset(Control.PRESET_CENTER)
 		_load_banner_border(border)
-		vbox.add_child(border)
+		button.add_child(border)
 
 		var sprite := AnimatedSprite2D.new()
 		sprite.centered = true
 		sprite.z_index = 1
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_load_animated_banner(sprite, card_name)
-		vbox.add_child(sprite)
+		button.add_child(sprite)
 	else:
 		var art := TextureRect.new()
-		art.name = "Art"
 		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		art.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		vbox.add_child(art)
-
-	var name_label := Label.new()
-	name_label.name = "NameLabel"
-	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	name_label.text = card_name
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	vbox.add_child(name_label)
+		button.add_child(art)
 
 	return button
 
