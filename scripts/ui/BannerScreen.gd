@@ -65,28 +65,21 @@ func _make_card(card_name: String, description: String, handler: Callable) -> Bu
 	var is_animated_banner := card_name in ["White Banner", "Black Banner"]
 
 	if is_animated_banner:
-		var art_container := Control.new()
-		art_container.name = "Art"
-		art_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		art_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		art_container.custom_minimum_size = Vector2(200, 350)
-
 		var border := TextureRect.new()
+		border.name = "Art"
 		border.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		border.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		border.set_anchors_preset(Control.PRESET_FULL_RECT)
+		border.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		border.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_load_banner_border(border)
-		art_container.add_child(border)
+		vbox.add_child(border)
 
 		var sprite := AnimatedSprite2D.new()
 		sprite.centered = true
-		sprite.position = Vector2(100, 175)
+		sprite.z_index = 1
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_load_animated_banner(sprite, card_name)
-		art_container.add_child(sprite)
-
-		vbox.add_child(art_container)
+		vbox.add_child(sprite)
 	else:
 		var art := TextureRect.new()
 		art.name = "Art"
@@ -136,6 +129,7 @@ func _load_animated_banner(sprite: AnimatedSprite2D, card_name: String) -> void:
 
 	sprite.sprite_frames = frames
 	sprite.scale = Vector2(6, 6)
+	sprite.position = Vector2(100, 190)
 	sprite.play("default")
 
 func _load_banner_border(border: TextureRect) -> void:
